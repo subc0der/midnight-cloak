@@ -2,7 +2,7 @@
  * PolicyBuilder - Fluent API for building complex verification policies
  */
 
-import type { Policy, PolicyCondition, VerificationType } from './types';
+import type { Policy, PolicyCondition, PolicyConfig, VerificationType } from './types';
 import { InvalidPolicyError } from './errors';
 
 export class PolicyBuilder {
@@ -41,10 +41,10 @@ export class PolicyBuilder {
     return this;
   }
 
-  requireCredential(type: VerificationType, params: Record<string, unknown>): this {
+  requireCredential(type: VerificationType, params: PolicyConfig): this {
     this.conditions.push({
       type,
-      params: params as PolicyCondition['params'],
+      params,
     });
     return this;
   }

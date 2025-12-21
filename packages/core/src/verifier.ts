@@ -12,11 +12,15 @@ import type {
 import { generateRequestId } from './utils';
 
 export class Verifier {
-  private config: Required<ClientConfig>;
+  private _config: Required<ClientConfig>;
   private pendingRequests: Map<string, VerificationRequest> = new Map();
 
   constructor(config: Required<ClientConfig>) {
-    this.config = config;
+    this._config = config;
+  }
+
+  get config(): Required<ClientConfig> {
+    return this._config;
   }
 
   async verify(request: VerificationRequest): Promise<VerificationResult> {
