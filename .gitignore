@@ -1,0 +1,86 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# IDE and editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Midnight/Compact
+zkir/
+compiler/
+*.cjs.map
+
+# Chrome extension build
+packages/wallet-extension/dist/
+*.crx
+*.pem
+
+# Electron build
+release/
+*.exe
+*.msi
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+
+# Testing artifacts
+*.local
+.cache/
+
+# Temporary files
+*.bak
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Claude Code
+.claude/settings.local.json
+
+# Handoff files (per user preference)
+*HANDOFF*.md
+HANDOFF_SUMMARY.md
+
+# Review and prompt files
+*REVIEW*.md
+*PROMPT*.md
+
+# Secrets (never commit)
+*.key
+*.pem
+credentials.json
+secrets.json

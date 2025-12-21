@@ -1,0 +1,41 @@
+{
+  "name": "@maskid/contracts",
+  "version": "0.1.0",
+  "description": "Compact smart contracts for MaskID on Midnight",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src/*.compact"
+  ],
+  "scripts": {
+    "compile": "compactc src/credential-registry.compact && compactc src/verification-engine.compact",
+    "build": "pnpm compile && tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist zkir compiler",
+    "deploy:testnet": "echo 'Deploy script not yet implemented'"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "maskid",
+    "compact",
+    "midnight",
+    "smart-contracts",
+    "zero-knowledge"
+  ],
+  "author": "subcoder",
+  "license": "MIT"
+}
