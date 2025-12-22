@@ -1,29 +1,15 @@
 /**
  * @maskid/contracts
- * Compact smart contracts for MaskID on Midnight
+ * Contract types and interfaces for MaskID on Midnight
  *
- * This package contains the Compact contract source files and exports
- * compiled contract bindings and deployment addresses.
+ * IMPORTANT: This is a placeholder package.
  *
- * ## Contract Files
+ * Real contract integration will require:
+ * 1. Official Midnight contract examples (we do NOT write Compact code)
+ * 2. Testnet access with tDUST
+ * 3. ZK expertise for any circuit modifications
  *
- * - `credential-registry.compact` - Main registry for credential management
- * - `age-verifier.compact` - Zero-knowledge age verification circuit
- *
- * ## Compilation
- *
- * To compile contracts, you need the Compact compiler installed:
- * ```bash
- * npm install -g @midnight-ntwrk/compact-compiler
- * ```
- *
- * Then compile each contract:
- * ```bash
- * npx compactc src/credential-registry.compact
- * npx compactc src/age-verifier.compact
- * ```
- *
- * This generates `.cjs` files that can be imported into the SDK.
+ * See CLAUDE.md "Compact Language Policy" for details.
  */
 
 // Contract addresses (to be updated after deployment to Midnight network)
@@ -49,22 +35,25 @@ export function getContractAddresses(network: Network) {
 
 /**
  * Check if contracts are deployed on a network
+ * Currently returns false - no contracts deployed yet
  */
-export function areContractsDeployed(network: Network): boolean {
-  const addresses = CONTRACT_ADDRESSES[network];
-  return Object.values(addresses).every((addr) => addr.length > 0);
+export function areContractsDeployed(_network: Network): boolean {
+  return false;
 }
 
-// Compiled contract modules are exported via package.json "exports" field:
-//
-// Age Verifier Contract:
-//   import { Contract, ledger, VerificationStatus } from '@maskid/contracts/age-verifier'
-//
-// Credential Registry Contract:
-//   import { Contract, ledger } from '@maskid/contracts/credential-registry'
-//
-// Each contract exports:
-//   - Contract: The main contract class
-//   - ledger(): Function to parse ledger state
-//   - Witnesses: Type for witness functions (private inputs)
-//   - Circuits: Type for circuit functions (ZK operations)
+/**
+ * Verification status enum (for type compatibility)
+ */
+export enum VerificationStatus {
+  PENDING = 'PENDING',
+  VERIFIED = 'VERIFIED',
+  DENIED = 'DENIED',
+}
+
+/**
+ * Credential status enum (for type compatibility)
+ */
+export enum CredentialStatus {
+  ACTIVE = 'ACTIVE',
+  REVOKED = 'REVOKED',
+}
