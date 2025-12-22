@@ -116,46 +116,35 @@ npm run lint                         # Lint all packages
 
 ---
 
-## Compact Language Quick Reference
+## Compact Language Policy
 
-Compact is Midnight's domain-specific language for ZK smart contracts. Key concepts:
+> **CRITICAL: We do NOT write Compact code.**
 
-```compact
-// Include standard library
-include "std";
+Compact is Midnight's ZK-native smart contract language requiring specialized cryptographic expertise. Writing incorrect ZK circuits can lead to security vulnerabilities, privacy leaks, or broken proofs.
 
-// Define public state (visible on-chain)
-ledger {
-    credentialCount: Counter;
-    isRevoked: Map<CredentialId, Boolean>;
-}
+### Our Policy
+- **NEVER** write, modify, or generate Compact (.compact) code
+- **NEVER** attempt to create ZK circuits without qualified ZK engineers
+- **USE ONLY** pre-audited Compact contracts from Midnight's official examples or verified sources
+- **REFERENCE ONLY** existing .compact files for understanding - do not create new ones
 
-// Define private state (user-controlled, never revealed)
-witness {
-    birthDate: Date;
-    credentialSecret: Field;
-}
+### What We DO
+- Use compiled contract outputs via Midnight.js SDK
+- Integrate with deployed contracts using TypeScript
+- Build SDK wrappers around existing ZK functionality
+- Focus on developer experience, not ZK cryptography
 
-// Public circuit (callable, generates ZK proof)
-export circuit verifyAge(minAge: Unsigned): Boolean {
-    // Access private witness data
-    const age = currentDate() - witness.birthDate;
-    
-    // Return result (only this is revealed, not birthDate)
-    return age >= minAge;
-}
+### Existing Contracts
+The `.compact` files in this repo are reference implementations based on Midnight's official examples. They should be:
+- Reviewed by ZK experts before production use
+- Compiled using official Midnight tooling only
+- Treated as immutable unless modified by qualified personnel
 
-// Increment public counter
-export circuit issueCredential(): Void {
-    ledger.credentialCount.increment(1);
-}
-```
-
-### Key Patterns
-- `ledger {}` — Public state, visible on Midnight
-- `witness {}` — Private state, user-controlled
-- `export circuit` — Public function generating ZK proof
-- Use `disclose()` for explicit selective disclosure
+### If ZK Changes Are Needed
+1. Document requirements clearly
+2. Consult Midnight documentation and examples
+3. Engage qualified ZK/cryptography expertise
+4. Audit before deployment
 
 ---
 
@@ -378,9 +367,9 @@ npm run build:all  # Rebuild SDK with new addresses
 - Document public APIs with JSDoc
 
 ### Compact
-- Follow Midnight examples style
-- Comment complex ZK logic
-- Keep circuits focused (single responsibility)
+- **DO NOT WRITE** - See "Compact Language Policy" section above
+- Reference existing contracts only
+- Any modifications require ZK expertise
 
 ### React
 - Functional components only
@@ -434,7 +423,7 @@ docker-compose restart proof-server
 
 When I ask for help with this project:
 
-1. **Compact contracts**: Reference Midnight's Compact language—it's similar to TypeScript but has ZK-specific constructs (`ledger`, `witness`, `circuit`)
+1. **Compact contracts**: NEVER write or generate Compact code. Only reference existing .compact files for understanding. Use Midnight.js SDK to interact with compiled contracts.
 
 2. **SDK design**: Prioritize developer experience. The API should feel like Stripe or Firebase—simple surface, powerful underneath
 

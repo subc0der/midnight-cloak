@@ -23,14 +23,25 @@ useMockWallet(birthYear: number)  // Sets up mock wallet with birth year for tes
 ```
 This is NOT a security issue - it's a developer experience feature for local testing.
 
-### 2. Compact Language Files (*.compact)
-Files ending in `.compact` are Midnight's ZK smart contract language. They have unique syntax:
-- `ledger {}` - Public on-chain state
-- `witness {}` - Private user-controlled state
-- `export circuit` - Public functions generating ZK proofs
-- `Uint<16>`, `Bytes<32>` - Sized types
+### 2. Compact Language Files (*.compact) - READ ONLY
 
-Do not flag Compact syntax as errors.
+> **CRITICAL: We do NOT write Compact code.**
+
+Files ending in `.compact` are Midnight's ZK smart contract language. These files are:
+- Reference implementations from Midnight's official examples
+- READ-ONLY - should never be created or modified by AI assistants
+- Require ZK cryptography expertise for any changes
+- Must be audited before production use
+
+**Do NOT:**
+- Generate new Compact code
+- Suggest modifications to .compact files
+- Create new ZK circuits
+
+**Do:**
+- Reference existing contracts for understanding
+- Use compiled outputs via Midnight.js SDK
+- Flag if someone attempts to write new Compact code
 
 ### 3. Placeholder Contract Addresses
 ```typescript
@@ -79,6 +90,7 @@ When reviewing, please focus on:
 3. Error handling completeness
 4. Security considerations for wallet interactions
 5. API design consistency
+6. **FLAG any attempts to write/generate Compact (.compact) code** - this violates our coding standards
 
 ## Do NOT Flag
 
