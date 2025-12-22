@@ -73,6 +73,13 @@ export function CredentialGate({
     }
   }, [require.type, persistSession]);
 
+  // Extract primitive values from require to avoid object reference in dependencies
+  const requireType = require.type;
+  const requireMinAge = require.minAge;
+  const requireToken = require.token;
+  const requireMinBalance = require.minBalance;
+  const requireCollection = require.collection;
+
   const handleVerify = useCallback(async () => {
     setStatus('loading');
     setError(null);
@@ -80,25 +87,25 @@ export function CredentialGate({
     try {
       let policy: PolicyConfig;
 
-      switch (require.type) {
+      switch (requireType) {
         case 'AGE':
-          policy = { minAge: require.minAge ?? 18 };
+          policy = { minAge: requireMinAge ?? 18 };
           break;
         case 'TOKEN_BALANCE':
-          policy = { token: require.token ?? '', minBalance: require.minBalance ?? 0 };
+          policy = { token: requireToken ?? '', minBalance: requireMinBalance ?? 0 };
           break;
         case 'NFT_OWNERSHIP':
-          policy = { collection: require.collection ?? '' };
+          policy = { collection: requireCollection ?? '' };
           break;
         default:
-          throw new Error(`Unsupported verification type: ${require.type}`);
+          throw new Error(`Unsupported verification type: ${requireType}`);
       }
 
-      const result = await client.verify({ type: require.type, policy });
+      const result = await client.verify({ type: requireType, policy });
 
       if (result.verified) {
         if (persistSession) {
-          const sessionKey = `maskid:session:${require.type}`;
+          const sessionKey = `maskid:session:${requireType}`;
           sessionStorage.setItem(
             sessionKey,
             JSON.stringify({ expires: Date.now() + sessionDuration * 1000 })
@@ -118,7 +125,7 @@ export function CredentialGate({
       setStatus('error');
       onError?.(err);
     }
-  }, [client, require, persistSession, sessionDuration, onVerified, onError]);
+  }, [client, requireType, requireMinAge, requireToken, requireMinBalance, requireCollection, persistSession, sessionDuration, onVerified, onError]);
 
   const handleReset = useCallback(() => {
     setStatus('unverified');
