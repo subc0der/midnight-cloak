@@ -207,8 +207,9 @@ export class WalletConnector {
       getAddress: async (): Promise<string> => {
         if (api.getUsedAddresses) {
           const addresses = await api.getUsedAddresses();
-          if (addresses.length > 0) {
-            return addresses[0]!;
+          const firstAddress = addresses[0];
+          if (firstAddress) {
+            return firstAddress;
           }
         }
         if (api.getChangeAddress) {

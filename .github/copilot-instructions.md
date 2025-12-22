@@ -92,6 +92,39 @@ When reviewing, please focus on:
 5. API design consistency
 6. **FLAG any attempts to write/generate Compact (.compact) code** - this violates our coding standards
 
+## Coding Standards We Follow
+
+These patterns are already enforced in our codebase. Do not flag code that follows these standards:
+
+### React Hooks
+- **useCallback dependencies**: We extract primitive values from objects to avoid unnecessary re-renders
+  ```typescript
+  // We do this - extract primitives
+  const requireType = require.type;
+  const requireMinAge = require.minAge;
+  useCallback(() => { ... }, [requireType, requireMinAge]);
+
+  // Not this - object reference
+  useCallback(() => { ... }, [require]);
+  ```
+
+### Type Safety
+- **No unsafe non-null assertions**: We always check for undefined before accessing
+  ```typescript
+  // We do this
+  const first = array[0];
+  if (first) { return first; }
+
+  // Not this
+  return array[0]!;
+  ```
+
+- **No @ts-expect-error or @ts-ignore**: We properly type everything
+
+### Error Handling
+- All async operations have proper try/catch
+- Errors are typed and propagated to callbacks
+
 ## Do NOT Flag
 
 - Unused exports in index.ts files (they're public API surface)
@@ -100,6 +133,7 @@ When reviewing, please focus on:
 - Placeholder values for contract addresses
 - Console.log statements in demo app (intentional for debugging)
 - TODO comments (tracked in project roadmap)
+- Empty catch blocks with comments explaining why (e.g., "Invalid session, continue")
 
 ## Package Structure
 
@@ -107,7 +141,7 @@ When reviewing, please focus on:
 packages/
 ├── core/       # @maskid/core - Main SDK
 ├── react/      # @maskid/react - React components
-├── contracts/  # Compact smart contracts
+├── contracts/  # Contract types and interfaces (mock implementation)
 apps/
 ├── demo/       # Demo application
 ```
