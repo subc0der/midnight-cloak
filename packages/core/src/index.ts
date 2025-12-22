@@ -7,4 +7,6 @@ export * from './types';
 export * from './client';
 export * from './verifier';
 export * from './policy-builder';
+export * from './wallet-connector';
+export * from './contract-client';
 export * from './errors';

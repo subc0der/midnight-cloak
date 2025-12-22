@@ -6,7 +6,7 @@ import { useState, type ReactNode, type ButtonHTMLAttributes } from 'react';
 import type { VerificationResult, VerificationType, PolicyConfig } from '@maskid/core';
 import { useMaskIDContext } from './MaskIDProvider';
 
-export interface VerifyButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
+export interface VerifyButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onError'> {
   type: VerificationType;
   minAge?: number;
   token?: string;
@@ -15,7 +15,7 @@ export interface VerifyButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonE
   policy?: PolicyConfig;
   onVerified?: (result: VerificationResult) => void;
   onDenied?: () => void;
-  onError?: (error: Error) => void;
+  onVerificationError?: (error: Error) => void;
   children?: ReactNode;
 }
 
@@ -27,7 +27,7 @@ export function VerifyButton({
   collection,
   onVerified,
   onDenied,
-  onError,
+  onVerificationError,
   disabled,
   children,
   ...buttonProps
@@ -63,7 +63,7 @@ export function VerifyButton({
         onDenied?.();
       }
     } catch (error) {
-      onError?.(error instanceof Error ? error : new Error(String(error)));
+      onVerificationError?.(error instanceof Error ? error : new Error(String(error)));
     } finally {
       setIsLoading(false);
     }
