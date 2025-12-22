@@ -10,17 +10,39 @@ import type {
   AgePolicy,
 } from './types';
 import { generateRequestId } from './utils';
+import type { WalletConnector, ConnectedWallet } from './wallet-connector';
+import { ContractClient } from './contract-client';
+import { ErrorCodes, UnsupportedVerificationTypeError } from './errors';
 
 export class Verifier {
   private _config: Required<ClientConfig>;
+  private walletConnector: WalletConnector;
+  private contractClient: ContractClient;
+  private mockWallet: ConnectedWallet | null = null;
   private pendingRequests: Map<string, VerificationRequest> = new Map();
 
-  constructor(config: Required<ClientConfig>) {
+  constructor(config: Required<ClientConfig>, walletConnector: WalletConnector) {
     this._config = config;
+    this.walletConnector = walletConnector;
+    this.contractClient = new ContractClient(config);
   }
 
   get config(): Required<ClientConfig> {
     return this._config;
+  }
+
+  /**
+   * Set a mock wallet for development/testing
+   */
+  setMockWallet(wallet: ConnectedWallet): void {
+    this.mockWallet = wallet;
+  }
+
+  /**
+   * Get the active wallet (mock or real)
+   */
+  private getActiveWallet(): ConnectedWallet | null {
+    return this.mockWallet || this.walletConnector.getConnection();
   }
 
   async verify(request: VerificationRequest): Promise<VerificationResult> {
@@ -28,17 +50,22 @@ export class Verifier {
     this.pendingRequests.set(requestId, request);
 
     try {
-      switch (request.type) {
+      const verificationType = request.type;
+      if (!verificationType) {
+        throw new UnsupportedVerificationTypeError('undefined');
+      }
+
+      switch (verificationType) {
         case 'AGE':
           return await this.verifyAge(requestId, request.policy as AgePolicy);
         case 'TOKEN_BALANCE':
-          throw new Error('TOKEN_BALANCE verification not yet implemented');
+          throw new UnsupportedVerificationTypeError('TOKEN_BALANCE');
         case 'NFT_OWNERSHIP':
-          throw new Error('NFT_OWNERSHIP verification not yet implemented');
+          throw new UnsupportedVerificationTypeError('NFT_OWNERSHIP');
         case 'RESIDENCY':
-          throw new Error('RESIDENCY verification not yet implemented');
+          throw new UnsupportedVerificationTypeError('RESIDENCY');
         default:
-          throw new Error(`Unknown verification type: ${request.type}`);
+          throw new UnsupportedVerificationTypeError(verificationType);
       }
     } finally {
       this.pendingRequests.delete(requestId);
@@ -46,47 +73,67 @@ export class Verifier {
   }
 
   private async verifyAge(requestId: string, policy: AgePolicy): Promise<VerificationResult> {
-    // TODO: Implement actual wallet connection and proof generation
-    // This is a placeholder implementation for development
+    const wallet = this.getActiveWallet();
 
-    // 1. Request wallet approval
-    const walletApproval = await this.requestWalletApproval(requestId, 'AGE', policy);
-
-    if (!walletApproval.approved) {
+    if (!wallet) {
       return {
         verified: false,
         requestId,
         timestamp: Date.now(),
         proof: null,
-        error: { code: 'E002', message: 'User denied verification' },
+        error: { code: ErrorCodes.WALLET_NOT_CONNECTED, message: 'No wallet connected. Please connect your wallet first.' },
       };
     }
 
-    // 2. Generate ZK proof (placeholder)
-    const proof = await this.generateProof(requestId, 'AGE', policy);
+    try {
+      // 1. Get wallet address and sign verification request
+      const address = await wallet.getAddress();
+      const payload = JSON.stringify({
+        requestId,
+        type: 'AGE',
+        policy,
+        timestamp: Date.now(),
+      });
 
-    // 3. Submit to contract (placeholder)
-    const contractResult = await this.submitToContract(requestId, proof);
+      // 2. Request signature (this prompts user approval in the wallet)
+      const signature = await wallet.signData(address, payload);
 
-    return {
-      verified: contractResult.verified,
-      requestId,
-      timestamp: Date.now(),
-      proof: contractResult.verified ? proof : null,
-      error: contractResult.verified
-        ? null
-        : { code: 'E005', message: 'Credential does not meet requirements' },
-    };
-  }
+      if (!signature) {
+        return {
+          verified: false,
+          requestId,
+          timestamp: Date.now(),
+          proof: null,
+          error: { code: ErrorCodes.VERIFICATION_DENIED, message: 'User denied verification request' },
+        };
+      }
 
-  private async requestWalletApproval(
-    _requestId: string,
-    _type: string,
-    _policy: unknown
-  ): Promise<{ approved: boolean }> {
-    // TODO: Implement DApp Connector API integration
-    // For now, simulate approval
-    return { approved: true };
+      // 3. Generate ZK proof (uses proof server when available)
+      const proof = await this.generateProof(requestId, 'AGE', policy);
+
+      // 4. Submit to contract (placeholder until Compact contracts are deployed)
+      const contractResult = await this.submitToContract(requestId, proof);
+
+      return {
+        verified: contractResult.verified,
+        requestId,
+        timestamp: Date.now(),
+        proof: contractResult.verified ? proof : null,
+        error: contractResult.verified
+          ? null
+          : { code: ErrorCodes.CREDENTIAL_NOT_FOUND, message: 'Credential does not meet requirements' },
+      };
+    } catch (error) {
+      // User rejected or wallet error
+      const message = error instanceof Error ? error.message : 'Wallet operation failed';
+      return {
+        verified: false,
+        requestId,
+        timestamp: Date.now(),
+        proof: null,
+        error: { code: ErrorCodes.VERIFICATION_TIMEOUT, message },
+      };
+    }
   }
 
   private async generateProof(
@@ -94,20 +141,37 @@ export class Verifier {
     _type: string,
     policy: AgePolicy
   ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
-    // TODO: Integrate with Midnight proof server
+    // Use ContractClient for proof generation
+    // In production, birthYear would come from the user's credential
+    // For now, we use a mock value that will always pass (age 30)
+    const currentYear = new Date().getFullYear();
+    const mockBirthYear = currentYear - 30; // Mock: user is 30 years old
+
+    const proofResponse = await this.contractClient.generateAgeProof({
+      birthYear: mockBirthYear,
+      minAge: policy.minAge,
+      currentYear,
+      requestId,
+    });
+
     return {
       type: 'zk-snark',
-      data: new Uint8Array(32),
-      publicInputs: [requestId, policy.minAge],
+      data: proofResponse.proof,
+      publicInputs: proofResponse.publicOutputs,
     };
   }
 
   private async submitToContract(
     _requestId: string,
-    _proof: unknown
+    proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }
   ): Promise<{ verified: boolean }> {
-    // TODO: Submit to Midnight contract
-    return { verified: true };
+    // Submit proof to contract for verification
+    const result = await this.contractClient.verifyAgeOnChain({
+      proof: proof.data,
+      publicOutputs: proof.publicInputs,
+    });
+
+    return { verified: result.success };
   }
 
   async getStatus(requestId: string): Promise<VerificationStatus> {

@@ -234,23 +234,48 @@ type CredentialType =
 
 ---
 
-## Current Development Phase
+## Project Roadmap
 
-**Phase 2: Core SDK MVP (Weeks 5-10)**
-
-### Current Goals
-- [ ] Design credential schema for age verification
-- [ ] Build Compact contract for age proof verification
-- [ ] Create TypeScript SDK wrapper with clean API
-- [ ] Build minimal credential wallet for testing
-- [ ] Create demo dApp that integrates the SDK
-- [ ] Write developer documentation
-
-### Completed
+### Phase 1: Foundation (Complete)
 - [x] Environment setup
 - [x] Midnight tutorial completion (counter, bulletin board)
 - [x] Project architecture design
 - [x] Documentation framework
+
+### Phase 2: Core SDK MVP (Current)
+- [x] Design credential schema for age verification
+- [x] Build Compact contracts (age-verifier, credential-registry)
+- [x] ZK circuit compilation via WSL Compact CLI
+- [x] Create TypeScript SDK (@maskid/core)
+- [x] Build React components (@maskid/react)
+- [x] Create demo dApp with mock wallet flow
+- [ ] Deploy contracts to testnet (blocked: waiting for tDUST/Preview network)
+- [ ] End-to-end verification with real wallet
+- [ ] Developer documentation
+
+### Phase 3: Wallet Extension + Credentials
+- [ ] Chrome extension scaffold
+- [ ] Credential storage and management
+- [ ] Multi-wallet support (Lace, NuFi, Vespr)
+- [ ] Credential issuance flow
+- [ ] MaskAuth integration (optional - see `.claude/context/future-maskauth.md`)
+
+### Phase 4: $Handle Shield ("Portfolio Blackout")
+- [ ] Cardano ↔ Midnight bridge integration
+- [ ] $handle claim circuit (prove NFT ownership)
+- [ ] Asset shielding UI in wallet
+- [ ] ZK proofs for hidden holdings
+- [ ] Android app integration (existing $handle lookup app)
+- [ ] Selective disclosure settings
+
+> **Note**: Phase 4 depends on Midnight bridge availability.
+> See `.claude/context/future-handle-shield.md` for full spec.
+
+### Phase 5: Production & Growth
+- [ ] Mainnet deployment
+- [ ] Developer dashboard
+- [ ] Additional verification types (TOKEN_BALANCE, NFT_OWNERSHIP, RESIDENCY)
+- [ ] Partner integrations
 
 ---
 

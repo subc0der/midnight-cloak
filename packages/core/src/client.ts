@@ -10,12 +10,19 @@ import type {
   VerificationStatus,
 } from './types';
 import { Verifier } from './verifier';
+import {
+  WalletConnector,
+  type ConnectedWallet,
+  type WalletInfo,
+  createMockWallet,
+} from './wallet-connector';
 
 type EventHandler = (...args: unknown[]) => void;
 
 export class MaskIDClient {
   private config: Required<ClientConfig>;
   private verifier: Verifier;
+  private walletConnector: WalletConnector;
   private eventListeners: Map<string, Set<EventHandler>> = new Map();
 
   constructor(config: ClientConfig) {
@@ -24,9 +31,17 @@ export class MaskIDClient {
       apiKey: config.apiKey,
       proofServerUrl: config.proofServerUrl || this.getDefaultProofServer(config.network),
       timeout: config.timeout || 30000,
+      preferredWallet: config.preferredWallet || 'lace',
     };
 
-    this.verifier = new Verifier(this.config);
+    this.walletConnector = new WalletConnector({
+      preferredWallet: this.config.preferredWallet,
+      onConnect: (wallet) => this.emit('wallet:connected', wallet),
+      onDisconnect: () => this.emit('wallet:disconnected'),
+      onError: (error) => this.emit('wallet:error', error),
+    });
+
+    this.verifier = new Verifier(this.config, this.walletConnector);
   }
 
   private getDefaultProofServer(network: Network): string {
@@ -78,7 +93,38 @@ export class MaskIDClient {
   }
 
   disconnect(): void {
+    this.walletConnector.disconnect();
     this.verifier.disconnect();
     this.eventListeners.clear();
+  }
+
+  // Wallet connection methods
+  async connectWallet(wallet?: 'lace' | 'nami' | 'nufi' | 'vespr'): Promise<ConnectedWallet> {
+    return this.walletConnector.connect(wallet);
+  }
+
+  disconnectWallet(): void {
+    this.walletConnector.disconnect();
+  }
+
+  isWalletConnected(): boolean {
+    return this.walletConnector.isConnected();
+  }
+
+  getAvailableWallets(): WalletInfo[] {
+    return this.walletConnector.getAvailableWallets();
+  }
+
+  isLaceAvailable(): boolean {
+    return this.walletConnector.isLaceAvailable();
+  }
+
+  /**
+   * Use mock wallet for development/testing when no real wallet is available
+   */
+  useMockWallet(options?: { network?: 'testnet' | 'mainnet'; autoApprove?: boolean }): void {
+    const mockWallet = createMockWallet(options);
+    this.verifier.setMockWallet(mockWallet);
+    this.emit('wallet:connected', mockWallet);
   }
 }

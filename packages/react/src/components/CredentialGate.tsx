@@ -2,8 +2,8 @@
  * CredentialGate - Gate content behind verification
  */
 
-import { useState, useEffect, type ReactNode } from 'react';
-import type { VerificationType, PolicyConfig } from '@maskid/core';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import type { VerificationType, PolicyConfig, VerificationResult } from '@maskid/core';
 import { useMaskIDContext } from './MaskIDProvider';
 
 export interface VerificationRequirement {
@@ -14,11 +14,21 @@ export interface VerificationRequirement {
   collection?: string;
 }
 
+export type GateStatus = 'loading' | 'verified' | 'unverified' | 'error';
+
+export interface CredentialGateRenderProps {
+  status: GateStatus;
+  error: Error | null;
+  verify: () => Promise<void>;
+  reset: () => void;
+}
+
 export interface CredentialGateProps {
   require: VerificationRequirement;
-  fallback?: ReactNode;
+  fallback?: ReactNode | ((props: CredentialGateRenderProps) => ReactNode);
   loading?: ReactNode;
-  onVerified?: () => void;
+  onVerified?: (result: VerificationResult) => void;
+  onError?: (error: Error) => void;
   persistSession?: boolean;
   sessionDuration?: number;
   children: ReactNode;
@@ -29,12 +39,14 @@ export function CredentialGate({
   fallback,
   loading,
   onVerified,
+  onError,
   persistSession = true,
   sessionDuration = 3600,
   children,
 }: CredentialGateProps) {
   const { client } = useMaskIDContext();
-  const [status, setStatus] = useState<'loading' | 'verified' | 'unverified'>('loading');
+  const [status, setStatus] = useState<GateStatus>('loading');
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const checkSession = () => {
@@ -42,10 +54,14 @@ export function CredentialGate({
         const sessionKey = `maskid:session:${require.type}`;
         const session = sessionStorage.getItem(sessionKey);
         if (session) {
-          const { expires } = JSON.parse(session);
-          if (Date.now() < expires) {
-            setStatus('verified');
-            return true;
+          try {
+            const { expires } = JSON.parse(session);
+            if (Date.now() < expires) {
+              setStatus('verified');
+              return true;
+            }
+          } catch {
+            // Invalid session, continue to unverified
           }
         }
       }
@@ -57,8 +73,9 @@ export function CredentialGate({
     }
   }, [require.type, persistSession]);
 
-  const handleVerify = async () => {
+  const handleVerify = useCallback(async () => {
     setStatus('loading');
+    setError(null);
 
     try {
       let policy: PolicyConfig;
@@ -88,14 +105,25 @@ export function CredentialGate({
           );
         }
         setStatus('verified');
-        onVerified?.();
+        onVerified?.(result);
       } else {
-        setStatus('unverified');
+        const verificationError = new Error(result.error?.message || 'Verification failed');
+        setError(verificationError);
+        setStatus('error');
+        onError?.(verificationError);
       }
-    } catch {
-      setStatus('unverified');
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error('Unknown error');
+      setError(err);
+      setStatus('error');
+      onError?.(err);
     }
-  };
+  }, [client, require, persistSession, sessionDuration, onVerified, onError]);
+
+  const handleReset = useCallback(() => {
+    setStatus('unverified');
+    setError(null);
+  }, []);
 
   if (status === 'loading') {
     return <>{loading ?? <div>Loading...</div>}</>;
@@ -105,12 +133,28 @@ export function CredentialGate({
     return <>{children}</>;
   }
 
+  // Render props for fallback
+  const renderProps: CredentialGateRenderProps = {
+    status,
+    error,
+    verify: handleVerify,
+    reset: handleReset,
+  };
+
+  // Support render prop pattern for fallback
+  if (typeof fallback === 'function') {
+    return <>{fallback(renderProps)}</>;
+  }
+
   return (
     <>
       {fallback ?? (
         <div>
           <p>Verification required</p>
-          <button onClick={handleVerify}>Verify to continue</button>
+          {error && <p style={{ color: 'red' }}>{error.message}</p>}
+          <button onClick={handleVerify}>
+            {status === 'error' ? 'Try Again' : 'Verify to continue'}
+          </button>
         </div>
       )}
     </>

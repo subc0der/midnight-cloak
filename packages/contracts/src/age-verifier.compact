@@ -1,0 +1,63 @@
+// MaskID Age Verifier Contract
+// Copyright (C) 2025 MaskID
+// SPDX-License-Identifier: MIT
+//
+// This contract enables zero-knowledge age verification.
+// Users prove they are above a certain age without revealing their birthdate.
+
+pragma language_version >= 0.16 && <= 0.18;
+
+import CompactStandardLibrary;
+
+// Verification result state
+export enum VerificationStatus {
+  PENDING,
+  VERIFIED,
+  DENIED
+}
+
+// Public ledger state
+export ledger verificationCount: Counter;
+
+export ledger lastVerificationId: Bytes<32>;
+
+export ledger lastStatus: VerificationStatus;
+
+// Constructor initializes the contract
+constructor() {
+  verificationCount.increment(0);
+  lastStatus = VerificationStatus.PENDING;
+}
+
+// Witness function to access the user's private birthdate
+// birthYear is the actual year (e.g., 1990, 2005)
+witness birthYear(): Uint<16>;
+
+// Calculate if user meets minimum age requirement
+// Parameters:
+//   minAge: minimum age required (e.g., 18)
+//   currentYear: current calendar year (e.g., 2025)
+//   requestId: unique identifier for this verification
+export circuit verifyAge(minAge: Uint<8>, currentYear: Uint<16>, requestId: Bytes<32>): [] {
+  // Get the user's private birth year
+  const userBirthYear = birthYear();
+
+  // Ensure birth year is not in the future
+  assert(userBirthYear <= currentYear, "Birth year cannot be in the future");
+
+  // Calculate age: currentYear - birthYear
+  const age = currentYear - userBirthYear;
+
+  // Check if age meets requirement (cast minAge to Uint<16> for comparison)
+  assert(age >= (minAge as Uint<16>), "Age requirement not met");
+
+  // Record successful verification
+  lastVerificationId = disclose(requestId);
+  lastStatus = VerificationStatus.VERIFIED;
+  verificationCount.increment(1);
+}
+
+// Get verification statistics
+export circuit getVerificationCount(): Uint<64> {
+  return verificationCount as Uint<64>;
+}
