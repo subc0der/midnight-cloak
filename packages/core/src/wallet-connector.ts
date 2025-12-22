@@ -254,10 +254,16 @@ export function createMockWallet(options: {
       // Simulate signing delay
       await new Promise((resolve) => setTimeout(resolve, 500));
       // Return mock signature using browser-native TextEncoder and btoa
+      // Use chunked conversion to avoid stack overflow on large payloads
       const encoder = new TextEncoder();
       const bytes = encoder.encode(payload);
-      // Convert bytes to base64-safe string
-      const base64 = btoa(String.fromCharCode(...bytes)).slice(0, 32);
+      let binary = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+        binary += String.fromCharCode(...chunk);
+      }
+      const base64 = btoa(binary).slice(0, 32);
       return `mock_sig_${base64}`;
     },
     submitTx: async (_tx: string) => {
