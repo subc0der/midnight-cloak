@@ -170,6 +170,32 @@ These patterns are already enforced in our codebase. Do not flag code that follo
   // Fallback logic...
   ```
 
+### Large Array Handling
+- Use chunked iteration for `String.fromCharCode()` to avoid stack overflow:
+  ```typescript
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode(...chunk);
+  }
+  ```
+
+### Session Storage Keys
+- Include policy parameters in session keys to prevent security bypass:
+  ```typescript
+  // Good: minAge:18 and minAge:21 have different session keys
+  const key = `maskid:session:${type}:minAge:${minAge}`;
+
+  // Bad: Would allow minAge:18 to satisfy minAge:21
+  const key = `maskid:session:${type}`;
+  ```
+
+### Provider Pattern
+- Use a single client instance via React context provider
+- All components should use the hook (useMaskID) to access the shared client
+- Do NOT create multiple client instances that need to sync state
+
 ## Do NOT Flag
 
 - Unused exports in index.ts files (they're public API surface)

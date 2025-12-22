@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   MaskIDProvider,
   VerifyButton,
@@ -6,16 +6,13 @@ import {
   useMaskID,
   type CredentialGateRenderProps,
 } from '@maskid/react';
-import { MaskIDClient } from '@maskid/core';
-
-// Shared client instance for wallet operations outside provider
-const sharedClient = new MaskIDClient({
-  network: 'testnet',
-  apiKey: 'demo-key',
-});
 
 type WalletStatus = 'disconnected' | 'connecting' | 'connected';
 
+/**
+ * WalletConnection component - uses the provider's client via useMaskID hook
+ * to ensure wallet state is shared across all components.
+ */
 function WalletConnection({
   onConnected,
   status,
@@ -25,6 +22,7 @@ function WalletConnection({
   status: WalletStatus;
   setStatus: (status: WalletStatus) => void;
 }) {
+  const client = useMaskID();
   const [error, setError] = useState<string | null>(null);
   const [useMock, setUseMock] = useState(false);
 
@@ -33,7 +31,7 @@ function WalletConnection({
     setError(null);
 
     try {
-      await sharedClient.connectWallet('lace');
+      await client.connectWallet('lace');
       setStatus('connected');
       onConnected(false);
     } catch (e) {
@@ -43,7 +41,7 @@ function WalletConnection({
   };
 
   const handleUseMockWallet = () => {
-    sharedClient.useMockWallet({ network: 'testnet' });
+    client.useMockWallet({ network: 'testnet' });
     setUseMock(true);
     setStatus('connected');
     onConnected(true);
@@ -69,7 +67,7 @@ function WalletConnection({
 
       {status === 'disconnected' && (
         <div className="wallet-actions">
-          {sharedClient.isLaceAvailable() && (
+          {client.isLaceAvailable() && (
             <button onClick={handleConnectWallet} className="verify-btn">
               Connect Lace Wallet
             </button>
@@ -77,7 +75,7 @@ function WalletConnection({
           <button
             onClick={handleUseMockWallet}
             className="verify-btn secondary"
-            style={{ marginTop: sharedClient.isLaceAvailable() ? '0.5rem' : '0' }}
+            style={{ marginTop: client.isLaceAvailable() ? '0.5rem' : '0' }}
           >
             Use Demo Mode (No Wallet)
           </button>
@@ -89,17 +87,10 @@ function WalletConnection({
   );
 }
 
-function AgeVerificationCard({ useMock }: { useMock: boolean }) {
-  const client = useMaskID();
+function AgeVerificationCard() {
+  // No need for useMock prop - wallet state is already shared via provider
   const [status, setStatus] = useState<'idle' | 'verified' | 'denied'>('idle');
   const [error, setError] = useState<string | null>(null);
-
-  // Sync mock wallet to provider's client - only run when useMock changes
-  useEffect(() => {
-    if (useMock) {
-      client.useMockWallet({ network: 'testnet' });
-    }
-  }, [useMock, client]);
 
   const handleReset = () => {
     setStatus('idle');
@@ -152,16 +143,8 @@ function AgeVerificationCard({ useMock }: { useMock: boolean }) {
   );
 }
 
-function GatedContentCard({ useMock }: { useMock: boolean }) {
-  const client = useMaskID();
-
-  // Sync mock wallet to provider's client - only run when useMock changes
-  useEffect(() => {
-    if (useMock) {
-      client.useMockWallet({ network: 'testnet' });
-    }
-  }, [useMock, client]);
-
+function GatedContentCard() {
+  // No need for useMock prop - wallet state is already shared via provider
   return (
     <div className="card">
       <h2>Gated Content (CredentialGate)</h2>
@@ -200,11 +183,10 @@ function GatedContentCard({ useMock }: { useMock: boolean }) {
 
 export function App() {
   const [walletStatus, setWalletStatus] = useState<WalletStatus>('disconnected');
-  const [useMock, setUseMock] = useState(false);
 
-  const handleConnected = (isMock: boolean) => {
-    setUseMock(isMock);
-  };
+  // Note: useMock state is no longer needed since all components
+  // share the same client via the provider. When WalletConnection
+  // sets up the mock wallet, it's available to all child components.
 
   return (
     <MaskIDProvider
@@ -220,15 +202,15 @@ export function App() {
 
         <main>
           <WalletConnection
-            onConnected={handleConnected}
+            onConnected={() => {}}
             status={walletStatus}
             setStatus={setWalletStatus}
           />
 
           {walletStatus === 'connected' && (
             <>
-              <AgeVerificationCard useMock={useMock} />
-              <GatedContentCard useMock={useMock} />
+              <AgeVerificationCard />
+              <GatedContentCard />
             </>
           )}
 

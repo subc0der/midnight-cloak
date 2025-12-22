@@ -34,6 +34,30 @@ export interface CredentialGateProps {
   children: ReactNode;
 }
 
+/**
+ * Generate a session key that includes policy parameters to prevent security bypass.
+ * For example, a minAge:18 verification should not satisfy minAge:21.
+ */
+function getSessionKey(require: VerificationRequirement): string {
+  const parts = [`maskid:session:${require.type}`];
+
+  // Include relevant policy params in the key
+  if (require.minAge !== undefined) {
+    parts.push(`minAge:${require.minAge}`);
+  }
+  if (require.token !== undefined) {
+    parts.push(`token:${require.token}`);
+  }
+  if (require.minBalance !== undefined) {
+    parts.push(`minBalance:${require.minBalance}`);
+  }
+  if (require.collection !== undefined) {
+    parts.push(`collection:${require.collection}`);
+  }
+
+  return parts.join(':');
+}
+
 export function CredentialGate({
   require,
   fallback,
@@ -48,10 +72,12 @@ export function CredentialGate({
   const [status, setStatus] = useState<GateStatus>('loading');
   const [error, setError] = useState<Error | null>(null);
 
+  // Extract primitive values for session key dependency
+  const sessionKey = getSessionKey(require);
+
   useEffect(() => {
     const checkSession = () => {
       if (persistSession) {
-        const sessionKey = `maskid:session:${require.type}`;
         const session = sessionStorage.getItem(sessionKey);
         if (session) {
           try {
@@ -80,7 +106,7 @@ export function CredentialGate({
     if (!checkSession()) {
       setStatus('unverified');
     }
-  }, [require.type, persistSession]);
+  }, [sessionKey, persistSession]);
 
   // Extract primitive values from require to avoid object reference in dependencies
   const requireType = require.type;
@@ -114,9 +140,16 @@ export function CredentialGate({
 
       if (result.verified) {
         if (persistSession) {
-          const sessionKey = `maskid:session:${requireType}`;
+          // Use the same session key format that includes policy params
+          const verifySessionKey = getSessionKey({
+            type: requireType,
+            minAge: requireMinAge,
+            token: requireToken,
+            minBalance: requireMinBalance,
+            collection: requireCollection,
+          });
           sessionStorage.setItem(
-            sessionKey,
+            verifySessionKey,
             JSON.stringify({ expires: Date.now() + sessionDuration * 1000 })
           );
         }
