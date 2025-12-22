@@ -14,11 +14,9 @@ type WalletStatus = 'disconnected' | 'connecting' | 'connected';
  * to ensure wallet state is shared across all components.
  */
 function WalletConnection({
-  onConnected,
   status,
   setStatus,
 }: {
-  onConnected: (useMock: boolean) => void;
   status: WalletStatus;
   setStatus: (status: WalletStatus) => void;
 }) {
@@ -33,7 +31,6 @@ function WalletConnection({
     try {
       await client.connectWallet('lace');
       setStatus('connected');
-      onConnected(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to connect wallet');
       setStatus('disconnected');
@@ -44,7 +41,6 @@ function WalletConnection({
     client.useMockWallet({ network: 'testnet' });
     setUseMock(true);
     setStatus('connected');
-    onConnected(true);
   };
 
   return (
@@ -202,7 +198,6 @@ export function App() {
 
         <main>
           <WalletConnection
-            onConnected={() => {}}
             status={walletStatus}
             setStatus={setWalletStatus}
           />

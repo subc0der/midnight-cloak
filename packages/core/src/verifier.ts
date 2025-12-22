@@ -128,10 +128,18 @@ export class Verifier {
     } catch (error) {
       // User rejected or wallet error
       const message = error instanceof Error ? error.message : 'Wallet operation failed';
-      // Determine appropriate error code based on error message
-      const isUserRejection = message.toLowerCase().includes('denied') ||
-                              message.toLowerCase().includes('rejected') ||
-                              message.toLowerCase().includes('cancelled');
+      // Determine appropriate error code based on error type and message
+      // Use specific phrase matching to avoid false positives (e.g., "denied by firewall")
+      const lowerMessage = message.toLowerCase();
+      const isUserRejection =
+        lowerMessage.includes('user denied') ||
+        lowerMessage.includes('user rejected') ||
+        lowerMessage.includes('user cancelled') ||
+        lowerMessage.includes('request rejected') ||
+        lowerMessage.includes('transaction declined') ||
+        lowerMessage === 'denied' ||
+        lowerMessage === 'rejected' ||
+        lowerMessage === 'cancelled';
       const errorCode = isUserRejection ? ErrorCodes.VERIFICATION_DENIED : ErrorCodes.WALLET_ERROR;
       return {
         verified: false,
