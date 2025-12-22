@@ -174,11 +174,25 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 - Use chunked iteration for `String.fromCharCode()` to avoid stack overflow:
   ```typescript
   let binary = '';
-  const chunkSize = 8192;
+  const chunkSize = 4096; // Safe across all major JS engines
   for (let i = 0; i < bytes.length; i += chunkSize) {
     const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
     binary += String.fromCharCode(...chunk);
   }
+  ```
+
+### Error Classification
+- Use specific phrase matching for error classification to avoid false positives:
+  ```typescript
+  // Good: Specific phrases
+  const isUserRejection =
+    message.includes('user denied') ||
+    message.includes('user rejected') ||
+    message === 'denied';
+
+  // Bad: Partial match could catch unrelated errors
+  const isUserRejection = message.includes('denied');
+  // Would incorrectly match "connection denied by firewall"
   ```
 
 ### Session Storage Keys

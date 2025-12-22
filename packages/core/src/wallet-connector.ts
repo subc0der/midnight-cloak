@@ -255,10 +255,11 @@ export function createMockWallet(options: {
       await new Promise((resolve) => setTimeout(resolve, 500));
       // Return mock signature using browser-native TextEncoder and btoa
       // Use chunked conversion to avoid stack overflow on large payloads
+      // ChunkSize of 4096 is safe across all major JS engines
       const encoder = new TextEncoder();
       const bytes = encoder.encode(payload);
       let binary = '';
-      const chunkSize = 8192;
+      const chunkSize = 4096;
       for (let i = 0; i < bytes.length; i += chunkSize) {
         const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
         binary += String.fromCharCode(...chunk);
