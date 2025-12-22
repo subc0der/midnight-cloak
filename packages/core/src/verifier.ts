@@ -50,12 +50,12 @@ export class Verifier {
     this.pendingRequests.set(requestId, request);
 
     try {
-      const verificationType = request.type;
-      if (!verificationType) {
+      // request.type is optional in VerificationRequest, so check for undefined
+      if (!request.type) {
         throw new UnsupportedVerificationTypeError('undefined');
       }
 
-      switch (verificationType) {
+      switch (request.type) {
         case 'AGE':
           return await this.verifyAge(requestId, request.policy as AgePolicy);
         case 'TOKEN_BALANCE':
@@ -64,8 +64,10 @@ export class Verifier {
           throw new UnsupportedVerificationTypeError('NFT_OWNERSHIP');
         case 'RESIDENCY':
           throw new UnsupportedVerificationTypeError('RESIDENCY');
-        default:
-          throw new UnsupportedVerificationTypeError(verificationType);
+        case 'ACCREDITED':
+          throw new UnsupportedVerificationTypeError('ACCREDITED');
+        case 'CREDENTIAL':
+          throw new UnsupportedVerificationTypeError('CREDENTIAL');
       }
     } finally {
       this.pendingRequests.delete(requestId);
@@ -126,12 +128,17 @@ export class Verifier {
     } catch (error) {
       // User rejected or wallet error
       const message = error instanceof Error ? error.message : 'Wallet operation failed';
+      // Determine appropriate error code based on error message
+      const isUserRejection = message.toLowerCase().includes('denied') ||
+                              message.toLowerCase().includes('rejected') ||
+                              message.toLowerCase().includes('cancelled');
+      const errorCode = isUserRejection ? ErrorCodes.VERIFICATION_DENIED : ErrorCodes.WALLET_ERROR;
       return {
         verified: false,
         requestId,
         timestamp: Date.now(),
         proof: null,
-        error: { code: ErrorCodes.VERIFICATION_TIMEOUT, message },
+        error: { code: errorCode, message },
       };
     }
   }
@@ -166,10 +173,12 @@ export class Verifier {
     proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }
   ): Promise<{ verified: boolean }> {
     // Submit proof to contract for verification
-    const result = await this.contractClient.verifyAgeOnChain({
+    // Map our internal proof format to ProofResponse expected by ContractClient
+    const proofResponse = {
       proof: proof.data,
       publicOutputs: proof.publicInputs,
-    });
+    };
+    const result = await this.contractClient.verifyAgeOnChain(proofResponse);
 
     return { verified: result.success };
   }

@@ -148,6 +148,16 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 - Errors are typed and propagated to callbacks
 - Unknown errors are wrapped: `e instanceof Error ? e : new Error('Unknown error')`
 - Optional callbacks use optional chaining: `onError?.(error)`
+- Error codes are context-specific (WALLET_ERROR for wallet failures, VERIFICATION_DENIED for user rejection)
+
+### JSON Parsing
+- Always validate parsed JSON data types before using:
+  ```typescript
+  const parsed = JSON.parse(data) as unknown;
+  if (typeof parsed === 'object' && parsed !== null && 'field' in parsed) {
+    // Safe to access field
+  }
+  ```
 
 ### Array Access
 - Always check array elements before accessing:
@@ -174,6 +184,9 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 - Optional chaining on callbacks (`onError?.(error)`)
 - Underscore-prefixed unused variables (`_key`, `_address`) - intentional to indicate unused
 - Global type declarations for `window.cardano` - required for CIP-30 wallet detection
+- Mock birth year in verifier (age 30) - intentional for demo mode testing
+- useEffect with `client` in deps for mock wallet sync - client is stable from useMemo
+- Compact (.compact) file security concerns - we don't write Compact code, files are read-only reference
 
 ## Package Structure
 

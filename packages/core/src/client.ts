@@ -8,6 +8,7 @@ import type {
   VerificationRequest,
   VerificationResult,
   VerificationStatus,
+  WalletType,
 } from './types';
 import { Verifier } from './verifier';
 import {
@@ -99,7 +100,7 @@ export class MaskIDClient {
   }
 
   // Wallet connection methods
-  async connectWallet(wallet?: 'lace' | 'nami' | 'nufi' | 'vespr'): Promise<ConnectedWallet> {
+  async connectWallet(wallet?: WalletType): Promise<ConnectedWallet> {
     return this.walletConnector.connect(wallet);
   }
 

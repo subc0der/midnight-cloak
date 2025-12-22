@@ -30,6 +30,7 @@ export const ErrorCodes = {
   NETWORK_ERROR: 'E007',
   CONTRACT_ERROR: 'E008',
   UNSUPPORTED_VERIFICATION_TYPE: 'E009',
+  WALLET_ERROR: 'E010',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
@@ -115,6 +116,14 @@ export class UnsupportedVerificationTypeError extends MaskIDError {
   constructor(type: string) {
     super(ErrorCodes.UNSUPPORTED_VERIFICATION_TYPE, `Verification type '${type}' is not yet implemented`);
     this.name = 'UnsupportedVerificationTypeError';
+  }
+}
+
+/** Thrown when a wallet operation fails */
+export class WalletError extends MaskIDError {
+  constructor(message = 'Wallet operation failed', details?: unknown) {
+    super(ErrorCodes.WALLET_ERROR, message, details);
+    this.name = 'WalletError';
   }
 }
 
