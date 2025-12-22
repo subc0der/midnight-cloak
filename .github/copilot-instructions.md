@@ -108,6 +108,28 @@ These patterns are already enforced in our codebase. Do not flag code that follo
   useCallback(() => { ... }, [require]);
   ```
 
+- **Empty useCallback dependencies**: When a callback only uses React state setters (which are stable), empty deps `[]` is correct
+  ```typescript
+  const handleReset = useCallback(() => {
+    setStatus('unverified');
+    setError(null);
+  }, []); // Correct - setters are stable
+  ```
+
+- **Inline async handlers for native elements**: Native elements like `<button>` don't need memoized callbacks
+  ```typescript
+  const handleClick = async () => { ... }; // OK for native elements
+  <button onClick={handleClick}>...</button>
+  ```
+
+- **useMemo for client instances**: We memoize client instances with primitive dependencies
+  ```typescript
+  const client = useMemo(
+    () => new MaskIDClient({ network, apiKey }),
+    [apiKey, network] // Primitives only
+  );
+  ```
+
 ### Type Safety
 - **No unsafe non-null assertions**: We always check for undefined before accessing
   ```typescript
@@ -124,6 +146,19 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 ### Error Handling
 - All async operations have proper try/catch
 - Errors are typed and propagated to callbacks
+- Unknown errors are wrapped: `e instanceof Error ? e : new Error('Unknown error')`
+- Optional callbacks use optional chaining: `onError?.(error)`
+
+### Array Access
+- Always check array elements before accessing:
+  ```typescript
+  const addresses = await api.getUsedAddresses();
+  const first = addresses[0];
+  if (first) {
+    return first;
+  }
+  // Fallback logic...
+  ```
 
 ## Do NOT Flag
 
@@ -134,6 +169,11 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 - Console.log statements in demo app (intentional for debugging)
 - TODO comments (tracked in project roadmap)
 - Empty catch blocks with comments explaining why (e.g., "Invalid session, continue")
+- useCallback with empty deps when only using state setters
+- Inline async handlers passed to native HTML elements
+- Optional chaining on callbacks (`onError?.(error)`)
+- Underscore-prefixed unused variables (`_key`, `_address`) - intentional to indicate unused
+- Global type declarations for `window.cardano` - required for CIP-30 wallet detection
 
 ## Package Structure
 
