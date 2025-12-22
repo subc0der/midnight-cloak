@@ -253,11 +253,12 @@ export function createMockWallet(options: {
     signData: async (_address: string, payload: string) => {
       // Simulate signing delay
       await new Promise((resolve) => setTimeout(resolve, 500));
-      // Return mock signature (use browser-native btoa for base64)
-      const encoded = typeof btoa === 'function'
-        ? btoa(unescape(encodeURIComponent(payload))).slice(0, 32)
-        : Buffer.from(payload).toString('base64').slice(0, 32);
-      return `mock_sig_${encoded}`;
+      // Return mock signature using browser-native TextEncoder and btoa
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(payload);
+      // Convert bytes to base64-safe string
+      const base64 = btoa(String.fromCharCode(...bytes)).slice(0, 32);
+      return `mock_sig_${base64}`;
     },
     submitTx: async (_tx: string) => {
       // Simulate transaction delay

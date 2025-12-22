@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MaskIDProvider,
   VerifyButton,
@@ -94,10 +94,12 @@ function AgeVerificationCard({ useMock }: { useMock: boolean }) {
   const [status, setStatus] = useState<'idle' | 'verified' | 'denied'>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  // Sync mock wallet to provider's client
-  if (useMock) {
-    client.useMockWallet({ network: 'testnet' });
-  }
+  // Sync mock wallet to provider's client - only run when useMock changes
+  useEffect(() => {
+    if (useMock) {
+      client.useMockWallet({ network: 'testnet' });
+    }
+  }, [useMock, client]);
 
   const handleReset = () => {
     setStatus('idle');
@@ -153,10 +155,12 @@ function AgeVerificationCard({ useMock }: { useMock: boolean }) {
 function GatedContentCard({ useMock }: { useMock: boolean }) {
   const client = useMaskID();
 
-  // Sync mock wallet to provider's client
-  if (useMock) {
-    client.useMockWallet({ network: 'testnet' });
-  }
+  // Sync mock wallet to provider's client - only run when useMock changes
+  useEffect(() => {
+    if (useMock) {
+      client.useMockWallet({ network: 'testnet' });
+    }
+  }, [useMock, client]);
 
   return (
     <div className="card">

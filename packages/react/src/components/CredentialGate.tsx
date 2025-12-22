@@ -55,10 +55,19 @@ export function CredentialGate({
         const session = sessionStorage.getItem(sessionKey);
         if (session) {
           try {
-            const { expires } = JSON.parse(session);
-            if (Date.now() < expires) {
-              setStatus('verified');
-              return true;
+            const parsed = JSON.parse(session) as unknown;
+            // Validate that parsed data has expires as a number
+            if (
+              typeof parsed === 'object' &&
+              parsed !== null &&
+              'expires' in parsed &&
+              typeof (parsed as { expires: unknown }).expires === 'number'
+            ) {
+              const expires = (parsed as { expires: number }).expires;
+              if (Date.now() < expires) {
+                setStatus('verified');
+                return true;
+              }
             }
           } catch {
             // Invalid session, continue to unverified
