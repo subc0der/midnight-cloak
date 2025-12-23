@@ -212,6 +212,7 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 
 ## Do NOT Flag
 
+### General Patterns
 - Unused exports in index.ts files (they're public API surface)
 - `any` types in Midnight.js integration code (SDK types are incomplete)
 - Mock implementations (intentional for dev experience)
@@ -219,14 +220,35 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 - Console.log statements in demo app (intentional for debugging)
 - TODO comments (tracked in project roadmap)
 - Empty catch blocks with comments explaining why (e.g., "Invalid session, continue")
+- Underscore-prefixed unused variables (`_key`, `_address`) - intentional to indicate unused
+
+### React Patterns
 - useCallback with empty deps when only using state setters
 - Inline async handlers passed to native HTML elements
 - Optional chaining on callbacks (`onError?.(error)`)
-- Underscore-prefixed unused variables (`_key`, `_address`) - intentional to indicate unused
-- Global type declarations for `window.cardano` - required for CIP-30 wallet detection
-- Mock birth year in verifier (age 30) - intentional for demo mode testing
 - useEffect with `client` in deps for mock wallet sync - client is stable from useMemo
-- Compact (.compact) file security concerns - we don't write Compact code, files are read-only reference
+- VerifyButton omits `onClick` from props - intentional, component handles click internally for verification flow
+
+### Type Definitions
+- Global type declarations for `window.cardano` - required for CIP-30 wallet detection
+- `VerificationRequest.type` is optional (`type?: VerificationType`) - the `if (!request.type)` check is necessary
+- `ProofResponse` type mapping in verifier.ts - the code correctly maps internal proof format to contract client
+
+### Mock Mode & Testing
+- Mock birth year in verifier (age 30) - intentional for demo mode testing
+- ContractClient is entirely mock implementation - no real contract deployment yet
+- Contract addresses are placeholders - testnet deployment blocked pending tDUST
+
+### Compact Files (CRITICAL)
+- Compact (.compact) file security concerns - we do NOT write or modify Compact code
+- Any security suggestions for .compact files - these are READ-ONLY reference implementations
+- Compact circuit logic issues - requires ZK cryptography expertise, not within project scope
+- Files in `packages/contracts/src/*.compact` are placeholder references only
+
+### Contract Package
+- `packages/contracts/src/deploy.ts` may not exist or be incomplete - contracts package has mock-only code
+- No real Midnight.js contract integration yet - blocked on testnet availability
+- CONTRACT_ADDRESSES are mock values with no real deployment
 
 ## Package Structure
 
