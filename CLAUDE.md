@@ -116,46 +116,35 @@ npm run lint                         # Lint all packages
 
 ---
 
-## Compact Language Quick Reference
+## Compact Language Policy
 
-Compact is Midnight's domain-specific language for ZK smart contracts. Key concepts:
+> **CRITICAL: We do NOT write Compact code.**
 
-```compact
-// Include standard library
-include "std";
+Compact is Midnight's ZK-native smart contract language requiring specialized cryptographic expertise. Writing incorrect ZK circuits can lead to security vulnerabilities, privacy leaks, or broken proofs.
 
-// Define public state (visible on-chain)
-ledger {
-    credentialCount: Counter;
-    isRevoked: Map<CredentialId, Boolean>;
-}
+### Our Policy
+- **NEVER** write, modify, or generate Compact (.compact) code
+- **NEVER** attempt to create ZK circuits without qualified ZK engineers
+- **USE ONLY** pre-audited Compact contracts from Midnight's official examples or verified sources
+- **REFERENCE ONLY** existing .compact files for understanding - do not create new ones
 
-// Define private state (user-controlled, never revealed)
-witness {
-    birthDate: Date;
-    credentialSecret: Field;
-}
+### What We DO
+- Use compiled contract outputs via Midnight.js SDK
+- Integrate with deployed contracts using TypeScript
+- Build SDK wrappers around existing ZK functionality
+- Focus on developer experience, not ZK cryptography
 
-// Public circuit (callable, generates ZK proof)
-export circuit verifyAge(minAge: Unsigned): Boolean {
-    // Access private witness data
-    const age = currentDate() - witness.birthDate;
-    
-    // Return result (only this is revealed, not birthDate)
-    return age >= minAge;
-}
+### Existing Contracts
+The `.compact` files in this repo are reference implementations based on Midnight's official examples. They should be:
+- Reviewed by ZK experts before production use
+- Compiled using official Midnight tooling only
+- Treated as immutable unless modified by qualified personnel
 
-// Increment public counter
-export circuit issueCredential(): Void {
-    ledger.credentialCount.increment(1);
-}
-```
-
-### Key Patterns
-- `ledger {}` — Public state, visible on Midnight
-- `witness {}` — Private state, user-controlled
-- `export circuit` — Public function generating ZK proof
-- Use `disclose()` for explicit selective disclosure
+### If ZK Changes Are Needed
+1. Document requirements clearly
+2. Consult Midnight documentation and examples
+3. Engage qualified ZK/cryptography expertise
+4. Audit before deployment
 
 ---
 
@@ -234,23 +223,48 @@ type CredentialType =
 
 ---
 
-## Current Development Phase
+## Project Roadmap
 
-**Phase 2: Core SDK MVP (Weeks 5-10)**
-
-### Current Goals
-- [ ] Design credential schema for age verification
-- [ ] Build Compact contract for age proof verification
-- [ ] Create TypeScript SDK wrapper with clean API
-- [ ] Build minimal credential wallet for testing
-- [ ] Create demo dApp that integrates the SDK
-- [ ] Write developer documentation
-
-### Completed
+### Phase 1: Foundation (Complete)
 - [x] Environment setup
 - [x] Midnight tutorial completion (counter, bulletin board)
 - [x] Project architecture design
 - [x] Documentation framework
+
+### Phase 2: Core SDK MVP (Current)
+- [x] Design credential schema for age verification
+- [x] Build Compact contracts (age-verifier, credential-registry)
+- [x] ZK circuit compilation via WSL Compact CLI
+- [x] Create TypeScript SDK (@maskid/core)
+- [x] Build React components (@maskid/react)
+- [x] Create demo dApp with mock wallet flow
+- [ ] Deploy contracts to testnet (blocked: waiting for tDUST/Preview network)
+- [ ] End-to-end verification with real wallet
+- [ ] Developer documentation
+
+### Phase 3: Wallet Extension + Credentials
+- [ ] Chrome extension scaffold
+- [ ] Credential storage and management
+- [ ] Multi-wallet support (Lace, NuFi, Vespr)
+- [ ] Credential issuance flow
+- [ ] MaskAuth integration (optional - see `.claude/context/future-maskauth.md`)
+
+### Phase 4: $Handle Shield ("Portfolio Blackout")
+- [ ] Cardano ↔ Midnight bridge integration
+- [ ] $handle claim circuit (prove NFT ownership)
+- [ ] Asset shielding UI in wallet
+- [ ] ZK proofs for hidden holdings
+- [ ] Android app integration (existing $handle lookup app)
+- [ ] Selective disclosure settings
+
+> **Note**: Phase 4 depends on Midnight bridge availability.
+> See `.claude/context/future-handle-shield.md` for full spec.
+
+### Phase 5: Production & Growth
+- [ ] Mainnet deployment
+- [ ] Developer dashboard
+- [ ] Additional verification types (TOKEN_BALANCE, NFT_OWNERSHIP, RESIDENCY)
+- [ ] Partner integrations
 
 ---
 
@@ -353,9 +367,9 @@ npm run build:all  # Rebuild SDK with new addresses
 - Document public APIs with JSDoc
 
 ### Compact
-- Follow Midnight examples style
-- Comment complex ZK logic
-- Keep circuits focused (single responsibility)
+- **DO NOT WRITE** - See "Compact Language Policy" section above
+- Reference existing contracts only
+- Any modifications require ZK expertise
 
 ### React
 - Functional components only
@@ -409,7 +423,7 @@ docker-compose restart proof-server
 
 When I ask for help with this project:
 
-1. **Compact contracts**: Reference Midnight's Compact language—it's similar to TypeScript but has ZK-specific constructs (`ledger`, `witness`, `circuit`)
+1. **Compact contracts**: NEVER write or generate Compact code. Only reference existing .compact files for understanding. Use Midnight.js SDK to interact with compiled contracts.
 
 2. **SDK design**: Prioritize developer experience. The API should feel like Stripe or Firebase—simple surface, powerful underneath
 

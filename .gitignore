@@ -7,6 +7,18 @@ dist/
 build/
 *.tsbuildinfo
 
+# TypeScript build artifacts in source directories
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
+
+# Compiled Compact contract outputs
+packages/contracts/managed/
+
+# Windows artifacts
+nul
+
 # Test coverage
 coverage/
 .nyc_output/
@@ -74,6 +86,7 @@ temp/
 # Handoff files (per user preference)
 *HANDOFF*.md
 HANDOFF_SUMMARY.md
+subcoder/
 
 # Review and prompt files
 *REVIEW*.md
