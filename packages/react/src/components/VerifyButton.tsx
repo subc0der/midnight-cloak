@@ -6,7 +6,7 @@ import { useState, type ReactNode, type ButtonHTMLAttributes } from 'react';
 import type { VerificationResult, VerificationType, PolicyConfig } from '@maskid/core';
 import { useMaskIDContext } from './MaskIDProvider';
 
-export interface VerifyButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onError'> {
+export interface VerifyButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onError' | 'onClick'> {
   type: VerificationType;
   minAge?: number;
   token?: string;
