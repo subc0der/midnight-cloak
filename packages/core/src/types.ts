@@ -4,6 +4,8 @@
 
 export type Network = 'testnet' | 'mainnet';
 
+export type WalletType = 'lace' | 'nami' | 'nufi' | 'vespr';
+
 export type VerificationType =
   | 'AGE'
   | 'TOKEN_BALANCE'
@@ -17,6 +19,7 @@ export interface ClientConfig {
   apiKey: string;
   proofServerUrl?: string;
   timeout?: number;
+  preferredWallet?: WalletType;
 }
 
 export interface AgePolicy {

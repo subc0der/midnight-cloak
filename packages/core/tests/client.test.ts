@@ -20,6 +20,9 @@ describe('MaskIDClient', () => {
     client.on('verification:requested', () => events.push('requested'));
     client.on('verification:approved', () => events.push('approved'));
 
+    // Use mock wallet for testing
+    client.useMockWallet({ network: 'testnet' });
+
     await client.verify({ type: 'AGE', policy: { minAge: 18 } });
 
     expect(events).toContain('requested');
