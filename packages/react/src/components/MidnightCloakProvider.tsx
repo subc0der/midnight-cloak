@@ -2,7 +2,7 @@
  * MidnightCloakProvider - Context provider for React integration
  */
 
-import { createContext, useContext, useMemo, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useEffect, useRef, type ReactNode } from 'react';
 import { MidnightCloakClient, type Network, type WalletType } from '@midnight-cloak/core';
 
 interface MidnightCloakContextValue {
@@ -12,15 +12,44 @@ interface MidnightCloakContextValue {
 const MidnightCloakContext = createContext<MidnightCloakContextValue | null>(null);
 
 export interface MidnightCloakProviderProps {
-  apiKey: string;
-  network: Network;
+  /**
+   * Pre-configured client instance. When provided, apiKey and network are ignored.
+   * Use this for advanced configuration or when sharing a client across providers.
+   */
+  client?: MidnightCloakClient;
+  /** API key for metered billing (required if client not provided) */
+  apiKey?: string;
+  /** Target network (required if client not provided) */
+  network?: Network;
+  /** Custom proof server URL */
   proofServerUrl?: string;
+  /** Preferred wallet type */
   preferredWallet?: WalletType;
+  /** Called when wallet or verification errors occur */
   onError?: (error: Error) => void;
   children: ReactNode;
 }
 
+/**
+ * Provider component for Midnight Cloak React integration.
+ * Wrap your app with this provider to enable verification components and hooks.
+ *
+ * @example
+ * ```tsx
+ * // Basic usage
+ * <MidnightCloakProvider apiKey="your-api-key" network="preprod">
+ *   <App />
+ * </MidnightCloakProvider>
+ *
+ * // With pre-configured client
+ * const client = new MidnightCloakClient({ network: 'preprod', apiKey: 'key' });
+ * <MidnightCloakProvider client={client}>
+ *   <App />
+ * </MidnightCloakProvider>
+ * ```
+ */
 export function MidnightCloakProvider({
+  client: providedClient,
   apiKey,
   network,
   proofServerUrl,
@@ -28,16 +57,46 @@ export function MidnightCloakProvider({
   onError,
   children,
 }: MidnightCloakProviderProps) {
-  const client = useMemo(
-    () =>
-      new MidnightCloakClient({
-        network,
-        apiKey,
-        proofServerUrl,
-        preferredWallet,
-      }),
-    [apiKey, network, proofServerUrl, preferredWallet]
-  );
+  // Track previous client for cleanup
+  const previousClientRef = useRef<MidnightCloakClient | null>(null);
+
+  const client = useMemo(() => {
+    // Use provided client if available
+    if (providedClient) {
+      return providedClient;
+    }
+
+    // Validate required props when not using provided client
+    if (!network) {
+      throw new Error('MidnightCloakProvider requires either a client prop or network prop');
+    }
+
+    return new MidnightCloakClient({
+      network,
+      apiKey: apiKey ?? '',
+      proofServerUrl,
+      preferredWallet,
+    });
+  }, [providedClient, apiKey, network, proofServerUrl, preferredWallet]);
+
+  // Cleanup previous client when a new one is created
+  useEffect(() => {
+    const previousClient = previousClientRef.current;
+
+    // If client changed and we created the previous one (not provided), clean it up
+    if (previousClient && previousClient !== client && previousClient !== providedClient) {
+      previousClient.disconnect();
+    }
+
+    previousClientRef.current = client;
+
+    // Cleanup on unmount (only if we created the client)
+    return () => {
+      if (!providedClient && client) {
+        client.disconnect();
+      }
+    };
+  }, [client, providedClient]);
 
   // Subscribe to client errors if onError callback is provided
   useEffect(() => {
@@ -67,6 +126,10 @@ export function MidnightCloakProvider({
   return <MidnightCloakContext.Provider value={value}>{children}</MidnightCloakContext.Provider>;
 }
 
+/**
+ * Access the Midnight Cloak context. Throws if used outside of provider.
+ * Prefer using `useMidnightCloak()` hook for most use cases.
+ */
 export function useMidnightCloakContext(): MidnightCloakContextValue {
   const context = useContext(MidnightCloakContext);
   if (!context) {
