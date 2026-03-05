@@ -57,5 +57,3 @@ This security policy applies to:
 1. Reviewed by qualified ZK engineers
 2. Audited before production use
 3. Approved by the repository owner
-
-See `CLAUDE.md` for the full Compact Language Policy.

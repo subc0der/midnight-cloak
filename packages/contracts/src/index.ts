@@ -8,8 +8,6 @@
  * 1. Official Midnight contract examples (we do NOT write Compact code)
  * 2. Testnet access with tDUST
  * 3. ZK expertise for any circuit modifications
- *
- * See CLAUDE.md "Compact Language Policy" for details.
  */
 
 // Contract addresses (to be updated after deployment to Midnight network)
