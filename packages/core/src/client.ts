@@ -129,9 +129,20 @@ export class MidnightCloakClient {
   }
 
   /**
-   * Use mock wallet for development/testing when no real wallet is available
+   * Use mock wallet for development/testing when no real wallet is available.
+   * SECURITY: This method is disabled in production builds.
+   *
+   * @throws Error if called in production environment
    */
   useMockWallet(options?: { network?: Network; autoApprove?: boolean }): void {
+    // SECURITY: Prevent mock wallet usage in production
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
+      throw new Error(
+        'useMockWallet() is disabled in production. ' +
+        'Mock wallets should only be used for development and testing.'
+      );
+    }
+
     const mockWallet = createMockWallet(options);
     this.verifier.setMockWallet(mockWallet);
     this.emit('wallet:connected', mockWallet);

@@ -17,6 +17,7 @@ import {
   UnsupportedVerificationTypeError,
   ProofGenerationError,
   ContractError,
+  InvalidPolicyError,
 } from './errors';
 
 export class Verifier {
@@ -37,9 +38,14 @@ export class Verifier {
   }
 
   /**
-   * Set a mock wallet for development/testing
+   * Set a mock wallet for development/testing.
+   * SECURITY: This method is disabled in production builds.
    */
   setMockWallet(wallet: ConnectedWallet): void {
+    // SECURITY: Defense in depth - prevent mock wallet in production
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
+      throw new Error('Mock wallets are disabled in production');
+    }
     this.mockWallet = wallet;
   }
 
@@ -48,6 +54,65 @@ export class Verifier {
    */
   private getActiveWallet(): ConnectedWallet | null {
     return this.mockWallet || this.walletConnector.getConnection();
+  }
+
+  /**
+   * Validate policy parameters at entry point.
+   * SECURITY: Never trust client-constructed policies - always re-validate.
+   */
+  private validatePolicy(type: string, policy: unknown): void {
+    if (!policy) {
+      throw new InvalidPolicyError('Policy is required');
+    }
+
+    switch (type) {
+      case 'AGE': {
+        const agePolicy = policy as { minAge?: unknown };
+        if (typeof agePolicy.minAge !== 'number') {
+          throw new InvalidPolicyError('AGE policy: minAge must be a number');
+        }
+        if (agePolicy.minAge < 0) {
+          throw new InvalidPolicyError('AGE policy: minAge cannot be negative');
+        }
+        if (agePolicy.minAge > 150) {
+          throw new InvalidPolicyError('AGE policy: minAge exceeds reasonable maximum (150)');
+        }
+        if (!Number.isInteger(agePolicy.minAge)) {
+          throw new InvalidPolicyError('AGE policy: minAge must be an integer');
+        }
+        break;
+      }
+      case 'TOKEN_BALANCE': {
+        const tokenPolicy = policy as { token?: unknown; minBalance?: unknown };
+        if (!tokenPolicy.token || typeof tokenPolicy.token !== 'string') {
+          throw new InvalidPolicyError('TOKEN_BALANCE policy: token must be a non-empty string');
+        }
+        if (typeof tokenPolicy.minBalance !== 'number' || tokenPolicy.minBalance < 0) {
+          throw new InvalidPolicyError('TOKEN_BALANCE policy: minBalance must be a non-negative number');
+        }
+        break;
+      }
+      case 'NFT_OWNERSHIP': {
+        const nftPolicy = policy as { collection?: unknown; minCount?: unknown };
+        if (!nftPolicy.collection || typeof nftPolicy.collection !== 'string') {
+          throw new InvalidPolicyError('NFT_OWNERSHIP policy: collection must be a non-empty string');
+        }
+        if (nftPolicy.minCount !== undefined) {
+          if (typeof nftPolicy.minCount !== 'number' || nftPolicy.minCount < 1) {
+            throw new InvalidPolicyError('NFT_OWNERSHIP policy: minCount must be a positive number');
+          }
+        }
+        break;
+      }
+      case 'RESIDENCY': {
+        const residencyPolicy = policy as { country?: unknown };
+        if (!residencyPolicy.country || typeof residencyPolicy.country !== 'string') {
+          throw new InvalidPolicyError('RESIDENCY policy: country must be a non-empty string');
+        }
+        break;
+      }
+      // ACCREDITED and CREDENTIAL validation can be added when implemented
+    }
   }
 
   async verify(request: VerificationRequest): Promise<VerificationResult> {
@@ -59,6 +124,9 @@ export class Verifier {
       if (!request.type) {
         throw new UnsupportedVerificationTypeError('undefined');
       }
+
+      // SECURITY: Validate policy at entry point - never trust client-constructed policies
+      this.validatePolicy(request.type, request.policy);
 
       switch (request.type) {
         case 'AGE':

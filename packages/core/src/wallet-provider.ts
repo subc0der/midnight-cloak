@@ -99,20 +99,38 @@ export class WalletBuilder {
   }
 
   /**
-   * Generate a new random seed
+   * Generate a new random seed using cryptographically secure RNG.
+   * Throws if no secure RNG is available - NEVER falls back to insecure RNG.
    */
   generateSeed(): string {
-    // Generate 32 random bytes and convert to hex
     const bytes = new Uint8Array(32);
+
+    // Browser environment
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
       crypto.getRandomValues(bytes);
-    } else {
-      // Fallback for non-browser environments
-      for (let i = 0; i < bytes.length; i++) {
-        bytes[i] = Math.floor(Math.random() * 256);
+      return toHex(bytes);
+    }
+
+    // Node.js environment
+    if (typeof globalThis !== 'undefined') {
+      try {
+        // Dynamic import for Node.js crypto module
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const nodeCrypto = require('crypto');
+        if (nodeCrypto && nodeCrypto.randomBytes) {
+          const nodeBytes = nodeCrypto.randomBytes(32);
+          return nodeBytes.toString('hex');
+        }
+      } catch {
+        // Node crypto not available
       }
     }
-    return toHex(bytes);
+
+    // SECURITY: Never fall back to Math.random() - it is NOT cryptographically secure
+    throw new Error(
+      'No cryptographically secure random number generator available. ' +
+      'Seed generation requires crypto.getRandomValues (browser) or crypto.randomBytes (Node.js).'
+    );
   }
 
   /**
@@ -160,8 +178,7 @@ export class WalletBuilder {
     // await wallet.start(shieldedSecretKeys, dustSecretKey);
 
     // Mock implementation for now
-    console.log(`Building wallet for network: ${this.config.network}`);
-    console.log(`Seed: ${seed}`);
+    // SECURITY: Never log seeds, keys, or other sensitive data
 
     return {
       wallet: null,
@@ -207,8 +224,8 @@ export function signTransactionIntents(
   if (!tx.intents || tx.intents.size === 0) return;
 
   // TODO: Implement real signing when dependencies are installed
-  // This is a placeholder that shows the pattern
-  console.log(`Signing ${tx.intents.size} intent(s) with proof marker: ${proofMarker}`);
+  // Placeholder - real implementation will sign without logging sensitive data
+  void proofMarker; // Suppress unused variable warning
 
   // Real implementation:
   // for (const segment of tx.intents.keys()) {
