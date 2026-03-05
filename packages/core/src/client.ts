@@ -1,5 +1,7 @@
 /**
  * MidnightCloakClient - Main entry point for the SDK
+ *
+ * Built on midnight-js 3.0.0 and wallet-sdk-facade 1.0.0.
  */
 
 import type {
@@ -10,6 +12,7 @@ import type {
   VerificationStatus,
   WalletType,
 } from './types';
+import { createNetworkConfig, type NetworkConfig } from './config';
 import { Verifier } from './verifier';
 import {
   WalletConnector,
@@ -22,17 +25,21 @@ type EventHandler = (...args: unknown[]) => void;
 
 export class MidnightCloakClient {
   private config: Required<ClientConfig>;
+  private networkConfig: NetworkConfig;
   private verifier: Verifier;
   private walletConnector: WalletConnector;
   private eventListeners: Map<string, Set<EventHandler>> = new Map();
 
   constructor(config: ClientConfig) {
+    this.networkConfig = createNetworkConfig(config.network);
+
     this.config = {
       network: config.network,
-      apiKey: config.apiKey,
-      proofServerUrl: config.proofServerUrl || this.getDefaultProofServer(config.network),
+      apiKey: config.apiKey ?? '',
+      proofServerUrl: config.proofServerUrl || this.networkConfig.proofServer,
       timeout: config.timeout || 30000,
       preferredWallet: config.preferredWallet || 'lace',
+      zkConfigPath: config.zkConfigPath ?? '',
     };
 
     this.walletConnector = new WalletConnector({
@@ -45,10 +52,11 @@ export class MidnightCloakClient {
     this.verifier = new Verifier(this.config, this.walletConnector);
   }
 
-  private getDefaultProofServer(network: Network): string {
-    return network === 'testnet'
-      ? 'http://localhost:6300'
-      : 'https://proof.midnight-cloak.xyz';
+  /**
+   * Get the network configuration
+   */
+  getNetworkConfig(): NetworkConfig {
+    return this.networkConfig;
   }
 
   async verify(request: VerificationRequest): Promise<VerificationResult> {
@@ -123,9 +131,21 @@ export class MidnightCloakClient {
   /**
    * Use mock wallet for development/testing when no real wallet is available
    */
-  useMockWallet(options?: { network?: 'testnet' | 'mainnet'; autoApprove?: boolean }): void {
+  useMockWallet(options?: { network?: Network; autoApprove?: boolean }): void {
     const mockWallet = createMockWallet(options);
     this.verifier.setMockWallet(mockWallet);
     this.emit('wallet:connected', mockWallet);
+  }
+
+  /**
+   * Check if proof server is available
+   */
+  async isProofServerAvailable(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.config.proofServerUrl}/version`);
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 }
