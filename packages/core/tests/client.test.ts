@@ -24,7 +24,7 @@ describe('MidnightCloakClient', () => {
     // Use mock wallet for testing
     client.useMockWallet({ network: 'preprod' });
 
-    await client.verify({ type: 'AGE', policy: { minAge: 18 } });
+    await client.verify({ type: 'AGE', policy: { kind: 'age', minAge: 18 } });
 
     expect(events).toContain('requested');
     expect(events).toContain('approved');
@@ -32,7 +32,7 @@ describe('MidnightCloakClient', () => {
 
   it('should disconnect and clear event listeners', () => {
     const handler = () => {};
-    client.on('test', handler);
+    client.on('wallet:disconnected', handler);
     client.disconnect();
     // No error should be thrown
     expect(true).toBe(true);

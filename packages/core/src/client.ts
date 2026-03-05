@@ -21,14 +21,29 @@ import {
   createMockWallet,
 } from './wallet-connector';
 
-type EventHandler = (...args: unknown[]) => void;
+/**
+ * Type-safe event definitions for MidnightCloakClient.
+ * Use with `client.on()` and `client.off()` for IntelliSense support.
+ */
+export interface ClientEvents {
+  'wallet:connected': (wallet: ConnectedWallet) => void;
+  'wallet:disconnected': () => void;
+  'wallet:error': (error: Error) => void;
+  'verification:requested': (request: VerificationRequest) => void;
+  'verification:approved': (result: VerificationResult) => void;
+  'verification:denied': (result: VerificationResult) => void;
+  'verification:error': (error: unknown, request: VerificationRequest) => void;
+}
+
+/** All valid event names for the client */
+export type ClientEventName = keyof ClientEvents;
 
 export class MidnightCloakClient {
   private config: Required<ClientConfig>;
   private networkConfig: NetworkConfig;
   private verifier: Verifier;
   private walletConnector: WalletConnector;
-  private eventListeners: Map<string, Set<EventHandler>> = new Map();
+  private eventListeners: Map<ClientEventName, Set<ClientEvents[ClientEventName]>> = new Map();
 
   constructor(config: ClientConfig) {
     this.networkConfig = createNetworkConfig(config.network);
@@ -53,12 +68,39 @@ export class MidnightCloakClient {
   }
 
   /**
-   * Get the network configuration
+   * Get the network configuration for the current client instance.
+   *
+   * @example
+   * ```typescript
+   * const config = client.getNetworkConfig();
+   * console.log(`Connected to ${config.network} at ${config.indexer}`);
+   * ```
    */
   getNetworkConfig(): NetworkConfig {
     return this.networkConfig;
   }
 
+  /**
+   * Verify a user's credential or attribute using zero-knowledge proofs.
+   *
+   * @param request - The verification request containing type, policy, or customPolicy
+   * @returns A result object indicating success/failure with proof or error details
+   *
+   * @example
+   * ```typescript
+   * // Simple age verification
+   * const result = await client.verify({
+   *   type: 'AGE',
+   *   policy: { kind: 'age', minAge: 18 }
+   * });
+   *
+   * if (result.verified) {
+   *   grantAccess();
+   * } else {
+   *   console.error(result.error?.message);
+   * }
+   * ```
+   */
   async verify(request: VerificationRequest): Promise<VerificationResult> {
     this.emit('verification:requested', request);
 
@@ -86,19 +128,37 @@ export class MidnightCloakClient {
     return this.verifier.cancel(requestId);
   }
 
-  on(event: string, handler: EventHandler): void {
+  /**
+   * Subscribe to client events with full type safety.
+   *
+   * @example
+   * ```typescript
+   * client.on('wallet:connected', (wallet) => {
+   *   console.log('Connected to wallet:', wallet);
+   * });
+   *
+   * client.on('verification:approved', (result) => {
+   *   console.log('Verified with proof:', result.proof);
+   * });
+   * ```
+   */
+  on<K extends ClientEventName>(event: K, handler: ClientEvents[K]): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    this.eventListeners.get(event)!.add(handler);
+    (this.eventListeners.get(event) as Set<ClientEvents[K]>).add(handler);
   }
 
-  off(event: string, handler: EventHandler): void {
-    this.eventListeners.get(event)?.delete(handler);
+  /**
+   * Unsubscribe from client events.
+   */
+  off<K extends ClientEventName>(event: K, handler: ClientEvents[K]): void {
+    (this.eventListeners.get(event) as Set<ClientEvents[K]> | undefined)?.delete(handler);
   }
 
-  private emit(event: string, ...args: unknown[]): void {
-    this.eventListeners.get(event)?.forEach((handler) => handler(...args));
+  private emit<K extends ClientEventName>(event: K, ...args: Parameters<ClientEvents[K]>): void {
+    const handlers = this.eventListeners.get(event) as Set<ClientEvents[K]> | undefined;
+    handlers?.forEach((handler) => (handler as (...args: Parameters<ClientEvents[K]>) => void)(...args));
   }
 
   disconnect(): void {

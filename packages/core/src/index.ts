@@ -14,7 +14,7 @@
  * // Verify user is 18+
  * const result = await client.verify({
  *   type: 'AGE',
- *   policy: { minAge: 18 }
+ *   policy: { kind: 'age', minAge: 18 }
  * });
  *
  * if (result.verified) {
@@ -31,7 +31,7 @@
  *
  * const result = await client.verify({
  *   type: 'AGE',
- *   policy: { minAge: 21 }
+ *   policy: { kind: 'age', minAge: 21 }
  * });
  * ```
  *
@@ -67,6 +67,7 @@ export * from './client';
 // Verification
 export * from './verifier';
 export * from './policy-builder';
+export * from './policy-validator';
 
 // Wallet integration (browser DApp connector)
 export * from './wallet-connector';

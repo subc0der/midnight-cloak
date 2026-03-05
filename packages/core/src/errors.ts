@@ -17,20 +17,27 @@
  */
 
 /**
- * Error codes used throughout the SDK.
+ * Semantic error codes used throughout the SDK.
  * Use these for programmatic error handling.
+ *
+ * @example
+ * ```typescript
+ * if (error.code === ErrorCodes.WALLET_NOT_CONNECTED) {
+ *   // Prompt user to connect wallet
+ * }
+ * ```
  */
 export const ErrorCodes = {
-  WALLET_NOT_CONNECTED: 'E001',
-  VERIFICATION_DENIED: 'E002',
-  VERIFICATION_TIMEOUT: 'E003',
-  INVALID_POLICY: 'E004',
-  CREDENTIAL_NOT_FOUND: 'E005',
-  PROOF_GENERATION_FAILED: 'E006',
-  NETWORK_ERROR: 'E007',
-  CONTRACT_ERROR: 'E008',
-  UNSUPPORTED_VERIFICATION_TYPE: 'E009',
-  WALLET_ERROR: 'E010',
+  WALLET_NOT_CONNECTED: 'WALLET_NOT_CONNECTED',
+  VERIFICATION_DENIED: 'VERIFICATION_DENIED',
+  VERIFICATION_TIMEOUT: 'VERIFICATION_TIMEOUT',
+  INVALID_POLICY: 'INVALID_POLICY',
+  CREDENTIAL_NOT_FOUND: 'CREDENTIAL_NOT_FOUND',
+  PROOF_GENERATION_FAILED: 'PROOF_GENERATION_FAILED',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  CONTRACT_ERROR: 'CONTRACT_ERROR',
+  UNSUPPORTED_VERIFICATION_TYPE: 'UNSUPPORTED_VERIFICATION_TYPE',
+  WALLET_ERROR: 'WALLET_ERROR',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
@@ -39,90 +46,119 @@ export class MidnightCloakError extends Error {
   public readonly code: string;
   public readonly details?: unknown;
 
-  constructor(code: string, message: string, details?: unknown) {
-    super(message);
+  constructor(code: string, message: string, details?: unknown, options?: { cause?: Error }) {
+    super(message, options);
     this.name = 'MidnightCloakError';
     this.code = code;
     this.details = details;
+  }
+
+  /**
+   * Serialize error for logging or transmission.
+   */
+  toJSON(): { name: string; code: string; message: string; details?: unknown } {
+    return {
+      name: this.name,
+      code: this.code,
+      message: this.message,
+      ...(this.details !== undefined && { details: this.details }),
+    };
+  }
+
+  /**
+   * Wrap an existing error with SDK error context.
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   await riskyOperation();
+   * } catch (error) {
+   *   throw MidnightCloakError.wrap(ErrorCodes.NETWORK_ERROR, 'Connection failed', error);
+   * }
+   * ```
+   */
+  static wrap(code: string, message: string, cause: unknown): MidnightCloakError {
+    const causeError = cause instanceof Error ? cause : new Error(String(cause));
+    return new MidnightCloakError(code, message, undefined, { cause: causeError });
   }
 }
 
 /** Thrown when user denies a verification request in their wallet */
 export class VerificationDeniedError extends MidnightCloakError {
-  constructor(message = 'User denied verification request') {
-    super(ErrorCodes.VERIFICATION_DENIED, message);
+  constructor(message = 'User denied verification request', options?: { cause?: Error }) {
+    super(ErrorCodes.VERIFICATION_DENIED, message, undefined, options);
     this.name = 'VerificationDeniedError';
   }
 }
 
 /** Thrown when a verification request times out */
 export class VerificationTimeoutError extends MidnightCloakError {
-  constructor(message = 'Verification request timed out') {
-    super(ErrorCodes.VERIFICATION_TIMEOUT, message);
+  constructor(message = 'Verification request timed out', options?: { cause?: Error }) {
+    super(ErrorCodes.VERIFICATION_TIMEOUT, message, undefined, options);
     this.name = 'VerificationTimeoutError';
   }
 }
 
 /** Thrown when attempting operations that require a connected wallet */
 export class WalletNotConnectedError extends MidnightCloakError {
-  constructor(message = 'No wallet connected') {
-    super(ErrorCodes.WALLET_NOT_CONNECTED, message);
+  constructor(message = 'No wallet connected', options?: { cause?: Error }) {
+    super(ErrorCodes.WALLET_NOT_CONNECTED, message, undefined, options);
     this.name = 'WalletNotConnectedError';
   }
 }
 
 /** Thrown when a network operation fails */
 export class NetworkError extends MidnightCloakError {
-  constructor(message = 'Network error occurred', details?: unknown) {
-    super(ErrorCodes.NETWORK_ERROR, message, details);
+  constructor(message = 'Network error occurred', details?: unknown, options?: { cause?: Error }) {
+    super(ErrorCodes.NETWORK_ERROR, message, details, options);
     this.name = 'NetworkError';
   }
 }
 
 /** Thrown when a policy configuration is invalid */
 export class InvalidPolicyError extends MidnightCloakError {
-  constructor(message = 'Invalid policy configuration', details?: unknown) {
-    super(ErrorCodes.INVALID_POLICY, message, details);
+  constructor(message = 'Invalid policy configuration', details?: unknown, options?: { cause?: Error }) {
+    super(ErrorCodes.INVALID_POLICY, message, details, options);
     this.name = 'InvalidPolicyError';
   }
 }
 
 /** Thrown when a required credential is not found in the user's wallet */
 export class CredentialNotFoundError extends MidnightCloakError {
-  constructor(message = 'Required credential not found') {
-    super(ErrorCodes.CREDENTIAL_NOT_FOUND, message);
+  constructor(message = 'Required credential not found', options?: { cause?: Error }) {
+    super(ErrorCodes.CREDENTIAL_NOT_FOUND, message, undefined, options);
     this.name = 'CredentialNotFoundError';
   }
 }
 
 /** Thrown when ZK proof generation fails */
 export class ProofGenerationError extends MidnightCloakError {
-  constructor(message = 'Failed to generate proof', details?: unknown) {
-    super(ErrorCodes.PROOF_GENERATION_FAILED, message, details);
+  constructor(message = 'Failed to generate proof', details?: unknown, options?: { cause?: Error }) {
+    super(ErrorCodes.PROOF_GENERATION_FAILED, message, details, options);
     this.name = 'ProofGenerationError';
   }
 }
 
 /** Thrown when a smart contract operation fails */
 export class ContractError extends MidnightCloakError {
-  constructor(message = 'Smart contract error', details?: unknown) {
-    super(ErrorCodes.CONTRACT_ERROR, message, details);
+  constructor(message = 'Smart contract error', details?: unknown, options?: { cause?: Error }) {
+    super(ErrorCodes.CONTRACT_ERROR, message, details, options);
     this.name = 'ContractError';
   }
 }
 
 /** Thrown when an unsupported verification type is requested */
 export class UnsupportedVerificationTypeError extends MidnightCloakError {
-  constructor(type: string) {
-    super(ErrorCodes.UNSUPPORTED_VERIFICATION_TYPE, `Verification type '${type}' is not yet implemented`);
+  constructor(type: string, options?: { cause?: Error }) {
+    super(ErrorCodes.UNSUPPORTED_VERIFICATION_TYPE, `Verification type '${type}' is not yet implemented`, undefined, options);
     this.name = 'UnsupportedVerificationTypeError';
   }
 }
 
 /** Thrown when a wallet operation fails */
 export class WalletError extends MidnightCloakError {
-  constructor(message = 'Wallet operation failed', details?: unknown) {
-    super(ErrorCodes.WALLET_ERROR, message, details);
+  constructor(message = 'Wallet operation failed', details?: unknown, options?: { cause?: Error }) {
+    super(ErrorCodes.WALLET_ERROR, message, details, options);
     this.name = 'WalletError';
   }
 }

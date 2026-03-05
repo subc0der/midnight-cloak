@@ -4,43 +4,79 @@
 
 import type { Policy, PolicyCondition, PolicyConfig, VerificationType } from './types';
 import { InvalidPolicyError } from './errors';
+import { validatePolicy, type ValidationResult } from './policy-validator';
 
 export class PolicyBuilder {
   private conditions: PolicyCondition[] = [];
   private combinator: 'AND' | 'OR' = 'AND';
 
+  /**
+   * Require minimum age verification.
+   *
+   * @example
+   * ```typescript
+   * new PolicyBuilder().requireAge(18).build()
+   * ```
+   */
   requireAge(minAge: number): this {
     this.conditions.push({
       type: 'AGE',
-      params: { minAge },
+      params: { kind: 'age', minAge },
     });
     return this;
   }
 
+  /**
+   * Require minimum token balance verification.
+   *
+   * @example
+   * ```typescript
+   * new PolicyBuilder().requireTokenBalance('ADA', 1000).build()
+   * ```
+   */
   requireTokenBalance(token: string, minBalance: number): this {
     this.conditions.push({
       type: 'TOKEN_BALANCE',
-      params: { token, minBalance },
+      params: { kind: 'token_balance', token, minBalance },
     });
     return this;
   }
 
+  /**
+   * Require NFT ownership verification.
+   *
+   * @example
+   * ```typescript
+   * new PolicyBuilder().requireNFT('collection_policy_id', 1).build()
+   * ```
+   */
   requireNFT(collection: string, minCount = 1): this {
     this.conditions.push({
       type: 'NFT_OWNERSHIP',
-      params: { collection, minCount },
+      params: { kind: 'nft_ownership', collection, minCount },
     });
     return this;
   }
 
+  /**
+   * Require residency verification.
+   *
+   * @example
+   * ```typescript
+   * new PolicyBuilder().requireResidency('US', 'CA').build()
+   * ```
+   */
   requireResidency(country: string, region?: string): this {
     this.conditions.push({
       type: 'RESIDENCY',
-      params: { country, region },
+      params: { kind: 'residency', country, region },
     });
     return this;
   }
 
+  /**
+   * Require a generic credential verification.
+   */
   requireCredential(type: VerificationType, params: PolicyConfig): this {
     this.conditions.push({
       type,
@@ -49,11 +85,17 @@ export class PolicyBuilder {
     return this;
   }
 
+  /**
+   * Combine conditions with AND (all must pass).
+   */
   and(): this {
     this.combinator = 'AND';
     return this;
   }
 
+  /**
+   * Combine conditions with OR (any must pass).
+   */
   or(): this {
     this.combinator = 'OR';
     return this;
@@ -61,7 +103,7 @@ export class PolicyBuilder {
 
   /**
    * Validate the current policy configuration without building.
-   * Returns validation result with any errors found.
+   * Uses centralized validation logic shared with Verifier.
    *
    * @example
    * ```typescript
@@ -72,7 +114,7 @@ export class PolicyBuilder {
    * }
    * ```
    */
-  validate(): { valid: boolean; errors: string[] } {
+  validate(): ValidationResult {
     const errors: string[] = [];
 
     if (this.conditions.length === 0) {
@@ -80,62 +122,16 @@ export class PolicyBuilder {
     }
 
     for (const condition of this.conditions) {
-      const conditionErrors = this.validateCondition(condition);
-      errors.push(...conditionErrors);
+      const result = validatePolicy(condition.type, condition.params);
+      errors.push(...result.errors);
     }
 
     return { valid: errors.length === 0, errors };
   }
 
   /**
-   * Validate a single policy condition
+   * Build the policy object. Throws if validation fails.
    */
-  private validateCondition(condition: PolicyCondition): string[] {
-    const errors: string[] = [];
-
-    switch (condition.type) {
-      case 'AGE': {
-        const params = condition.params as { minAge?: number };
-        if (typeof params.minAge !== 'number' || params.minAge < 0) {
-          errors.push('AGE policy: minAge must be a non-negative number');
-        }
-        if (params.minAge !== undefined && params.minAge > 150) {
-          errors.push('AGE policy: minAge exceeds reasonable maximum (150)');
-        }
-        break;
-      }
-      case 'TOKEN_BALANCE': {
-        const params = condition.params as { token?: string; minBalance?: number };
-        if (!params.token || typeof params.token !== 'string') {
-          errors.push('TOKEN_BALANCE policy: token must be a non-empty string');
-        }
-        if (typeof params.minBalance !== 'number' || params.minBalance < 0) {
-          errors.push('TOKEN_BALANCE policy: minBalance must be a non-negative number');
-        }
-        break;
-      }
-      case 'NFT_OWNERSHIP': {
-        const params = condition.params as { collection?: string; minCount?: number };
-        if (!params.collection || typeof params.collection !== 'string') {
-          errors.push('NFT_OWNERSHIP policy: collection must be a non-empty string');
-        }
-        if (params.minCount !== undefined && (typeof params.minCount !== 'number' || params.minCount < 1)) {
-          errors.push('NFT_OWNERSHIP policy: minCount must be a positive number');
-        }
-        break;
-      }
-      case 'RESIDENCY': {
-        const params = condition.params as { country?: string };
-        if (!params.country || typeof params.country !== 'string') {
-          errors.push('RESIDENCY policy: country must be a non-empty string');
-        }
-        break;
-      }
-    }
-
-    return errors;
-  }
-
   build(): Policy {
     const validation = this.validate();
     if (!validation.valid) {

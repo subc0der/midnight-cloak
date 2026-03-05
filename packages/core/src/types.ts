@@ -74,8 +74,8 @@ export interface ClientConfig {
  * Requires the user to prove they meet a minimum age requirement
  */
 export interface AgePolicy {
-  /** Discriminant for type narrowing (optional for backward compatibility) */
-  readonly kind?: 'age';
+  /** Discriminant for type narrowing */
+  readonly kind: 'age';
   /** Minimum age in years that the user must prove they meet */
   minAge: number;
 }
@@ -85,8 +85,8 @@ export interface AgePolicy {
  * Requires the user to prove they hold a minimum balance of a token
  */
 export interface TokenBalancePolicy {
-  /** Discriminant for type narrowing (optional for backward compatibility) */
-  readonly kind?: 'token_balance';
+  /** Discriminant for type narrowing */
+  readonly kind: 'token_balance';
   /** Token identifier (e.g., 'ADA', 'NIGHT', contract address) */
   token: string;
   /** Minimum balance required */
@@ -98,8 +98,8 @@ export interface TokenBalancePolicy {
  * Requires the user to prove ownership of NFTs from a collection
  */
 export interface NFTOwnershipPolicy {
-  /** Discriminant for type narrowing (optional for backward compatibility) */
-  readonly kind?: 'nft_ownership';
+  /** Discriminant for type narrowing */
+  readonly kind: 'nft_ownership';
   /** NFT collection identifier or policy ID */
   collection: string;
   /** Minimum number of NFTs required (default: 1) */
@@ -111,8 +111,8 @@ export interface NFTOwnershipPolicy {
  * Requires the user to prove residency in a specific region
  */
 export interface ResidencyPolicy {
-  /** Discriminant for type narrowing (optional for backward compatibility) */
-  readonly kind?: 'residency';
+  /** Discriminant for type narrowing */
+  readonly kind: 'residency';
   /** ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB') */
   country: string;
   /** Optional region/state code */
@@ -144,37 +144,69 @@ export type PolicyConfig =
   | ResidencyPolicy;
 
 /**
+ * Base request options shared by all verification request types.
+ */
+interface VerificationRequestBase {
+  /** Optional key-value metadata attached to the request */
+  metadata?: Record<string, string>;
+  /** Custom timeout in milliseconds (overrides client default) */
+  timeout?: number;
+}
+
+/**
+ * Simple verification request using type and policy.
+ *
+ * @example
+ * ```typescript
+ * const request: SimpleVerificationRequest = {
+ *   type: 'AGE',
+ *   policy: { kind: 'age', minAge: 18 }
+ * };
+ * ```
+ */
+export interface SimpleVerificationRequest extends VerificationRequestBase {
+  /** Type of verification to perform */
+  type: VerificationType;
+  /** Policy configuration for the verification type */
+  policy: PolicyConfig;
+}
+
+/**
+ * Complex verification request using a custom policy built with PolicyBuilder.
+ *
+ * @example
+ * ```typescript
+ * const request: CustomPolicyRequest = {
+ *   customPolicy: new PolicyBuilder().requireAge(21).and().requireResidency('US').build()
+ * };
+ * ```
+ */
+export interface CustomPolicyRequest extends VerificationRequestBase {
+  /** Complex policy built with PolicyBuilder */
+  customPolicy: Policy;
+}
+
+/**
  * Request parameters for initiating a verification.
- * Pass either `type` with `policy`, or `customPolicy` for complex requirements.
+ * Use either SimpleVerificationRequest (type + policy) or CustomPolicyRequest (customPolicy).
+ * These are mutually exclusive - you cannot provide both.
  *
  * @example
  * ```typescript
  * // Simple age verification
  * const request: VerificationRequest = {
  *   type: 'AGE',
- *   policy: { minAge: 18 }
+ *   policy: { kind: 'age', minAge: 18 }
  * };
  *
- * // With metadata for tracking
+ * // Complex policy verification
  * const request: VerificationRequest = {
- *   type: 'AGE',
- *   policy: { minAge: 21 },
+ *   customPolicy: policy,
  *   metadata: { purpose: 'alcohol-purchase' }
  * };
  * ```
  */
-export interface VerificationRequest {
-  /** Type of verification to perform */
-  type?: VerificationType;
-  /** Policy configuration for the verification type */
-  policy?: PolicyConfig;
-  /** Complex policy built with PolicyBuilder (alternative to type+policy) */
-  customPolicy?: Policy;
-  /** Optional key-value metadata attached to the request */
-  metadata?: Record<string, string>;
-  /** Custom timeout in milliseconds (overrides client default) */
-  timeout?: number;
-}
+export type VerificationRequest = SimpleVerificationRequest | CustomPolicyRequest;
 
 /**
  * Result of a verification attempt.
@@ -233,7 +265,7 @@ export interface Proof {
  * Use the `code` field for programmatic error handling.
  */
 export interface VerificationError {
-  /** Error code (e.g., 'E001' for wallet not connected) */
+  /** Semantic error code (e.g., 'WALLET_NOT_CONNECTED') */
   code: string;
   /** Human-readable error message */
   message: string;

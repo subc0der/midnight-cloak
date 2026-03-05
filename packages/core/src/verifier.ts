@@ -8,6 +8,7 @@ import type {
   VerificationResult,
   VerificationStatus,
   AgePolicy,
+  SimpleVerificationRequest,
 } from './types';
 import { generateRequestId } from './utils';
 import type { WalletConnector, ConnectedWallet } from './wallet-connector';
@@ -17,8 +18,8 @@ import {
   UnsupportedVerificationTypeError,
   ProofGenerationError,
   ContractError,
-  InvalidPolicyError,
 } from './errors';
+import { assertValidPolicy } from './policy-validator';
 
 export class Verifier {
   private _config: Required<ClientConfig>;
@@ -57,62 +58,10 @@ export class Verifier {
   }
 
   /**
-   * Validate policy parameters at entry point.
-   * SECURITY: Never trust client-constructed policies - always re-validate.
+   * Type guard to check if request is a SimpleVerificationRequest
    */
-  private validatePolicy(type: string, policy: unknown): void {
-    if (!policy) {
-      throw new InvalidPolicyError('Policy is required');
-    }
-
-    switch (type) {
-      case 'AGE': {
-        const agePolicy = policy as { minAge?: unknown };
-        if (typeof agePolicy.minAge !== 'number') {
-          throw new InvalidPolicyError('AGE policy: minAge must be a number');
-        }
-        if (agePolicy.minAge < 0) {
-          throw new InvalidPolicyError('AGE policy: minAge cannot be negative');
-        }
-        if (agePolicy.minAge > 150) {
-          throw new InvalidPolicyError('AGE policy: minAge exceeds reasonable maximum (150)');
-        }
-        if (!Number.isInteger(agePolicy.minAge)) {
-          throw new InvalidPolicyError('AGE policy: minAge must be an integer');
-        }
-        break;
-      }
-      case 'TOKEN_BALANCE': {
-        const tokenPolicy = policy as { token?: unknown; minBalance?: unknown };
-        if (!tokenPolicy.token || typeof tokenPolicy.token !== 'string') {
-          throw new InvalidPolicyError('TOKEN_BALANCE policy: token must be a non-empty string');
-        }
-        if (typeof tokenPolicy.minBalance !== 'number' || tokenPolicy.minBalance < 0) {
-          throw new InvalidPolicyError('TOKEN_BALANCE policy: minBalance must be a non-negative number');
-        }
-        break;
-      }
-      case 'NFT_OWNERSHIP': {
-        const nftPolicy = policy as { collection?: unknown; minCount?: unknown };
-        if (!nftPolicy.collection || typeof nftPolicy.collection !== 'string') {
-          throw new InvalidPolicyError('NFT_OWNERSHIP policy: collection must be a non-empty string');
-        }
-        if (nftPolicy.minCount !== undefined) {
-          if (typeof nftPolicy.minCount !== 'number' || nftPolicy.minCount < 1) {
-            throw new InvalidPolicyError('NFT_OWNERSHIP policy: minCount must be a positive number');
-          }
-        }
-        break;
-      }
-      case 'RESIDENCY': {
-        const residencyPolicy = policy as { country?: unknown };
-        if (!residencyPolicy.country || typeof residencyPolicy.country !== 'string') {
-          throw new InvalidPolicyError('RESIDENCY policy: country must be a non-empty string');
-        }
-        break;
-      }
-      // ACCREDITED and CREDENTIAL validation can be added when implemented
-    }
+  private isSimpleRequest(request: VerificationRequest): request is SimpleVerificationRequest {
+    return 'type' in request && 'policy' in request;
   }
 
   async verify(request: VerificationRequest): Promise<VerificationResult> {
@@ -120,13 +69,14 @@ export class Verifier {
     this.pendingRequests.set(requestId, request);
 
     try {
-      // request.type is optional in VerificationRequest, so check for undefined
-      if (!request.type) {
-        throw new UnsupportedVerificationTypeError('undefined');
+      // Handle discriminated union: SimpleVerificationRequest vs CustomPolicyRequest
+      if (!this.isSimpleRequest(request)) {
+        // CustomPolicyRequest with customPolicy - not yet implemented
+        throw new UnsupportedVerificationTypeError('customPolicy');
       }
 
-      // SECURITY: Validate policy at entry point - never trust client-constructed policies
-      this.validatePolicy(request.type, request.policy);
+      // SECURITY: Validate policy at entry point using centralized validator
+      assertValidPolicy(request.type, request.policy);
 
       switch (request.type) {
         case 'AGE':

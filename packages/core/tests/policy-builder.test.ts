@@ -9,7 +9,7 @@ describe('PolicyBuilder', () => {
     expect(policy.type).toBe('SINGLE');
     expect(policy.conditions).toHaveLength(1);
     expect(policy.conditions[0]?.type).toBe('AGE');
-    expect(policy.conditions[0]?.params).toEqual({ minAge: 18 });
+    expect(policy.conditions[0]?.params).toEqual({ kind: 'age', minAge: 18 });
   });
 
   it('should build an AND policy with multiple conditions', () => {
