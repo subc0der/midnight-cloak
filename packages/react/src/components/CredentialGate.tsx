@@ -3,34 +3,17 @@
  */
 
 import { useState, useEffect, useCallback, useId, useRef, type ReactNode } from 'react';
-import type { VerificationType, PolicyConfig, VerificationResult } from '@midnight-cloak/core';
+import type { PolicyConfig, VerificationResult } from '@midnight-cloak/core';
 import { useMidnightCloakContext } from './MidnightCloakProvider';
+import {
+  inferTypeFromPolicy,
+  buildPolicyFromRequirement,
+  getSessionKey,
+  type VerificationRequirement,
+} from '../utils/policy-utils';
 
-/**
- * Verification requirement using convenience props.
- * @deprecated Consider using `policy` prop directly for type safety.
- */
-export interface VerificationRequirement {
-  /**
-   * Type of verification to perform.
-   * @deprecated Use `verificationType` instead.
-   */
-  type?: VerificationType;
-  /** Type of verification to perform */
-  verificationType?: VerificationType;
-  /** Minimum age for AGE verification */
-  minAge?: number;
-  /** Token identifier for TOKEN_BALANCE verification */
-  token?: string;
-  /** Minimum balance for TOKEN_BALANCE verification */
-  minBalance?: number;
-  /** Collection ID for NFT_OWNERSHIP verification */
-  collection?: string;
-  /** Country code for RESIDENCY verification */
-  country?: string;
-  /** Region code for RESIDENCY verification */
-  region?: string;
-}
+// Re-export for backwards compatibility
+export type { VerificationRequirement } from '../utils/policy-utils';
 
 export type GateStatus = 'loading' | 'verified' | 'unverified' | 'error';
 
@@ -67,82 +50,6 @@ export interface CredentialGateProps {
   sessionDuration?: number;
   /** Content to show when verified */
   children: ReactNode;
-}
-
-/**
- * Generate a session key that includes policy parameters to prevent security bypass.
- * For example, a minAge:18 verification should not satisfy minAge:21.
- */
-function getSessionKey(policy: PolicyConfig): string {
-  const parts = [`midnight-cloak:session:${policy.kind}`];
-
-  switch (policy.kind) {
-    case 'age':
-      parts.push(`minAge:${policy.minAge}`);
-      break;
-    case 'token_balance':
-      parts.push(`token:${policy.token}`, `minBalance:${policy.minBalance}`);
-      break;
-    case 'nft_ownership':
-      parts.push(`collection:${policy.collection}`);
-      if (policy.minCount !== undefined) {
-        parts.push(`minCount:${policy.minCount}`);
-      }
-      break;
-    case 'residency':
-      parts.push(`country:${policy.country}`);
-      if (policy.region !== undefined) {
-        parts.push(`region:${policy.region}`);
-      }
-      break;
-  }
-
-  return parts.join(':');
-}
-
-/**
- * Build PolicyConfig from VerificationRequirement convenience props.
- */
-function buildPolicyFromRequirement(require: VerificationRequirement): PolicyConfig {
-  const verifyType = require.verificationType ?? require.type;
-
-  if (!verifyType) {
-    throw new Error('Either verificationType or type must be provided in require prop');
-  }
-
-  switch (verifyType) {
-    case 'AGE':
-      return { kind: 'age', minAge: require.minAge ?? 18 };
-    case 'TOKEN_BALANCE':
-      return { kind: 'token_balance', token: require.token ?? '', minBalance: require.minBalance ?? 0 };
-    case 'NFT_OWNERSHIP':
-      return { kind: 'nft_ownership', collection: require.collection ?? '' };
-    case 'RESIDENCY':
-      if (!require.country) {
-        throw new Error('RESIDENCY verification requires country');
-      }
-      return { kind: 'residency', country: require.country, region: require.region };
-    default:
-      throw new Error(`Unsupported verification type: ${verifyType}`);
-  }
-}
-
-/**
- * Infer VerificationType from PolicyConfig kind.
- */
-function inferTypeFromPolicy(policy: PolicyConfig): VerificationType {
-  switch (policy.kind) {
-    case 'age':
-      return 'AGE';
-    case 'token_balance':
-      return 'TOKEN_BALANCE';
-    case 'nft_ownership':
-      return 'NFT_OWNERSHIP';
-    case 'residency':
-      return 'RESIDENCY';
-    default:
-      throw new Error(`Unknown policy kind: ${(policy as { kind: string }).kind}`);
-  }
 }
 
 /**

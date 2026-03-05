@@ -5,6 +5,7 @@
 import { useState, useId, type ReactNode, type ButtonHTMLAttributes } from 'react';
 import type { VerificationResult, VerificationType, PolicyConfig } from '@midnight-cloak/core';
 import { useMidnightCloakContext } from './MidnightCloakProvider';
+import { inferTypeFromPolicy, buildPolicyFromConvenienceProps } from '../utils/policy-utils';
 
 export interface VerifyButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onError' | 'onClick'> {
   /**
@@ -92,22 +93,13 @@ export function VerifyButton({
       if (providedPolicy) {
         policy = providedPolicy;
       } else if (verifyType) {
-        // Otherwise, construct policy from convenience props with required kind
-        switch (verifyType) {
-          case 'AGE':
-            policy = { kind: 'age', minAge: minAge ?? 18 };
-            break;
-          case 'TOKEN_BALANCE':
-            policy = { kind: 'token_balance', token: token ?? '', minBalance: minBalance ?? 0 };
-            break;
-          case 'NFT_OWNERSHIP':
-            policy = { kind: 'nft_ownership', collection: collection ?? '' };
-            break;
-          case 'RESIDENCY':
-            throw new Error('RESIDENCY verification requires using the policy prop with country specified');
-          default:
-            throw new Error(`Unsupported verification type: ${verifyType}`);
-        }
+        // Otherwise, construct policy from convenience props using shared utility
+        policy = buildPolicyFromConvenienceProps(verifyType, {
+          minAge,
+          token,
+          minBalance,
+          collection,
+        });
       } else {
         throw new Error('Either policy or verificationType must be provided');
       }
@@ -151,22 +143,4 @@ export function VerifyButton({
       )}
     </>
   );
-}
-
-/**
- * Infer VerificationType from PolicyConfig kind
- */
-function inferTypeFromPolicy(policy: PolicyConfig): VerificationType {
-  switch (policy.kind) {
-    case 'age':
-      return 'AGE';
-    case 'token_balance':
-      return 'TOKEN_BALANCE';
-    case 'nft_ownership':
-      return 'NFT_OWNERSHIP';
-    case 'residency':
-      return 'RESIDENCY';
-    default:
-      throw new Error(`Unknown policy kind: ${(policy as { kind: string }).kind}`);
-  }
 }

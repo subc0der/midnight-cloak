@@ -10,7 +10,7 @@ import {
 type WalletStatus = 'disconnected' | 'connecting' | 'connected';
 
 /**
- * WalletConnection component - uses the provider's client via useMaskID hook
+ * WalletConnection component - uses the provider's client via useMidnightCloak hook
  * to ensure wallet state is shared across all components.
  */
 function WalletConnection({
@@ -20,7 +20,7 @@ function WalletConnection({
   status: WalletStatus;
   setStatus: (status: WalletStatus) => void;
 }) {
-  const client = useMidnightCloak();
+  const { client } = useMidnightCloak();
   const [error, setError] = useState<string | null>(null);
   const [useMock, setUseMock] = useState(false);
 
@@ -39,7 +39,7 @@ function WalletConnection({
 
   const handleUseMockWallet = () => {
     console.log('[MidnightCloak] Setting up mock wallet...');
-    client.useMockWallet({ network: 'testnet' });
+    client.useMockWallet({ network: 'preprod' });
     console.log('[MidnightCloak] Mock wallet ready');
     setUseMock(true);
     setStatus('connected');
@@ -102,8 +102,7 @@ function AgeVerificationCard() {
 
       {status === 'idle' && (
         <VerifyButton
-          type="AGE"
-          minAge={18}
+          policy={{ kind: 'age', minAge: 18 }}
           onVerified={(result) => {
             console.log('[MidnightCloak] Verification SUCCESS:', result);
             setStatus('verified');
@@ -154,7 +153,7 @@ function GatedContentCard() {
       <p>Content below is gated behind age verification.</p>
 
       <CredentialGate
-        require={{ type: 'AGE', minAge: 21 }}
+        policy={{ kind: 'age', minAge: 21 }}
         persistSession={true}
         sessionDuration={300}
         onVerified={(result) => console.log('[MidnightCloak] Gate UNLOCKED:', result)}
@@ -194,7 +193,7 @@ export function App() {
   return (
     <MidnightCloakProvider
       apiKey="demo-key"
-      network="testnet"
+      network="preprod"
       onError={(err) => console.error('Midnight Cloak Error:', err)}
     >
       <div className="app">
