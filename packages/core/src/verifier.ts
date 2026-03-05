@@ -12,7 +12,12 @@ import type {
 import { generateRequestId } from './utils';
 import type { WalletConnector, ConnectedWallet } from './wallet-connector';
 import { ContractClient } from './contract-client';
-import { ErrorCodes, UnsupportedVerificationTypeError } from './errors';
+import {
+  ErrorCodes,
+  UnsupportedVerificationTypeError,
+  ProofGenerationError,
+  ContractError,
+} from './errors';
 
 export class Verifier {
   private _config: Required<ClientConfig>;
@@ -111,10 +116,34 @@ export class Verifier {
       }
 
       // 3. Generate ZK proof (uses proof server when available)
-      const proof = await this.generateProof(requestId, 'AGE', policy);
+      let proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] };
+      try {
+        proof = await this.generateProofWithTimeout(requestId, 'AGE', policy);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Proof generation failed';
+        return {
+          verified: false,
+          requestId,
+          timestamp: Date.now(),
+          proof: null,
+          error: { code: ErrorCodes.PROOF_GENERATION_FAILED, message },
+        };
+      }
 
       // 4. Submit to contract (placeholder until Compact contracts are deployed)
-      const contractResult = await this.submitToContract(requestId, proof);
+      let contractResult: { verified: boolean };
+      try {
+        contractResult = await this.submitToContractWithTimeout(requestId, proof);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Contract execution failed';
+        return {
+          verified: false,
+          requestId,
+          timestamp: Date.now(),
+          proof: null,
+          error: { code: ErrorCodes.CONTRACT_ERROR, message },
+        };
+      }
 
       return {
         verified: contractResult.verified,
@@ -151,6 +180,27 @@ export class Verifier {
     }
   }
 
+  /**
+   * Generate proof with timeout protection
+   * Throws ProofGenerationError on timeout or failure
+   */
+  private async generateProofWithTimeout(
+    requestId: string,
+    type: string,
+    policy: AgePolicy
+  ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
+    const timeoutMs = this._config.timeout;
+
+    const proofPromise = this.generateProof(requestId, type, policy);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new ProofGenerationError(`Proof generation timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    return Promise.race([proofPromise, timeoutPromise]);
+  }
+
   private async generateProof(
     requestId: string,
     _type: string,
@@ -174,6 +224,26 @@ export class Verifier {
       data: proofResponse.proof,
       publicInputs: proofResponse.publicOutputs,
     };
+  }
+
+  /**
+   * Submit to contract with timeout protection
+   * Throws ContractError on timeout or failure
+   */
+  private async submitToContractWithTimeout(
+    requestId: string,
+    proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }
+  ): Promise<{ verified: boolean }> {
+    const timeoutMs = this._config.timeout;
+
+    const submitPromise = this.submitToContract(requestId, proof);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new ContractError(`Contract execution timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    return Promise.race([submitPromise, timeoutPromise]);
   }
 
   private async submitToContract(
