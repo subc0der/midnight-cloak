@@ -80,8 +80,9 @@ release/
 tmp/
 temp/
 
-# Claude Code
-.claude/settings.local.json
+# Claude Code (local dev tools - not for GitHub)
+.claude/
+CLAUDE.md
 
 # Handoff files (per user preference)
 *HANDOFF*.md

@@ -1,7 +1,7 @@
 # Midnight Cloak — Development Guide
 
-> **Purpose**: Step-by-step implementation guide for building Midnight Cloak  
-> **Audience**: Solo developer (you) working with Claude CLI  
+> **Purpose**: Step-by-step implementation guide for building Midnight Cloak
+> **Audience**: Solo developer
 > **Last Updated**: December 2025
 
 ---
