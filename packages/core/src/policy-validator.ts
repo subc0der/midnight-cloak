@@ -5,7 +5,7 @@
  * PolicyBuilder and Verifier to ensure consistent validation rules.
  */
 
-import type { PolicyConfig, VerificationType } from './types';
+import type { PolicyConfig, VerificationType, AgePolicy, TokenBalancePolicy, NFTOwnershipPolicy, ResidencyPolicy } from './types';
 import { InvalidPolicyError } from './errors';
 
 /**
@@ -16,27 +16,81 @@ export interface ValidationResult {
   errors: string[];
 }
 
+// ============================================================================
+// Type Guards - Runtime type checking for user-provided policy objects
+// ============================================================================
+
+/**
+ * Check if a value is a non-null object (not array, not null)
+ */
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Type guard for AgePolicy
+ */
+export function isAgePolicy(policy: unknown): policy is AgePolicy {
+  return isObject(policy) && 'minAge' in policy;
+}
+
+/**
+ * Type guard for TokenBalancePolicy
+ */
+export function isTokenBalancePolicy(policy: unknown): policy is TokenBalancePolicy {
+  return isObject(policy) && 'token' in policy && 'minBalance' in policy;
+}
+
+/**
+ * Type guard for NFTOwnershipPolicy
+ */
+export function isNFTOwnershipPolicy(policy: unknown): policy is NFTOwnershipPolicy {
+  return isObject(policy) && 'collection' in policy;
+}
+
+/**
+ * Type guard for ResidencyPolicy
+ */
+export function isResidencyPolicy(policy: unknown): policy is ResidencyPolicy {
+  return isObject(policy) && 'country' in policy;
+}
+
+// ============================================================================
+// Validation Functions
+// ============================================================================
+
 /**
  * Validate an age policy configuration.
  */
 function validateAgePolicy(policy: unknown): string[] {
   const errors: string[] = [];
-  const agePolicy = policy as { minAge?: unknown };
 
-  if (typeof agePolicy.minAge !== 'number') {
+  if (!isObject(policy)) {
+    errors.push('AGE policy: must be an object');
+    return errors;
+  }
+
+  if (!('minAge' in policy)) {
+    errors.push('AGE policy: minAge is required');
+    return errors;
+  }
+
+  const { minAge } = policy;
+
+  if (typeof minAge !== 'number') {
     errors.push('AGE policy: minAge must be a number');
     return errors;
   }
 
-  if (agePolicy.minAge < 0) {
+  if (minAge < 0) {
     errors.push('AGE policy: minAge cannot be negative');
   }
 
-  if (agePolicy.minAge > 150) {
+  if (minAge > 150) {
     errors.push('AGE policy: minAge exceeds reasonable maximum (150)');
   }
 
-  if (!Number.isInteger(agePolicy.minAge)) {
+  if (!Number.isInteger(minAge)) {
     errors.push('AGE policy: minAge must be an integer');
   }
 
@@ -48,13 +102,19 @@ function validateAgePolicy(policy: unknown): string[] {
  */
 function validateTokenBalancePolicy(policy: unknown): string[] {
   const errors: string[] = [];
-  const tokenPolicy = policy as { token?: unknown; minBalance?: unknown };
 
-  if (!tokenPolicy.token || typeof tokenPolicy.token !== 'string') {
+  if (!isObject(policy)) {
+    errors.push('TOKEN_BALANCE policy: must be an object');
+    return errors;
+  }
+
+  const { token, minBalance } = policy;
+
+  if (!token || typeof token !== 'string') {
     errors.push('TOKEN_BALANCE policy: token must be a non-empty string');
   }
 
-  if (typeof tokenPolicy.minBalance !== 'number' || tokenPolicy.minBalance < 0) {
+  if (typeof minBalance !== 'number' || minBalance < 0) {
     errors.push('TOKEN_BALANCE policy: minBalance must be a non-negative number');
   }
 
@@ -66,14 +126,20 @@ function validateTokenBalancePolicy(policy: unknown): string[] {
  */
 function validateNFTOwnershipPolicy(policy: unknown): string[] {
   const errors: string[] = [];
-  const nftPolicy = policy as { collection?: unknown; minCount?: unknown };
 
-  if (!nftPolicy.collection || typeof nftPolicy.collection !== 'string') {
+  if (!isObject(policy)) {
+    errors.push('NFT_OWNERSHIP policy: must be an object');
+    return errors;
+  }
+
+  const { collection, minCount } = policy;
+
+  if (!collection || typeof collection !== 'string') {
     errors.push('NFT_OWNERSHIP policy: collection must be a non-empty string');
   }
 
-  if (nftPolicy.minCount !== undefined) {
-    if (typeof nftPolicy.minCount !== 'number' || nftPolicy.minCount < 1) {
+  if (minCount !== undefined) {
+    if (typeof minCount !== 'number' || minCount < 1) {
       errors.push('NFT_OWNERSHIP policy: minCount must be a positive number');
     }
   }
@@ -86,9 +152,15 @@ function validateNFTOwnershipPolicy(policy: unknown): string[] {
  */
 function validateResidencyPolicy(policy: unknown): string[] {
   const errors: string[] = [];
-  const residencyPolicy = policy as { country?: unknown };
 
-  if (!residencyPolicy.country || typeof residencyPolicy.country !== 'string') {
+  if (!isObject(policy)) {
+    errors.push('RESIDENCY policy: must be an object');
+    return errors;
+  }
+
+  const { country } = policy;
+
+  if (!country || typeof country !== 'string') {
     errors.push('RESIDENCY policy: country must be a non-empty string');
   }
 

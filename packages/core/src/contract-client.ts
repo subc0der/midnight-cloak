@@ -17,6 +17,7 @@
 import type { ClientConfig, Network } from './types';
 import { createNetworkConfig, type NetworkConfig } from './config';
 import { ProviderFactory, type WalletContext } from './providers';
+import { NotInitializedError, ContractError } from './errors';
 
 /**
  * Proof generation request
@@ -103,6 +104,34 @@ export interface ContractConfig {
 }
 
 /**
+ * Service health status returned by initialize()
+ */
+export interface ServiceHealth {
+  /** Whether initialization completed */
+  initialized: boolean;
+  /** Proof server availability */
+  proofServer: boolean;
+  /** Indexer availability */
+  indexer: boolean;
+  /** Node availability */
+  node: boolean;
+  /** Any degraded services */
+  degraded: boolean;
+  /** Human-readable status message */
+  message: string;
+}
+
+/**
+ * Successful deployment information
+ */
+export interface DeployedContractInfo {
+  contractAddress: string;
+  txHash: string;
+  txId?: string;
+  blockHeight?: number;
+}
+
+/**
  * Contract client for Midnight Cloak verification contracts
  *
  * This class handles:
@@ -162,24 +191,38 @@ export class ContractClient {
   }
 
   /**
-   * Initialize contract providers with wallet context
+   * Ensure the client is initialized, throwing if not.
+   * @throws NotInitializedError if not initialized
+   */
+  private ensureInitialized(): void {
+    if (!this._isInitialized) {
+      throw new NotInitializedError('ContractClient');
+    }
+  }
+
+  /**
+   * Initialize contract providers with wallet context.
    *
    * This must be called before any contract operations.
    * Sets up all Midnight providers required for contract interaction.
+   *
+   * @returns ServiceHealth report showing availability of dependent services
    */
-  async initialize(walletContext: WalletContext): Promise<void> {
-    if (this._isInitialized) return;
+  async initialize(walletContext: WalletContext): Promise<ServiceHealth> {
+    if (this._isInitialized) {
+      const services = await this.providerFactory.checkServices();
+      return {
+        initialized: true,
+        ...services,
+        degraded: !services.proofServer || !services.indexer || !services.node,
+        message: 'Already initialized',
+      };
+    }
 
     this.walletContext = walletContext;
 
     // Check service availability
     const services = await this.providerFactory.checkServices();
-    if (!services.proofServer) {
-      console.warn('Warning: Proof server not available at', this.networkConfig.proofServer);
-    }
-    if (!services.indexer) {
-      console.warn('Warning: Indexer not available at', this.networkConfig.indexer);
-    }
 
     // TODO: Create real providers when dependencies are installed
     // const walletAndMidnightProvider = await createWalletAndMidnightProvider(walletContext);
@@ -214,6 +257,24 @@ export class ContractClient {
     };
 
     this._isInitialized = true;
+
+    // Build status message
+    const unavailable: string[] = [];
+    if (!services.proofServer) unavailable.push('proof server');
+    if (!services.indexer) unavailable.push('indexer');
+    if (!services.node) unavailable.push('node');
+
+    const degraded = unavailable.length > 0;
+    const message = degraded
+      ? `Initialized with degraded services: ${unavailable.join(', ')} unavailable`
+      : 'All services available';
+
+    return {
+      initialized: true,
+      ...services,
+      degraded,
+      message,
+    };
   }
 
   /**
@@ -243,17 +304,14 @@ export class ContractClient {
    *
    * @param contractType - Type of contract to deploy
    * @param initialState - Initial private state for the contract
+   * @throws NotInitializedError if not initialized
+   * @throws ContractError if deployment fails or not yet implemented
    */
   async deploy(
     contractType: string,
     _initialState: Record<string, unknown> = {}
-  ): Promise<DeploymentResult> {
-    if (!this._isInitialized) {
-      return {
-        success: false,
-        error: 'ContractClient not initialized. Call initialize() first.',
-      };
-    }
+  ): Promise<DeployedContractInfo> {
+    this.ensureInitialized();
 
     // TODO: Real deployment using CompiledContract pattern
     // const compiledContract = CompiledContract.make(contractType, Contract).pipe(
@@ -268,16 +326,15 @@ export class ContractClient {
     // });
     //
     // return {
-    //   success: true,
     //   contractAddress: deployed.deployTxData.public.contractAddress,
+    //   txHash: deployed.deployTxData.public.txHash,
     //   txId: deployed.deployTxData.public.txId,
     //   blockHeight: deployed.deployTxData.public.blockHeight,
     // };
 
-    return {
-      success: false,
-      error: `Contract deployment not yet implemented for ${contractType}. Awaiting ZK contract development.`,
-    };
+    throw new ContractError(
+      `Contract deployment not yet implemented for ${contractType}. Awaiting ZK contract development.`
+    );
   }
 
   /**
@@ -285,17 +342,14 @@ export class ContractClient {
    *
    * @param contractType - Type of contract to join
    * @param contractAddress - Address of deployed contract
+   * @throws NotInitializedError if not initialized
+   * @throws ContractError if joining fails or not yet implemented
    */
   async join(
     _contractType: string,
     contractAddress: string
-  ): Promise<DeploymentResult> {
-    if (!this._isInitialized) {
-      return {
-        success: false,
-        error: 'ContractClient not initialized. Call initialize() first.',
-      };
-    }
+  ): Promise<DeployedContractInfo> {
+    this.ensureInitialized();
 
     // TODO: Real contract joining using findDeployedContract
     // const compiledContract = CompiledContract.make(contractType, Contract).pipe(
@@ -311,14 +365,13 @@ export class ContractClient {
     // });
     //
     // return {
-    //   success: true,
     //   contractAddress: contract.deployTxData.public.contractAddress,
+    //   txHash: contract.deployTxData.public.txHash,
     // };
 
-    return {
-      success: false,
-      error: `Contract joining not yet implemented. Address: ${contractAddress}`,
-    };
+    throw new ContractError(
+      `Contract joining not yet implemented. Address: ${contractAddress}`
+    );
   }
 
   /**
@@ -329,6 +382,8 @@ export class ContractClient {
    * 2. Create proof inputs from credential
    * 3. Generate proof via proof server
    * 4. Return proof for on-chain verification
+   *
+   * Note: Currently returns mock proof. Real implementation pending proof server integration.
    */
   async generateAgeProof(params: {
     birthYear: number;
@@ -352,7 +407,7 @@ export class ContractClient {
       // return { proof: proof.data, publicOutputs: proof.publicOutputs };
     }
 
-    // Mock proof for development
+    // Mock proof for development (64-byte placeholder)
     const proofData = new Uint8Array(64);
     const encoder = new TextEncoder();
     const data = encoder.encode(`${params.requestId}:${isVerified}`);
@@ -366,9 +421,13 @@ export class ContractClient {
 
   /**
    * Verify age proof on-chain
+   *
+   * Note: Currently returns mock success. Real implementation pending contract deployment.
+   * Mock implementation does not require initialization.
    */
   async verifyAgeOnChain(_proof: ProofResponse): Promise<ContractCallResult> {
-    // TODO: Real on-chain verification
+    // TODO: When real implementation is added, uncomment:
+    // this.ensureInitialized();
     // const result = await this.deployedContract.callTx.verify(proof);
     // return {
     //   success: true,
@@ -376,6 +435,7 @@ export class ContractClient {
     //   blockHeight: result.public.blockHeight,
     // };
 
+    // Mock implementation - does not require initialization
     return {
       success: true,
       txHash: `mock_tx_${Date.now().toString(16)}`,
@@ -392,22 +452,30 @@ export class ContractClient {
     _contractAddress: string,
     _stateName: string
   ): Promise<unknown> {
-    // TODO: Real state query
+    // TODO: When real implementation is added, uncomment:
+    // this.ensureInitialized();
     // const state = await this._providers.publicDataProvider
     //   .queryContractState(contractAddress);
     // return state?.data?.[stateName] ?? null;
 
+    // Mock implementation - returns null
     return null;
   }
 
   /**
-   * Issue a credential (mock implementation)
+   * Issue a credential
+   *
+   * Note: Currently returns mock success. Real implementation pending contract deployment.
    */
   async issueCredential(_params: {
     issuer: string;
     credentialId: string;
     credentialSecret: Uint8Array;
   }): Promise<ContractCallResult> {
+    // TODO: When real implementation is added, uncomment:
+    // this.ensureInitialized();
+
+    // Mock implementation
     return {
       success: true,
       txHash: `mock_tx_${Date.now().toString(16)}`,
@@ -415,7 +483,9 @@ export class ContractClient {
   }
 
   /**
-   * Prove credential ownership (mock implementation)
+   * Prove credential ownership
+   *
+   * Note: Currently returns mock proof. Real implementation pending.
    */
   async proveCredentialOwnership(credentialId: string): Promise<ProofResponse> {
     return {

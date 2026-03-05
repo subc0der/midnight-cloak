@@ -38,6 +38,7 @@ export const ErrorCodes = {
   CONTRACT_ERROR: 'CONTRACT_ERROR',
   UNSUPPORTED_VERIFICATION_TYPE: 'UNSUPPORTED_VERIFICATION_TYPE',
   WALLET_ERROR: 'WALLET_ERROR',
+  NOT_INITIALIZED: 'NOT_INITIALIZED',
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
@@ -160,6 +161,14 @@ export class WalletError extends MidnightCloakError {
   constructor(message = 'Wallet operation failed', details?: unknown, options?: { cause?: Error }) {
     super(ErrorCodes.WALLET_ERROR, message, details, options);
     this.name = 'WalletError';
+  }
+}
+
+/** Thrown when an operation requires initialization that hasn't been performed */
+export class NotInitializedError extends MidnightCloakError {
+  constructor(component: string, options?: { cause?: Error }) {
+    super(ErrorCodes.NOT_INITIALIZED, `${component} not initialized. Call initialize() first.`, undefined, options);
+    this.name = 'NotInitializedError';
   }
 }
 
