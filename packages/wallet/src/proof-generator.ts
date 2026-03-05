@@ -11,6 +11,7 @@
  */
 
 import type { Credential, Proof, PolicyConfig } from '@midnight-cloak/core';
+import { IS_DEVELOPMENT } from '@midnight-cloak/core';
 
 /** Error thrown when proof generation fails */
 export class ProofGenerationError extends Error {
@@ -120,7 +121,7 @@ export class ProofGenerator {
     // 5. Return the generated proof
 
     // Log that we're using placeholder (development only)
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+    if (IS_DEVELOPMENT) {
       console.warn(
         '[ProofGenerator] Using placeholder implementation. ' +
         'Connect to Midnight proof server for real proofs.'

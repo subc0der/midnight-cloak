@@ -16,6 +16,33 @@ import type { WalletContext } from './providers';
 import { toHex } from './providers';
 
 /**
+ * Result of wallet creation, containing both the context and seed.
+ * The seed is returned separately so callers can handle it appropriately
+ * (e.g., display for backup, then securely discard).
+ */
+export interface WalletCreationResult {
+  /** The wallet context (does NOT contain the seed) */
+  context: WalletContext;
+  /** The seed - handle securely, display for backup, then discard from memory */
+  seed: string;
+}
+
+/**
+ * Midnight provider interface for contract interactions.
+ * This bridges wallet-sdk-facade to midnight-js contract API.
+ */
+export interface MidnightProvider {
+  /** Get the coin public key for shielded transactions */
+  getCoinPublicKey(): string;
+  /** Get the encryption public key for receiving encrypted data */
+  getEncryptionPublicKey(): string;
+  /** Balance a transaction with wallet funds */
+  balanceTx(tx: unknown, ttl?: number): Promise<unknown>;
+  /** Submit a transaction to the network */
+  submitTx(tx: unknown): Promise<string>;
+}
+
+/**
  * Wallet address information
  */
 export interface WalletAddresses {
@@ -134,15 +161,19 @@ export class WalletBuilder {
   }
 
   /**
-   * Create a new wallet with a fresh seed
+   * Create a new wallet with a fresh seed.
+   * Returns both the context and the seed separately.
+   * The seed should be shown to the user for backup, then discarded.
    */
-  async createWallet(): Promise<WalletContext> {
+  async createWallet(): Promise<WalletCreationResult> {
     const seed = this.generateSeed();
-    return this.buildWallet(seed);
+    const context = await this.buildWallet(seed);
+    return { context, seed };
   }
 
   /**
-   * Restore a wallet from an existing seed
+   * Restore a wallet from an existing seed.
+   * Returns only the context (seed is already known by caller).
    */
   async restoreWallet(seed: string): Promise<WalletContext> {
     if (!/^[0-9a-fA-F]{64}$/.test(seed)) {
@@ -177,29 +208,64 @@ export class WalletBuilder {
     // const wallet = new WalletFacade(shieldedWallet, unshieldedWallet, dustWallet);
     // await wallet.start(shieldedSecretKeys, dustSecretKey);
 
-    // Mock implementation for now
-    // SECURITY: Never log seeds, keys, or other sensitive data
+    // Generate a wallet ID from the seed (first 16 chars of seed hash)
+    // SECURITY: This is a one-way derivation - walletId cannot be used to recover seed
+    const walletId = await this.deriveWalletId(seed);
 
+    // SECURITY: Never log seeds, keys, or other sensitive data
     return {
       wallet: null,
       shieldedSecretKeys: null,
       dustSecretKey: null,
       unshieldedKeystore: null,
-      seed,
+      walletId,
     };
   }
 
   /**
-   * Get mock wallet addresses for development
+   * Derive a public wallet identifier from the seed.
+   * Uses SHA-256 hash to ensure one-way derivation.
    */
-  getMockAddresses(seed: string): WalletAddresses {
+  private async deriveWalletId(seed: string): Promise<string> {
+    // Use Web Crypto API for hashing (available in browsers and Node 18+)
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(seed);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = new Uint8Array(hashBuffer);
+      return `wallet_${toHex(hashArray).slice(0, 16)}`;
+    }
+
+    // Fallback for Node.js environments without Web Crypto
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const nodeCrypto = require('crypto');
+      const hash = nodeCrypto.createHash('sha256').update(seed).digest('hex');
+      return `wallet_${hash.slice(0, 16)}`;
+    } catch {
+      // Last resort: simple hash (not cryptographically secure, but unique)
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+      }
+      return `wallet_${Math.abs(hash).toString(16).padStart(8, '0')}`;
+    }
+  }
+
+  /**
+   * Get mock wallet addresses for development.
+   * Uses walletId (derived from seed hash) to generate unique addresses
+   * without exposing any seed entropy.
+   */
+  getMockAddresses(walletId: string): WalletAddresses {
     const prefix = this.config.network === 'mainnet' ? '' : `_${this.config.networkId}`;
-    const shortSeed = seed.slice(0, 8);
+    // Extract the hex portion from walletId (e.g., "wallet_abc123" -> "abc123")
+    const idPart = walletId.replace('wallet_', '').slice(0, 8);
 
     return {
-      shielded: `mn_shield-addr${prefix}1${shortSeed}...`,
-      unshielded: `mn_addr${prefix}1${shortSeed}...`,
-      dust: `mn_dust${prefix}1${shortSeed}...`,
+      shielded: `mn_shield-addr${prefix}1${idPart}mock...`,
+      unshielded: `mn_addr${prefix}1${idPart}mock...`,
+      dust: `mn_dust${prefix}1${idPart}mock...`,
     };
   }
 }
@@ -255,7 +321,7 @@ export function signTransactionIntents(
  */
 export async function createWalletAndMidnightProvider(
   _ctx: WalletContext
-): Promise<unknown> {
+): Promise<MidnightProvider> {
   // TODO: Real implementation
   // const state = await Rx.firstValueFrom(ctx.wallet.state().pipe(Rx.filter((s) => s.isSynced)));
   // return {

@@ -20,6 +20,7 @@ import {
   type WalletInfo,
   createMockWallet,
 } from './wallet-connector';
+import { assertNotProduction } from './constants';
 
 /**
  * Type-safe event definitions for MidnightCloakClient.
@@ -196,12 +197,7 @@ export class MidnightCloakClient {
    */
   useMockWallet(options?: { network?: Network; autoApprove?: boolean }): void {
     // SECURITY: Prevent mock wallet usage in production
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
-      throw new Error(
-        'useMockWallet() is disabled in production. ' +
-        'Mock wallets should only be used for development and testing.'
-      );
-    }
+    assertNotProduction('useMockWallet()');
 
     const mockWallet = createMockWallet(options);
     this.verifier.setMockWallet(mockWallet);

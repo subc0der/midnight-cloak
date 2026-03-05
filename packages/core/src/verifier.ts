@@ -10,7 +10,7 @@ import type {
   AgePolicy,
   SimpleVerificationRequest,
 } from './types';
-import { generateRequestId } from './utils';
+import { generateRequestId, withTimeout } from './utils';
 import type { WalletConnector, ConnectedWallet } from './wallet-connector';
 import { ContractClient } from './contract-client';
 import {
@@ -18,8 +18,10 @@ import {
   UnsupportedVerificationTypeError,
   ProofGenerationError,
   ContractError,
+  getWalletErrorCode,
 } from './errors';
 import { assertValidPolicy } from './policy-validator';
+import { assertNotProduction } from './constants';
 
 export class Verifier {
   private _config: Required<ClientConfig>;
@@ -44,9 +46,7 @@ export class Verifier {
    */
   setMockWallet(wallet: ConnectedWallet): void {
     // SECURITY: Defense in depth - prevent mock wallet in production
-    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
-      throw new Error('Mock wallets are disabled in production');
-    }
+    assertNotProduction('Mock wallets');
     this.mockWallet = wallet;
   }
 
@@ -175,19 +175,7 @@ export class Verifier {
     } catch (error) {
       // User rejected or wallet error
       const message = error instanceof Error ? error.message : 'Wallet operation failed';
-      // Determine appropriate error code based on error type and message
-      // Use specific phrase matching to avoid false positives (e.g., "denied by firewall")
-      const lowerMessage = message.toLowerCase();
-      const isUserRejection =
-        lowerMessage.includes('user denied') ||
-        lowerMessage.includes('user rejected') ||
-        lowerMessage.includes('user cancelled') ||
-        lowerMessage.includes('request rejected') ||
-        lowerMessage.includes('transaction declined') ||
-        lowerMessage === 'denied' ||
-        lowerMessage === 'rejected' ||
-        lowerMessage === 'cancelled';
-      const errorCode = isUserRejection ? ErrorCodes.VERIFICATION_DENIED : ErrorCodes.WALLET_ERROR;
+      const errorCode = getWalletErrorCode(message);
       return {
         verified: false,
         requestId,
@@ -207,16 +195,19 @@ export class Verifier {
     type: string,
     policy: AgePolicy
   ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
-    const timeoutMs = this._config.timeout;
-
-    const proofPromise = this.generateProof(requestId, type, policy);
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new ProofGenerationError(`Proof generation timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-    });
-
-    return Promise.race([proofPromise, timeoutPromise]);
+    try {
+      return await withTimeout(
+        this.generateProof(requestId, type, policy),
+        this._config.timeout,
+        `Proof generation timed out after ${this._config.timeout}ms`
+      );
+    } catch (error) {
+      // Wrap timeout errors in ProofGenerationError for consistent error handling
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new ProofGenerationError(error.message);
+      }
+      throw error;
+    }
   }
 
   private async generateProof(
@@ -252,16 +243,19 @@ export class Verifier {
     requestId: string,
     proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }
   ): Promise<{ verified: boolean }> {
-    const timeoutMs = this._config.timeout;
-
-    const submitPromise = this.submitToContract(requestId, proof);
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new ContractError(`Contract execution timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-    });
-
-    return Promise.race([submitPromise, timeoutPromise]);
+    try {
+      return await withTimeout(
+        this.submitToContract(requestId, proof),
+        this._config.timeout,
+        `Contract execution timed out after ${this._config.timeout}ms`
+      );
+    } catch (error) {
+      // Wrap timeout errors in ContractError for consistent error handling
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new ContractError(error.message);
+      }
+      throw error;
+    }
   }
 
   private async submitToContract(

@@ -193,3 +193,58 @@ export function isMidnightCloakError(error: unknown): error is MidnightCloakErro
 export function hasErrorCode(error: unknown, code: ErrorCode): boolean {
   return isMidnightCloakError(error) && error.code === code;
 }
+
+/**
+ * Known phrases that indicate user rejection of a wallet operation.
+ * These are common patterns from various wallet implementations.
+ */
+const USER_REJECTION_PHRASES = [
+  'user denied',
+  'user rejected',
+  'user cancelled',
+  'request rejected',
+  'transaction declined',
+] as const;
+
+/**
+ * Exact matches that indicate user rejection (for short error messages).
+ */
+const USER_REJECTION_EXACT = ['denied', 'rejected', 'cancelled'] as const;
+
+/**
+ * Determine if an error message indicates user rejection of a wallet operation.
+ * This handles various error message formats from different wallet implementations.
+ *
+ * @param message - The error message to check
+ * @returns true if the error appears to be a user rejection
+ *
+ * @example
+ * ```typescript
+ * const isRejection = isUserRejectionError(error.message);
+ * const code = isRejection ? ErrorCodes.VERIFICATION_DENIED : ErrorCodes.WALLET_ERROR;
+ * ```
+ */
+export function isUserRejectionError(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+
+  // Check for exact matches (short messages like "denied")
+  if (USER_REJECTION_EXACT.some((phrase) => lowerMessage === phrase)) {
+    return true;
+  }
+
+  // Check for phrase matches (e.g., "user denied request")
+  return USER_REJECTION_PHRASES.some((phrase) => lowerMessage.includes(phrase));
+}
+
+/**
+ * Determine the appropriate error code based on an error message.
+ * Useful for mapping wallet errors to SDK error codes.
+ *
+ * @param message - The error message to analyze
+ * @returns VERIFICATION_DENIED if user rejected, WALLET_ERROR otherwise
+ */
+export function getWalletErrorCode(message: string): ErrorCode {
+  return isUserRejectionError(message)
+    ? ErrorCodes.VERIFICATION_DENIED
+    : ErrorCodes.WALLET_ERROR;
+}

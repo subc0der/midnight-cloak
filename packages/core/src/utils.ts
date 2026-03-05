@@ -43,3 +43,52 @@ export function calculateAge(birthYear: number, birthMonth: number, birthDay: nu
 export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+/**
+ * Timeout error thrown when an operation exceeds the time limit
+ */
+export class TimeoutError extends Error {
+  constructor(message: string, public readonly timeoutMs: number) {
+    super(message);
+    this.name = 'TimeoutError';
+  }
+}
+
+/**
+ * Wrap a promise with a timeout.
+ * If the promise doesn't resolve within the specified time, rejects with TimeoutError.
+ *
+ * @param promise - The promise to wrap
+ * @param timeoutMs - Timeout in milliseconds
+ * @param errorMessage - Optional custom error message (default: "Operation timed out")
+ * @returns The result of the promise if it resolves in time
+ * @throws TimeoutError if the timeout is exceeded
+ *
+ * @example
+ * ```typescript
+ * const result = await withTimeout(
+ *   fetchData(),
+ *   5000,
+ *   'Data fetch timed out'
+ * );
+ * ```
+ */
+export function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMessage?: string
+): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    const timer = setTimeout(() => {
+      reject(new TimeoutError(
+        errorMessage ?? `Operation timed out after ${timeoutMs}ms`,
+        timeoutMs
+      ));
+    }, timeoutMs);
+
+    // Clean up timer if promise settles first (avoid memory leak in long-running processes)
+    promise.finally(() => clearTimeout(timer));
+  });
+
+  return Promise.race([promise, timeoutPromise]);
+}

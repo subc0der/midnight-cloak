@@ -77,3 +77,6 @@ export * from './contract-client';
 
 // Error handling
 export * from './errors';
+
+// Constants and environment
+export * from './constants';

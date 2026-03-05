@@ -21,6 +21,10 @@ import type { IndexerClientConnection } from './config';
 /**
  * Wallet context containing all wallet components
  * This is the result of building/restoring a wallet
+ *
+ * SECURITY: This context intentionally excludes the seed.
+ * Seeds should only exist transiently during wallet creation/restoration
+ * and should be handled/stored by the caller, never in long-lived contexts.
  */
 export interface WalletContext {
   /** The unified wallet facade */
@@ -31,8 +35,8 @@ export interface WalletContext {
   dustSecretKey: unknown; // ledger.DustSecretKey
   /** Unshielded wallet keystore */
   unshieldedKeystore: unknown; // UnshieldedKeystore
-  /** The seed used to derive keys (for display/backup) */
-  seed: string;
+  /** Public identifier for the wallet (derived from seed, not the seed itself) */
+  walletId: string;
 }
 
 /**
