@@ -67,10 +67,10 @@ Allow users to "blackout" their portfolios from $handle lookups while retaining 
 | Component | Description | Dependency |
 |-----------|-------------|------------|
 | Cardano ↔ Midnight Bridge | Move assets between chains | Midnight team |
-| $Handle Claim Circuit | Prove ownership of $handle NFT | MaskID |
-| Shielded Balance Tracker | Track balances in Midnight | MaskID |
-| Proof Generation | ZK proofs of holdings | MaskID (exists) |
-| Visibility Settings UI | User controls what's public | MaskID Wallet |
+| $Handle Claim Circuit | Prove ownership of $handle NFT | Midnight Cloak |
+| Shielded Balance Tracker | Track balances in Midnight | Midnight Cloak |
+| Proof Generation | ZK proofs of holdings | Midnight Cloak (exists) |
+| Visibility Settings UI | User controls what's public | Midnight Cloak Wallet |
 
 ### Compact Contract: handle-shield.compact
 
@@ -144,9 +144,9 @@ async function lookupHandle(handle: string): Promise<HandleLookupResult> {
 
 ---
 
-## How It Fits MaskID
+## How It Fits Midnight Cloak
 
-| MaskID Core | $Handle Shield |
+| Midnight Cloak Core | $Handle Shield |
 |-------------|----------------|
 | Prove identity attributes | Prove asset holdings |
 | Hide personal data | Hide portfolio data |
@@ -168,9 +168,9 @@ async function lookupHandle(handle: string): Promise<HandleLookupResult> {
 - Selective disclosure (prove what you need, hide what you don't)
 - Protection from tracking, targeting, and social engineering
 
-### For MaskID
+### For Midnight Cloak
 - Unique differentiator (no competitors doing this)
-- Drives adoption of MaskID wallet
+- Drives adoption of Midnight Cloak wallet
 - Real user pain point with clear solution
 - Potential premium feature for revenue
 
@@ -197,11 +197,11 @@ async function lookupHandle(handle: string): Promise<HandleLookupResult> {
 ### Blockers
 1. **Cardano ↔ Midnight bridge** - Must exist and be stable
 2. **Midnight mainnet/stable testnet** - Currently in flux
-3. **MaskID core SDK** - Must be complete first
+3. **Midnight Cloak core SDK** - Must be complete first
 
 ### Estimated Phase
 ```
-Phase 2: MaskID Core MVP ← current
+Phase 2: Midnight Cloak Core MVP ← current
 Phase 3: Wallet Extension + Credential Management
 Phase 4: $Handle Shield ← this feature
   └── 4.1: Bridge integration research

@@ -2,7 +2,7 @@
  * ProofGenerator - Generate ZK proofs for verification requests
  */
 
-import type { Credential, Proof, PolicyConfig } from '@maskid/core';
+import type { Credential, Proof, PolicyConfig } from '@midnight-cloak/core';
 
 export interface ProofGeneratorConfig {
   proofServerUrl: string;
@@ -27,8 +27,9 @@ export class ProofGenerator {
 
     // In production, this would:
     // 1. Prepare witness data from credential
-    // 2. Send to proof server
+    // 2. Send to proof server at this.proofServerUrl
     // 3. Return generated ZK proof
+    void this.proofServerUrl; // Used in production implementation
 
     return {
       type: 'zk-snark',

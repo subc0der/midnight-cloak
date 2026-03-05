@@ -3,8 +3,8 @@
  */
 
 import { useState, type ReactNode, type ButtonHTMLAttributes } from 'react';
-import type { VerificationResult, VerificationType, PolicyConfig } from '@maskid/core';
-import { useMaskIDContext } from './MaskIDProvider';
+import type { VerificationResult, VerificationType, PolicyConfig } from '@midnight-cloak/core';
+import { useMidnightCloakContext } from './MidnightCloakProvider';
 
 export interface VerifyButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type' | 'onError' | 'onClick'> {
   type: VerificationType;
@@ -32,7 +32,7 @@ export function VerifyButton({
   children,
   ...buttonProps
 }: VerifyButtonProps) {
-  const { client } = useMaskIDContext();
+  const { client } = useMidnightCloakContext();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleClick = async () => {

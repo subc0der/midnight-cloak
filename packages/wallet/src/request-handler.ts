@@ -2,7 +2,7 @@
  * RequestHandler - Handle incoming verification requests
  */
 
-import type { VerificationRequest, Proof } from '@maskid/core';
+import type { VerificationRequest, Proof } from '@midnight-cloak/core';
 
 export interface VerificationResponse {
   approved: boolean;

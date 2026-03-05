@@ -1,5 +1,5 @@
 /**
- * Utility functions for MaskID SDK
+ * Utility functions for Midnight Cloak SDK
  */
 
 /**

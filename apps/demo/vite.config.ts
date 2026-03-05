@@ -7,8 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '@maskid/core': resolve(__dirname, '../../packages/core/src'),
-      '@maskid/react': resolve(__dirname, '../../packages/react/src'),
+      '@midnight-cloak/core': resolve(__dirname, '../../packages/core/src'),
+      '@midnight-cloak/react': resolve(__dirname, '../../packages/react/src'),
     },
   },
   server: {

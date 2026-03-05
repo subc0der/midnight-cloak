@@ -3,8 +3,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { VerificationRequest, VerificationResult } from '@maskid/core';
-import { useMaskIDContext } from '../components/MaskIDProvider';
+import type { VerificationRequest, VerificationResult } from '@midnight-cloak/core';
+import { useMidnightCloakContext } from '../components/MidnightCloakProvider';
 
 type VerificationStatus = 'idle' | 'pending' | 'verified' | 'denied' | 'error';
 
@@ -18,7 +18,7 @@ export interface UseVerificationReturn {
 }
 
 export function useVerification(): UseVerificationReturn {
-  const { client } = useMaskIDContext();
+  const { client } = useMidnightCloakContext();
   const [status, setStatus] = useState<VerificationStatus>('idle');
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [error, setError] = useState<Error | null>(null);

@@ -1,6 +1,6 @@
-# MaskID — Development Guide
+# Midnight Cloak — Development Guide
 
-> **Purpose**: Step-by-step implementation guide for building MaskID  
+> **Purpose**: Step-by-step implementation guide for building Midnight Cloak  
 > **Audience**: Solo developer (you) working with Claude CLI  
 > **Last Updated**: December 2025
 
@@ -31,7 +31,7 @@ node --version  # Should be 18+
 docker --version  # Required for proof server
 
 # 2. Create project structure
-mkdir maskid && cd maskid
+mkdir midnight-cloak && cd midnight-cloak
 npm init -y
 
 # 3. Install Midnight tools
@@ -50,7 +50,7 @@ docker run -d -p 6300:6300 --name midnight-proof midnightnetwork/proof-server
 
 1. Install Lace Wallet (Midnight edition) Chrome extension
 2. Create new wallet or import existing
-3. Switch to Testnet-02
+3. Switch to Preprod
 4. Get tDUST from faucet: https://faucet.midnight.network/
 
 #### Day 5: Verify Setup
@@ -140,14 +140,14 @@ IAMX is partnering with Midnight for identity. Study their approach:
 #### Create Project Structure
 
 ```bash
-# From maskid root
+# From midnight-cloak root
 mkdir -p packages/{contracts,core,react,wallet,wallet-extension}
 mkdir -p apps/{demo,docs}
 
 # Initialize workspaces
 cat > package.json << 'EOF'
 {
-  "name": "maskid",
+  "name": "midnight-cloak",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -252,7 +252,7 @@ npx vitest run
 
 - [ ] Midnight dev environment installed and working
 - [ ] Proof server running locally
-- [ ] Lace wallet configured on testnet
+- [ ] Lace wallet configured on Preprod
 - [ ] Counter tutorial completed
 - [ ] Bulletin board tutorial completed
 - [ ] IAMX research documented
@@ -454,7 +454,7 @@ export type CredentialType = VerificationType;
 import { ClientConfig, VerificationRequest, VerificationResult, Network } from './types';
 import { Verifier } from './verifier';
 
-export class MaskIDClient {
+export class MidnightCloakClient {
   private config: Required<ClientConfig>;
   private verifier: Verifier;
   private eventListeners: Map<string, Set<Function>> = new Map();
@@ -677,11 +677,11 @@ npm install typescript
 ```typescript
 // src/credential-manager.ts
 
-import { Credential, CredentialType } from '@maskid/core';
+import { Credential, CredentialType } from '@midnight-cloak/core';
 
 export class CredentialManager {
   private credentials: Map<string, Credential> = new Map();
-  private storageKey = 'maskid:credentials';
+  private storageKey = 'midnight-cloak:credentials';
 
   constructor() {
     this.loadFromStorage();
@@ -742,7 +742,7 @@ export class CredentialManager {
 ```bash
 cd apps/demo
 npm create vite@latest . -- --template react-ts
-npm install @maskid/core @maskid/react
+npm install @midnight-cloak/core @midnight-cloak/react
 ```
 
 #### Simple Demo (src/App.tsx)
@@ -751,9 +751,9 @@ npm install @maskid/core @maskid/react
 // apps/demo/src/App.tsx
 
 import { useState } from 'react';
-import { MaskIDClient } from '@maskid/core';
+import { MidnightCloakClient } from '@midnight-cloak/core';
 
-const client = new MaskIDClient({
+const client = new MidnightCloakClient({
   network: 'testnet',
   apiKey: 'demo-key'
 });
@@ -786,7 +786,7 @@ function App() {
 
   return (
     <div className="app">
-      <h1>MaskID Demo</h1>
+      <h1>Midnight Cloak Demo</h1>
       
       <div className="status">
         Status: {status}
@@ -826,7 +826,7 @@ export default App;
 
 - [ ] verification-engine.compact contract complete
 - [ ] Contract compiles and generates TypeScript bindings
-- [ ] @maskid/core package with MaskIDClient
+- [ ] @midnight-cloak/core package with MidnightCloakClient
 - [ ] Verifier class with age verification flow
 - [ ] Basic CredentialManager in wallet package
 - [ ] Demo app running on localhost
@@ -853,7 +853,7 @@ cd packages/wallet-extension
 cat > manifest.json << 'EOF'
 {
   "manifest_version": 3,
-  "name": "MaskID Wallet",
+  "name": "Midnight Cloak Wallet",
   "version": "0.1.0",
   "description": "Manage your privacy-preserving credentials",
   "permissions": ["storage", "activeTab"],
@@ -951,13 +951,13 @@ export circuit proveInRange(min: Unsigned, max: Unsigned): Boolean {
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MaskIDClient } from '../src/client';
+import { MidnightCloakClient } from '../src/client';
 
-describe('MaskIDClient', () => {
-  let client: MaskIDClient;
+describe('MidnightCloakClient', () => {
+  let client: MidnightCloakClient;
 
   beforeEach(() => {
-    client = new MaskIDClient({
+    client = new MidnightCloakClient({
       network: 'testnet',
       apiKey: 'test-key'
     });

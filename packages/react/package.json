@@ -1,7 +1,7 @@
 {
-  "name": "@maskid/react",
+  "name": "@midnight-cloak/react",
   "version": "0.1.0",
-  "description": "React components for MaskID identity verification",
+  "description": "React components for Midnight Cloak identity verification",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -18,14 +18,14 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@maskid/core": "workspace:*"
+    "@midnight-cloak/core": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
@@ -42,7 +42,7 @@
     "react-dom": ">=18.0.0"
   },
   "keywords": [
-    "maskid",
+    "midnight-cloak",
     "react",
     "identity",
     "verification",

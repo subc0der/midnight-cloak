@@ -1,5 +1,5 @@
 /**
- * Core type definitions for MaskID SDK
+ * Core type definitions for Midnight Cloak SDK
  */
 
 export type Network = 'testnet' | 'mainnet';

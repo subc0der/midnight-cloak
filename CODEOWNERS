@@ -1,0 +1,25 @@
+# Code Owners for Midnight Cloak
+# These users will be requested for review when someone opens a pull request
+
+# Default owner for everything
+* @subc0der
+
+# Core SDK requires owner review
+/packages/core/ @subc0der
+
+# React components require owner review
+/packages/react/ @subc0der
+
+# Contracts are critical - require owner review
+/packages/contracts/ @subc0der
+
+# Wallet code is security-sensitive
+/packages/wallet/ @subc0der
+/packages/wallet-extension/ @subc0der
+
+# GitHub workflows and security configs
+/.github/ @subc0der
+
+# Documentation
+/docs/ @subc0der
+*.md @subc0der

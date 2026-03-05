@@ -1,5 +1,5 @@
 /**
- * MaskIDClient - Main entry point for the SDK
+ * MidnightCloakClient - Main entry point for the SDK
  */
 
 import type {
@@ -20,7 +20,7 @@ import {
 
 type EventHandler = (...args: unknown[]) => void;
 
-export class MaskIDClient {
+export class MidnightCloakClient {
   private config: Required<ClientConfig>;
   private verifier: Verifier;
   private walletConnector: WalletConnector;
@@ -48,7 +48,7 @@ export class MaskIDClient {
   private getDefaultProofServer(network: Network): string {
     return network === 'testnet'
       ? 'http://localhost:6300'
-      : 'https://proof.maskid.xyz';
+      : 'https://proof.midnight-cloak.xyz';
   }
 
   async verify(request: VerificationRequest): Promise<VerificationResult> {

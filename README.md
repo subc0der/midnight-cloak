@@ -1,8 +1,10 @@
-# MaskID
+# Midnight Cloak
+
+This project extends the Midnight Network with additional developer tooling.
 
 Zero-knowledge identity verification SDK for the Midnight blockchain.
 
-MaskID enables applications to verify user attributes (age, credentials, token holdings) without exposing the underlying personal data. Users prove claims about themselves while maintaining privacy.
+Midnight Cloak enables applications to verify user attributes (age, credentials, token holdings) without exposing the underlying personal data. Users prove claims about themselves while maintaining privacy.
 
 ## Status
 
@@ -10,10 +12,10 @@ MaskID enables applications to verify user attributes (age, credentials, token h
 
 | Component | Status |
 |-----------|--------|
-| @maskid/core | Available (mock mode) |
-| @maskid/react | Available |
-| @maskid/contracts | Placeholder |
-| Testnet deployment | Blocked (awaiting tDUST) |
+| @midnight-cloak/core | Available (mock mode) |
+| @midnight-cloak/react | Available |
+| @midnight-cloak/contracts | Placeholder |
+| Preprod deployment | Blocked (awaiting tDUST) |
 
 ## Features
 
@@ -29,10 +31,10 @@ MaskID enables applications to verify user attributes (age, credentials, token h
 
 ```
 packages/
-  core/           @maskid/core      Core SDK and verification logic
-  react/          @maskid/react     React components and hooks
-  contracts/      @maskid/contracts Contract types (placeholder)
-  wallet/         @maskid/wallet    Wallet utilities (planned)
+  core/           @midnight-cloak/core      Core SDK and verification logic
+  react/          @midnight-cloak/react     React components and hooks
+  contracts/      @midnight-cloak/contracts Contract types (placeholder)
+  wallet/         @midnight-cloak/wallet    Wallet utilities (planned)
 apps/
   demo/           Demo application
 ```
@@ -40,7 +42,7 @@ apps/
 ## Installation
 
 ```bash
-npm install @maskid/core @maskid/react
+npm install @midnight-cloak/core @midnight-cloak/react
 ```
 
 ## Quick Start
@@ -48,9 +50,9 @@ npm install @maskid/core @maskid/react
 ### Basic Age Verification
 
 ```typescript
-import { MaskIDClient } from '@maskid/core';
+import { MidnightCloakClient } from '@midnight-cloak/core';
 
-const client = new MaskIDClient({
+const client = new MidnightCloakClient({
   network: 'testnet',
   apiKey: 'your-api-key'
 });
@@ -72,11 +74,11 @@ if (result.verified) {
 ### React Components
 
 ```tsx
-import { MaskIDProvider, VerifyButton, CredentialGate } from '@maskid/react';
+import { MidnightCloakProvider, VerifyButton, CredentialGate } from '@midnight-cloak/react';
 
 function App() {
   return (
-    <MaskIDProvider apiKey="your-api-key" network="testnet">
+    <MidnightCloakProvider apiKey="your-api-key" network="testnet">
       {/* Simple verification button */}
       <VerifyButton
         type="AGE"
@@ -93,7 +95,7 @@ function App() {
       >
         <RestrictedContent />
       </CredentialGate>
-    </MaskIDProvider>
+    </MidnightCloakProvider>
   );
 }
 ```
@@ -101,7 +103,7 @@ function App() {
 ### Development Mode (No Wallet)
 
 ```typescript
-const client = new MaskIDClient({
+const client = new MidnightCloakClient({
   network: 'testnet',
   apiKey: 'demo-key'
 });
@@ -118,10 +120,10 @@ const result = await client.verify({
 
 ## API Reference
 
-### MaskIDClient
+### MidnightCloakClient
 
 ```typescript
-new MaskIDClient(config: ClientConfig)
+new MidnightCloakClient(config: ClientConfig)
 
 interface ClientConfig {
   network: 'testnet' | 'mainnet';
@@ -147,7 +149,7 @@ interface ClientConfig {
 ### PolicyBuilder
 
 ```typescript
-import { PolicyBuilder } from '@maskid/core';
+import { PolicyBuilder } from '@midnight-cloak/core';
 
 const policy = new PolicyBuilder()
   .requireAge(21)
@@ -158,16 +160,16 @@ const policy = new PolicyBuilder()
 
 ### React Components
 
-**MaskIDProvider** - Context provider for SDK client
+**MidnightCloakProvider** - Context provider for SDK client
 
 ```tsx
-<MaskIDProvider
+<MidnightCloakProvider
   apiKey="key"
   network="testnet"
   onError={(err) => console.error(err)}
 >
   {children}
-</MaskIDProvider>
+</MidnightCloakProvider>
 ```
 
 **VerifyButton** - One-click verification button
@@ -223,8 +225,8 @@ const policy = new PolicyBuilder()
 ### Setup
 
 ```bash
-git clone https://github.com/subc0der/MaskID.git
-cd MaskID
+git clone https://github.com/subc0der/midnight-cloak.git
+cd midnight-cloak
 pnpm install
 ```
 
@@ -235,8 +237,8 @@ pnpm install
 pnpm build
 
 # Build specific package
-pnpm --filter @maskid/core build
-pnpm --filter @maskid/react build
+pnpm --filter @midnight-cloak/core build
+pnpm --filter @midnight-cloak/react build
 ```
 
 ### Test
@@ -246,10 +248,10 @@ pnpm --filter @maskid/react build
 pnpm test
 
 # Run specific package tests
-pnpm --filter @maskid/core test
+pnpm --filter @midnight-cloak/core test
 
 # Watch mode
-pnpm --filter @maskid/core test:watch
+pnpm --filter @midnight-cloak/core test:watch
 ```
 
 ### Demo App
@@ -263,7 +265,7 @@ Opens demo application at `http://localhost:5173`
 ## Project Structure
 
 ```
-maskid/
+midnight-cloak/
   packages/
     core/                 Core SDK
       src/
@@ -276,11 +278,11 @@ maskid/
     react/                React integration
       src/
         components/
-          MaskIDProvider.tsx  Context provider
+          MidnightCloakProvider.tsx  Context provider
           VerifyButton.tsx    Verification button
           CredentialGate.tsx  Content gating
         hooks/
-          useMaskID.ts        Client hook
+          useMidnightCloak.ts        Client hook
     contracts/            Contract interfaces
   apps/
     demo/                 Demo application
@@ -294,7 +296,7 @@ maskid/
 | SDK | TypeScript |
 | React Components | React 18+ |
 | Wallet Integration | CIP-30 (Cardano) |
-| Network | Midnight Testnet / Mainnet |
+| Network | Midnight Preprod / Mainnet |
 
 ## Roadmap
 

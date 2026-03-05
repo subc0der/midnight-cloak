@@ -1,13 +1,13 @@
 /**
- * @maskid/core
+ * @midnight-cloak/core
  *
- * Core SDK for MaskID zero-knowledge identity verification on Midnight.
+ * Core SDK for Midnight Cloak zero-knowledge identity verification on Midnight.
  *
  * @example Basic usage
  * ```typescript
- * import { MaskIDClient } from '@maskid/core';
+ * import { MidnightCloakClient } from '@midnight-cloak/core';
  *
- * const client = new MaskIDClient({ network: 'testnet' });
+ * const client = new MidnightCloakClient({ network: 'testnet' });
  *
  * // Verify user is 18+
  * const result = await client.verify({
@@ -22,9 +22,9 @@
  *
  * @example With wallet connection
  * ```typescript
- * import { MaskIDClient, WalletConnector } from '@maskid/core';
+ * import { MidnightCloakClient, WalletConnector } from '@midnight-cloak/core';
  *
- * const client = new MaskIDClient({ network: 'testnet' });
+ * const client = new MidnightCloakClient({ network: 'testnet' });
  * await client.connectWallet('lace');
  *
  * const result = await client.verify({

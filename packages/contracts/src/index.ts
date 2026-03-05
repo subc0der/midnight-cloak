@@ -1,6 +1,6 @@
 /**
- * @maskid/contracts
- * Contract types and interfaces for MaskID on Midnight
+ * @midnight-cloak/contracts
+ * Contract types and interfaces for Midnight Cloak on Midnight
  *
  * IMPORTANT: This is a placeholder package.
  *

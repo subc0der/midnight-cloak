@@ -1,8 +1,8 @@
-# GitHub Copilot Instructions for MaskID
+# GitHub Copilot Instructions for Midnight Cloak
 
 ## Project Overview
 
-MaskID is a zero-knowledge identity verification SDK for the Midnight blockchain (Cardano's privacy-focused partner chain). It enables users to prove attributes (age, credentials) without revealing underlying personal data.
+Midnight Cloak is a zero-knowledge identity verification SDK for the Midnight blockchain (Cardano's privacy-focused partner chain). It enables users to prove attributes (age, credentials) without revealing underlying personal data.
 
 ## Technology Stack
 
@@ -125,7 +125,7 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 - **useMemo for client instances**: We memoize client instances with primitive dependencies
   ```typescript
   const client = useMemo(
-    () => new MaskIDClient({ network, apiKey }),
+    () => new MidnightCloakClient({ network, apiKey }),
     [apiKey, network] // Primitives only
   );
   ```
@@ -199,15 +199,15 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 - Include policy parameters in session keys to prevent security bypass:
   ```typescript
   // Good: minAge:18 and minAge:21 have different session keys
-  const key = `maskid:session:${type}:minAge:${minAge}`;
+  const key = `midnight-cloak:session:${type}:minAge:${minAge}`;
 
   // Bad: Would allow minAge:18 to satisfy minAge:21
-  const key = `maskid:session:${type}`;
+  const key = `midnight-cloak:session:${type}`;
   ```
 
 ### Provider Pattern
 - Use a single client instance via React context provider
-- All components should use the hook (useMaskID) to access the shared client
+- All components should use the hook (useMidnightCloak) to access the shared client
 - Do NOT create multiple client instances that need to sync state
 
 ## Do NOT Flag
@@ -254,8 +254,8 @@ These patterns are already enforced in our codebase. Do not flag code that follo
 
 ```
 packages/
-├── core/       # @maskid/core - Main SDK
-├── react/      # @maskid/react - React components
+├── core/       # @midnight-cloak/core - Main SDK
+├── react/      # @midnight-cloak/react - React components
 ├── contracts/  # Contract types and interfaces (mock implementation)
 apps/
 ├── demo/       # Demo application
@@ -264,8 +264,8 @@ apps/
 ## Testing
 
 ```bash
-pnpm --filter @maskid/core test   # Run core tests (8 tests)
-pnpm --filter @maskid/core build  # Build core package
+pnpm --filter @midnight-cloak/core test   # Run core tests (8 tests)
+pnpm --filter @midnight-cloak/core build  # Build core package
 ```
 
 All tests should pass before merge.

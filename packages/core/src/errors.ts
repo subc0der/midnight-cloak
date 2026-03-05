@@ -1,7 +1,7 @@
 /**
- * Custom error classes for MaskID SDK
+ * Custom error classes for Midnight Cloak SDK
  *
- * All SDK errors extend MaskIDError and include an error code
+ * All SDK errors extend MidnightCloakError and include an error code
  * for programmatic error handling.
  *
  * @example
@@ -9,7 +9,7 @@
  * try {
  *   await client.verify({ type: 'AGE', policy: { minAge: 18 } });
  * } catch (error) {
- *   if (isMaskIDError(error)) {
+ *   if (isMidnightCloakError(error)) {
  *     console.log(`Error ${error.code}: ${error.message}`);
  *   }
  * }
@@ -35,20 +35,20 @@ export const ErrorCodes = {
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
 
-export class MaskIDError extends Error {
+export class MidnightCloakError extends Error {
   public readonly code: string;
   public readonly details?: unknown;
 
   constructor(code: string, message: string, details?: unknown) {
     super(message);
-    this.name = 'MaskIDError';
+    this.name = 'MidnightCloakError';
     this.code = code;
     this.details = details;
   }
 }
 
 /** Thrown when user denies a verification request in their wallet */
-export class VerificationDeniedError extends MaskIDError {
+export class VerificationDeniedError extends MidnightCloakError {
   constructor(message = 'User denied verification request') {
     super(ErrorCodes.VERIFICATION_DENIED, message);
     this.name = 'VerificationDeniedError';
@@ -56,7 +56,7 @@ export class VerificationDeniedError extends MaskIDError {
 }
 
 /** Thrown when a verification request times out */
-export class VerificationTimeoutError extends MaskIDError {
+export class VerificationTimeoutError extends MidnightCloakError {
   constructor(message = 'Verification request timed out') {
     super(ErrorCodes.VERIFICATION_TIMEOUT, message);
     this.name = 'VerificationTimeoutError';
@@ -64,7 +64,7 @@ export class VerificationTimeoutError extends MaskIDError {
 }
 
 /** Thrown when attempting operations that require a connected wallet */
-export class WalletNotConnectedError extends MaskIDError {
+export class WalletNotConnectedError extends MidnightCloakError {
   constructor(message = 'No wallet connected') {
     super(ErrorCodes.WALLET_NOT_CONNECTED, message);
     this.name = 'WalletNotConnectedError';
@@ -72,7 +72,7 @@ export class WalletNotConnectedError extends MaskIDError {
 }
 
 /** Thrown when a network operation fails */
-export class NetworkError extends MaskIDError {
+export class NetworkError extends MidnightCloakError {
   constructor(message = 'Network error occurred', details?: unknown) {
     super(ErrorCodes.NETWORK_ERROR, message, details);
     this.name = 'NetworkError';
@@ -80,7 +80,7 @@ export class NetworkError extends MaskIDError {
 }
 
 /** Thrown when a policy configuration is invalid */
-export class InvalidPolicyError extends MaskIDError {
+export class InvalidPolicyError extends MidnightCloakError {
   constructor(message = 'Invalid policy configuration', details?: unknown) {
     super(ErrorCodes.INVALID_POLICY, message, details);
     this.name = 'InvalidPolicyError';
@@ -88,7 +88,7 @@ export class InvalidPolicyError extends MaskIDError {
 }
 
 /** Thrown when a required credential is not found in the user's wallet */
-export class CredentialNotFoundError extends MaskIDError {
+export class CredentialNotFoundError extends MidnightCloakError {
   constructor(message = 'Required credential not found') {
     super(ErrorCodes.CREDENTIAL_NOT_FOUND, message);
     this.name = 'CredentialNotFoundError';
@@ -96,7 +96,7 @@ export class CredentialNotFoundError extends MaskIDError {
 }
 
 /** Thrown when ZK proof generation fails */
-export class ProofGenerationError extends MaskIDError {
+export class ProofGenerationError extends MidnightCloakError {
   constructor(message = 'Failed to generate proof', details?: unknown) {
     super(ErrorCodes.PROOF_GENERATION_FAILED, message, details);
     this.name = 'ProofGenerationError';
@@ -104,7 +104,7 @@ export class ProofGenerationError extends MaskIDError {
 }
 
 /** Thrown when a smart contract operation fails */
-export class ContractError extends MaskIDError {
+export class ContractError extends MidnightCloakError {
   constructor(message = 'Smart contract error', details?: unknown) {
     super(ErrorCodes.CONTRACT_ERROR, message, details);
     this.name = 'ContractError';
@@ -112,7 +112,7 @@ export class ContractError extends MaskIDError {
 }
 
 /** Thrown when an unsupported verification type is requested */
-export class UnsupportedVerificationTypeError extends MaskIDError {
+export class UnsupportedVerificationTypeError extends MidnightCloakError {
   constructor(type: string) {
     super(ErrorCodes.UNSUPPORTED_VERIFICATION_TYPE, `Verification type '${type}' is not yet implemented`);
     this.name = 'UnsupportedVerificationTypeError';
@@ -120,7 +120,7 @@ export class UnsupportedVerificationTypeError extends MaskIDError {
 }
 
 /** Thrown when a wallet operation fails */
-export class WalletError extends MaskIDError {
+export class WalletError extends MidnightCloakError {
   constructor(message = 'Wallet operation failed', details?: unknown) {
     super(ErrorCodes.WALLET_ERROR, message, details);
     this.name = 'WalletError';
@@ -128,23 +128,23 @@ export class WalletError extends MaskIDError {
 }
 
 /**
- * Type guard to check if an error is a MaskIDError
+ * Type guard to check if an error is a MidnightCloakError
  *
  * @param error - The error to check
- * @returns true if the error is a MaskIDError instance
+ * @returns true if the error is a MidnightCloakError instance
  *
  * @example
  * ```typescript
  * catch (error) {
- *   if (isMaskIDError(error)) {
- *     // TypeScript knows error is MaskIDError here
+ *   if (isMidnightCloakError(error)) {
+ *     // TypeScript knows error is MidnightCloakError here
  *     handleError(error.code, error.message);
  *   }
  * }
  * ```
  */
-export function isMaskIDError(error: unknown): error is MaskIDError {
-  return error instanceof MaskIDError;
+export function isMidnightCloakError(error: unknown): error is MidnightCloakError {
+  return error instanceof MidnightCloakError;
 }
 
 /**
@@ -152,8 +152,8 @@ export function isMaskIDError(error: unknown): error is MaskIDError {
  *
  * @param error - The error to check
  * @param code - The error code to match
- * @returns true if the error is a MaskIDError with the specified code
+ * @returns true if the error is a MidnightCloakError with the specified code
  */
 export function hasErrorCode(error: unknown, code: ErrorCode): boolean {
-  return isMaskIDError(error) && error.code === code;
+  return isMidnightCloakError(error) && error.code === code;
 }

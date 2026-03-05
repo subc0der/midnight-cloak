@@ -1,4 +1,4 @@
-# MaskID SDK — API Specification
+# Midnight Cloak SDK — API Specification
 
 > **Version**: 1.0.0-alpha  
 > **Last Updated**: December 2025  
@@ -10,9 +10,9 @@
 
 1. [Installation](#installation)
 2. [Quick Start](#quick-start)
-3. [Core Package (`@privatelogin/core`)](#core-package)
-4. [React Package (`@privatelogin/react`)](#react-package)
-5. [Wallet Package (`@privatelogin/wallet`)](#wallet-package)
+3. [Core Package (`@midnight-cloak/core`)](#core-package)
+4. [React Package (`@midnight-cloak/react`)](#react-package)
+5. [Wallet Package (`@midnight-cloak/wallet`)](#wallet-package)
 6. [Verification Types](#verification-types)
 7. [Policy Builder](#policy-builder)
 8. [Error Handling](#error-handling)
@@ -25,13 +25,13 @@
 
 ```bash
 # Core SDK (required)
-npm install @maskid/core
+npm install @midnight-cloak/core
 
 # React components (optional, for React apps)
-npm install @maskid/react
+npm install @midnight-cloak/react
 
 # Wallet utilities (optional, for wallet development)
-npm install @maskid/wallet
+npm install @midnight-cloak/wallet
 ```
 
 ### Peer Dependencies
@@ -47,10 +47,10 @@ npm install @midnight-ntwrk/midnight-js  # Midnight.js SDK
 ### Basic Age Verification
 
 ```typescript
-import { MaskIDClient } from '@maskid/core';
+import { MidnightCloakClient } from '@midnight-cloak/core';
 
 // Initialize client
-const client = new MaskIDClient({
+const client = new MidnightCloakClient({
   network: 'testnet',  // 'testnet' | 'mainnet'
   apiKey: 'your-api-key'
 });
@@ -78,11 +78,11 @@ async function checkAge() {
 ### React Integration
 
 ```tsx
-import { MaskIDProvider, VerifyButton } from '@maskid/react';
+import { MidnightCloakProvider, VerifyButton } from '@midnight-cloak/react';
 
 function App() {
   return (
-    <MaskIDProvider apiKey="your-api-key" network="testnet">
+    <MidnightCloakProvider apiKey="your-api-key" network="testnet">
       <VerifyButton
         type="AGE"
         minAge={18}
@@ -91,7 +91,7 @@ function App() {
       >
         Verify Age to Continue
       </VerifyButton>
-    </MaskIDProvider>
+    </MidnightCloakProvider>
   );
 }
 ```
@@ -100,14 +100,14 @@ function App() {
 
 ## Core Package
 
-### `MaskIDClient`
+### `MidnightCloakClient`
 
 Main entry point for the SDK.
 
 #### Constructor
 
 ```typescript
-new MaskIDClient(config: ClientConfig)
+new MidnightCloakClient(config: ClientConfig)
 ```
 
 **ClientConfig**
@@ -115,11 +115,11 @@ new MaskIDClient(config: ClientConfig)
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
 | `network` | `'testnet' \| 'mainnet'` | Yes | Midnight network to use |
-| `apiKey` | `string` | Yes | Your MaskID API key |
+| `apiKey` | `string` | Yes | Your Midnight Cloak API key |
 | `proofServerUrl` | `string` | No | Custom proof server URL |
 | `timeout` | `number` | No | Request timeout in ms (default: 30000) |
 
-> **Note**: Use `MaskIDClient` as the main entry point for all SDK operations.
+> **Note**: Use `MidnightCloakClient` as the main entry point for all SDK operations.
 
 #### Methods
 
@@ -198,7 +198,7 @@ client.disconnect();
 Lower-level verification API for custom flows.
 
 ```typescript
-import { Verifier } from '@privatelogin/core';
+import { Verifier } from '@midnight-cloak/core';
 
 const verifier = new Verifier(client);
 
@@ -216,18 +216,18 @@ const result = await verifier.waitForResult(request.id);
 
 ## React Package
 
-### `<MaskIDProvider>`
+### `<MidnightCloakProvider>`
 
 Context provider for React integration.
 
 ```tsx
-<MaskIDProvider
+<MidnightCloakProvider
   apiKey="your-api-key"
   network="testnet"
   onError={(error) => console.error(error)}
 >
   {children}
-</MaskIDProvider>
+</MidnightCloakProvider>
 ```
 
 **Props**
@@ -339,12 +339,12 @@ const handleVerify = async () => {
 | `isLoading` | `boolean` | Is verification in progress |
 | `reset` | `() => void` | Reset to initial state |
 
-#### `useMaskID()`
+#### `useMidnightCloak()`
 
 Access the client instance.
 
 ```tsx
-const client = useMaskID();
+const client = useMidnightCloak();
 
 // Access client methods directly
 await client.verify({ ... });
@@ -354,14 +354,14 @@ await client.verify({ ... });
 
 ## Wallet Package
 
-For wallet developers integrating MaskID credential support.
+For wallet developers integrating Midnight Cloak credential support.
 
 ### `CredentialManager`
 
 Manage user credentials.
 
 ```typescript
-import { CredentialManager } from '@maskid/wallet';
+import { CredentialManager } from '@midnight-cloak/wallet';
 
 const manager = new CredentialManager({
   storage: 'local',  // 'local' | 'session' | custom StorageAdapter
@@ -386,7 +386,7 @@ await manager.delete(credentialId);
 Generate ZK proofs for verification requests.
 
 ```typescript
-import { ProofGenerator } from '@maskid/wallet';
+import { ProofGenerator } from '@midnight-cloak/wallet';
 
 const generator = new ProofGenerator({
   proofServerUrl: 'http://localhost:6300'
@@ -404,7 +404,7 @@ const proof = await generator.generate({
 Handle incoming verification requests.
 
 ```typescript
-import { RequestHandler } from '@maskid/wallet';
+import { RequestHandler } from '@midnight-cloak/wallet';
 
 const handler = new RequestHandler();
 
@@ -487,7 +487,7 @@ Prove residency without revealing address.
 Build complex verification policies with multiple conditions.
 
 ```typescript
-import { PolicyBuilder } from '@maskid/core';
+import { PolicyBuilder } from '@midnight-cloak/core';
 
 // Simple AND policy
 const policy = new PolicyBuilder()
@@ -539,13 +539,13 @@ const result = await client.verify({ customPolicy: policy });
 
 ```typescript
 import {
-  MaskIDError,
+  MidnightCloakError,
   VerificationDeniedError,
   VerificationTimeoutError,
   WalletNotConnectedError,
   NetworkError,
   InvalidPolicyError
-} from '@maskid/core';
+} from '@midnight-cloak/core';
 
 try {
   await client.verify({ ... });
@@ -726,4 +726,4 @@ interface ClientConfig {
 
 ---
 
-*For questions or support, contact: support@maskid.xyz*
+*For questions or support, contact: support@midnight-cloak.xyz*

@@ -1,15 +1,15 @@
-# CLAUDE.md - MaskID Project Context
+# CLAUDE.md - Midnight Cloak Project Context
 
-> **Purpose**: This file provides context for Claude CLI sessions when developing the MaskID project. Place this file in your project root.
+> **Purpose**: This file provides context for Claude CLI sessions when developing the Midnight Cloak project. Place this file in your project root.
 
 ---
 
 ## Project Overview
 
-**MaskID** is a zero-knowledge identity verification infrastructure for Midnight (Cardano's privacy-focused partner chain). It enables users to prove attributes (age, token holdings, residency) without revealing underlying personal data.
+**Midnight Cloak** is a zero-knowledge identity verification infrastructure for Midnight (Cardano's privacy-focused partner chain). It enables users to prove attributes (age, token holdings, residency) without revealing underlying personal data.
 
 ### Core Products
-1. **Developer SDK** (`@maskid/*`) — TypeScript SDK for dApp developers to integrate identity verification
+1. **Developer SDK** (`@midnight-cloak/*`) — TypeScript SDK for dApp developers to integrate identity verification
 2. **Credential Wallet** — Consumer-facing Chrome extension/web app for managing verifiable credentials
 
 ### Value Proposition
@@ -28,7 +28,7 @@
 | Wallet | **React + Vite**, Chrome Extension APIs |
 | Wallet Integration | Lace, NuFi, Vespr via DApp Connector API v2.0 |
 | Proof Server | Midnight Docker images |
-| Network | Midnight Testnet-02 → Mainnet |
+| Network | Midnight Preprod → Mainnet |
 | Tokens | DUST (tx fees), NIGHT (governance) |
 
 ---
@@ -36,7 +36,7 @@
 ## Project Structure
 
 ```
-maskid/
+midnight-cloak/
 ├── packages/
 │   ├── contracts/           # Compact smart contracts
 │   │   ├── src/
@@ -45,14 +45,14 @@ maskid/
 │   │   │   ├── policy-evaluator.compact
 │   │   │   └── issuer-registry.compact
 │   │   └── tests/
-│   ├── core/                # @privatelogin/core
+│   ├── core/                # @midnight-cloak/core
 │   │   ├── src/
 │   │   │   ├── client.ts
 │   │   │   ├── verifier.ts
 │   │   │   ├── policy-builder.ts
 │   │   │   └── types.ts
 │   │   └── tests/
-│   ├── react/               # @privatelogin/react
+│   ├── react/               # @midnight-cloak/react
 │   │   ├── src/
 │   │   │   ├── components/
 │   │   │   │   ├── VerifyButton.tsx
@@ -60,7 +60,7 @@ maskid/
 │   │   │   └── hooks/
 │   │   │       └── useVerification.ts
 │   │   └── tests/
-│   ├── wallet/              # @privatelogin/wallet
+│   ├── wallet/              # @midnight-cloak/wallet
 │   │   └── src/
 │   └── wallet-extension/    # Chrome extension
 │       ├── src/
@@ -90,7 +90,7 @@ docker-compose up -d                 # Start Midnight proof server
 cd packages/contracts
 npx compactc src/credential-registry.compact  # Compile contract
 npm run test                         # Run contract tests
-npm run deploy:testnet               # Deploy to Testnet-02
+npm run deploy:preprod               # Deploy to Preprod
 
 # SDK Development
 cd packages/core
@@ -152,9 +152,9 @@ The `.compact` files in this repo are reference implementations based on Midnigh
 
 ```typescript
 // Initialize client
-import { MaskIDClient } from '@maskid/core';
+import { MidnightCloakClient } from '@midnight-cloak/core';
 
-const client = new MaskIDClient({
+const client = new MidnightCloakClient({
   network: 'testnet',
   apiKey: 'your-api-key'  // For metered billing
 });
@@ -170,7 +170,7 @@ if (result.verified) {
 }
 
 // Complex policy with PolicyBuilder
-import { PolicyBuilder } from '@maskid/core';
+import { PolicyBuilder } from '@midnight-cloak/core';
 
 const policy = new PolicyBuilder()
   .requireAge(21)
@@ -181,7 +181,7 @@ const policy = new PolicyBuilder()
 const result = await client.verify({ policy });
 
 // React component usage
-import { VerifyButton, CredentialGate } from '@maskid/react';
+import { VerifyButton, CredentialGate } from '@midnight-cloak/react';
 
 // Simple button
 <VerifyButton 
@@ -235,8 +235,8 @@ type CredentialType =
 - [x] Design credential schema for age verification
 - [x] Build Compact contracts (age-verifier, credential-registry)
 - [x] ZK circuit compilation via WSL Compact CLI
-- [x] Create TypeScript SDK (@maskid/core)
-- [x] Build React components (@maskid/react)
+- [x] Create TypeScript SDK (@midnight-cloak/core)
+- [x] Build React components (@midnight-cloak/react)
 - [x] Create demo dApp with mock wallet flow
 - [ ] Deploy contracts to testnet (blocked: waiting for tDUST/Preview network)
 - [ ] End-to-end verification with real wallet
@@ -391,7 +391,7 @@ npm run build:all  # Rebuild SDK with new addresses
 MIDNIGHT_NETWORK=testnet
 MIDNIGHT_API_KEY=your-api-key
 PROOF_SERVER_URL=http://localhost:6300
-MASKID_API_KEY=dev-key
+MIDNIGHT_CLOAK_API_KEY=dev-key
 
 # For wallet extension
 REACT_APP_MIDNIGHT_NETWORK=testnet
@@ -435,7 +435,7 @@ When I ask for help with this project:
 
 6. **Testing**: Every feature needs tests. Help me write them alongside implementation
 
-7. **Branding**: The project is called **MaskID**, packages use `@maskid/*` namespace
+7. **Branding**: The project is called **Midnight Cloak**, packages use `@midnight-cloak/*` namespace
 
 ---
 

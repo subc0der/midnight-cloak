@@ -1,7 +1,7 @@
 {
-  "name": "@maskid/contracts",
+  "name": "@midnight-cloak/contracts",
   "version": "0.1.0",
-  "description": "Contract types and interfaces for MaskID on Midnight (mock implementation)",
+  "description": "Contract types and interfaces for Midnight Cloak on Midnight (mock implementation)",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
@@ -30,7 +30,7 @@
     "vitest": "^2.1.8"
   },
   "keywords": [
-    "maskid",
+    "midnight-cloak",
     "midnight",
     "contracts",
     "zero-knowledge"
