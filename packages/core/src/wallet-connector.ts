@@ -1,9 +1,13 @@
 /**
  * WalletConnector - Interface for connecting to Midnight wallets (Lace, NuFi, etc.)
- * Implements CIP-30 compatible DApp Connector API for Midnight
+ *
+ * Midnight uses a DApp Connector API similar to CIP-30 but with extensions
+ * for privacy-preserving operations and ZK proof signing.
+ *
+ * Primary wallet: Lace Midnight (Chrome extension)
  */
 
-import type { WalletType } from './types';
+import type { WalletType, Network } from './types';
 
 export interface WalletInfo {
   name: string;
@@ -13,8 +17,10 @@ export interface WalletInfo {
 }
 
 export interface ConnectedWallet {
-  getNetworkId(): Promise<number>;
+  getNetworkId(): Promise<string>;
   getAddress(): Promise<string>;
+  getShieldedAddress?(): Promise<string>;
+  getDustAddress?(): Promise<string>;
   signData(address: string, payload: string): Promise<string>;
   submitTx(tx: string): Promise<string>;
 }
@@ -27,16 +33,19 @@ export interface WalletConnectorConfig {
   onError?: (error: Error) => void;
 }
 
-// Midnight network IDs
+/**
+ * Midnight network identifiers
+ * These are string-based unlike Cardano's numeric network IDs
+ */
 export const NETWORK_IDS = {
-  mainnet: 1,
-  testnet: 0,
+  mainnet: 'mainnet',
+  preprod: 'preprod',
+  standalone: 'undeployed',
 } as const;
 
-// Wallet identifiers in window.cardano
+// Wallet identifiers in window.cardano (Midnight uses same extension point)
 const WALLET_KEYS: Record<WalletType, string> = {
   lace: 'lace',
-  nami: 'nami',
   nufi: 'nufi',
   vespr: 'vespr',
 } as const;
@@ -184,24 +193,28 @@ export class WalletConnector {
   }
 
   /**
-   * Get the current network (testnet/mainnet)
+   * Get the current network
    */
-  async getNetwork(): Promise<'testnet' | 'mainnet'> {
+  async getNetwork(): Promise<Network> {
     if (!this.connectedWallet) {
       throw new Error('Wallet not connected');
     }
 
     const networkId = await this.connectedWallet.getNetworkId();
-    return networkId === NETWORK_IDS.mainnet ? 'mainnet' : 'testnet';
+    if (networkId === NETWORK_IDS.mainnet) return 'mainnet';
+    if (networkId === NETWORK_IDS.standalone) return 'standalone';
+    return 'preprod';
   }
 
   private wrapWalletApi(api: CIP30WalletAPI): ConnectedWallet {
     return {
       getNetworkId: async () => {
         if (api.getNetworkId) {
-          return api.getNetworkId();
+          const id = await api.getNetworkId();
+          // Convert numeric ID to string network ID for Midnight
+          return id === 1 ? NETWORK_IDS.mainnet : NETWORK_IDS.preprod;
         }
-        return NETWORK_IDS.testnet; // Default to testnet
+        return NETWORK_IDS.preprod; // Default to preprod
       },
 
       getAddress: async (): Promise<string> => {
@@ -240,15 +253,19 @@ export class WalletConnector {
  * Create a mock wallet for development/testing
  */
 export function createMockWallet(options: {
-  network?: 'testnet' | 'mainnet';
+  network?: Network;
   address?: string;
   autoApprove?: boolean;
 } = {}): ConnectedWallet {
-  const network = options.network || 'testnet';
-  const address = options.address || 'addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjqp';
+  const network = options.network || 'preprod';
+  // Use Midnight-style address format for mock
+  const address = options.address || 'mn_addr_preprod1mock_address_for_development_testing_only';
+  const networkId = network === 'mainnet' ? NETWORK_IDS.mainnet :
+                    network === 'standalone' ? NETWORK_IDS.standalone :
+                    NETWORK_IDS.preprod;
 
   return {
-    getNetworkId: async () => NETWORK_IDS[network],
+    getNetworkId: async () => networkId,
     getAddress: async () => address,
     signData: async (_address: string, payload: string) => {
       // Simulate signing delay

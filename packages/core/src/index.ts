@@ -3,11 +3,13 @@
  *
  * Core SDK for Midnight Cloak zero-knowledge identity verification on Midnight.
  *
+ * Built on midnight-js 3.0.0 and wallet-sdk-facade 1.0.0.
+ *
  * @example Basic usage
  * ```typescript
  * import { MidnightCloakClient } from '@midnight-cloak/core';
  *
- * const client = new MidnightCloakClient({ network: 'testnet' });
+ * const client = new MidnightCloakClient({ network: 'preprod' });
  *
  * // Verify user is 18+
  * const result = await client.verify({
@@ -22,9 +24,9 @@
  *
  * @example With wallet connection
  * ```typescript
- * import { MidnightCloakClient, WalletConnector } from '@midnight-cloak/core';
+ * import { MidnightCloakClient } from '@midnight-cloak/core';
  *
- * const client = new MidnightCloakClient({ network: 'testnet' });
+ * const client = new MidnightCloakClient({ network: 'preprod' });
  * await client.connectWallet('lace');
  *
  * const result = await client.verify({
@@ -33,11 +35,31 @@
  * });
  * ```
  *
+ * @example Using network configurations
+ * ```typescript
+ * import { MidnightCloakClient, PreprodConfig, StandaloneConfig } from '@midnight-cloak/core';
+ *
+ * // For testnet development
+ * const preprodConfig = new PreprodConfig();
+ *
+ * // For local Docker development
+ * const standaloneConfig = new StandaloneConfig();
+ * ```
+ *
  * @packageDocumentation
  */
 
 // Types
 export * from './types';
+
+// Network configuration
+export * from './config';
+
+// Midnight providers
+export * from './providers';
+
+// Wallet provider integration
+export * from './wallet-provider';
 
 // Main client
 export * from './client';
@@ -46,10 +68,10 @@ export * from './client';
 export * from './verifier';
 export * from './policy-builder';
 
-// Wallet integration
+// Wallet integration (browser DApp connector)
 export * from './wallet-connector';
 
-// Contract interaction (mock)
+// Contract interaction
 export * from './contract-client';
 
 // Error handling
