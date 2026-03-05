@@ -1,17 +1,17 @@
 /**
- * MaskIDProvider - Context provider for React integration
+ * MidnightCloakProvider - Context provider for React integration
  */
 
 import { createContext, useContext, useMemo, useEffect, type ReactNode } from 'react';
-import { MaskIDClient, type Network, type WalletType } from '@maskid/core';
+import { MidnightCloakClient, type Network, type WalletType } from '@midnight-cloak/core';
 
-interface MaskIDContextValue {
-  client: MaskIDClient;
+interface MidnightCloakContextValue {
+  client: MidnightCloakClient;
 }
 
-const MaskIDContext = createContext<MaskIDContextValue | null>(null);
+const MidnightCloakContext = createContext<MidnightCloakContextValue | null>(null);
 
-export interface MaskIDProviderProps {
+export interface MidnightCloakProviderProps {
   apiKey: string;
   network: Network;
   proofServerUrl?: string;
@@ -20,17 +20,17 @@ export interface MaskIDProviderProps {
   children: ReactNode;
 }
 
-export function MaskIDProvider({
+export function MidnightCloakProvider({
   apiKey,
   network,
   proofServerUrl,
   preferredWallet,
   onError,
   children,
-}: MaskIDProviderProps) {
+}: MidnightCloakProviderProps) {
   const client = useMemo(
     () =>
-      new MaskIDClient({
+      new MidnightCloakClient({
         network,
         apiKey,
         proofServerUrl,
@@ -64,13 +64,13 @@ export function MaskIDProvider({
 
   const value = useMemo(() => ({ client }), [client]);
 
-  return <MaskIDContext.Provider value={value}>{children}</MaskIDContext.Provider>;
+  return <MidnightCloakContext.Provider value={value}>{children}</MidnightCloakContext.Provider>;
 }
 
-export function useMaskIDContext(): MaskIDContextValue {
-  const context = useContext(MaskIDContext);
+export function useMidnightCloakContext(): MidnightCloakContextValue {
+  const context = useContext(MidnightCloakContext);
   if (!context) {
-    throw new Error('useMaskIDContext must be used within a MaskIDProvider');
+    throw new Error('useMidnightCloakContext must be used within a MidnightCloakProvider');
   }
   return context;
 }

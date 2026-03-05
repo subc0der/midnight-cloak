@@ -1,10 +1,10 @@
 /**
- * @maskid/react
- * React components for MaskID identity verification
+ * @midnight-cloak/react
+ * React components for Midnight Cloak identity verification
  */
 
 export * from './components/VerifyButton';
 export * from './components/CredentialGate';
-export * from './components/MaskIDProvider';
+export * from './components/MidnightCloakProvider';
 export * from './hooks/useVerification';
-export * from './hooks/useMaskID';
+export * from './hooks/useMidnightCloak';

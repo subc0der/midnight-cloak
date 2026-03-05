@@ -2,7 +2,7 @@
  * CredentialManager - Manage user credentials
  */
 
-import type { Credential, CredentialType } from '@maskid/core';
+import type { Credential, CredentialType } from '@midnight-cloak/core';
 
 export interface CredentialManagerConfig {
   storage?: 'local' | 'session';
@@ -11,7 +11,7 @@ export interface CredentialManagerConfig {
 
 export class CredentialManager {
   private credentials: Map<string, Credential> = new Map();
-  private storageKey = 'maskid:credentials';
+  private storageKey = 'midnight-cloak:credentials';
   private storage: Storage;
 
   constructor(config: CredentialManagerConfig = {}) {

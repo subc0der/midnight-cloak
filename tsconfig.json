@@ -29,10 +29,10 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@maskid/core": ["packages/core/src"],
-      "@maskid/react": ["packages/react/src"],
-      "@maskid/wallet": ["packages/wallet/src"],
-      "@maskid/contracts": ["packages/contracts/src"]
+      "@midnight-cloak/core": ["packages/core/src"],
+      "@midnight-cloak/react": ["packages/react/src"],
+      "@midnight-cloak/wallet": ["packages/wallet/src"],
+      "@midnight-cloak/contracts": ["packages/contracts/src"]
     }
   },
   "exclude": ["node_modules", "dist", "build", "coverage"]

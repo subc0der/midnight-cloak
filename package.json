@@ -1,5 +1,5 @@
 {
-  "name": "maskid",
+  "name": "midnight-cloak",
   "version": "0.1.0",
   "private": true,
   "description": "Zero-knowledge identity verification infrastructure for Midnight",
@@ -21,11 +21,12 @@
   },
   "packageManager": "pnpm@9.15.0",
   "scripts": {
+    "demo": "tsx scripts/sdk-demo.ts",
     "build": "pnpm -r build",
-    "build:contracts": "pnpm --filter @maskid/contracts build",
-    "build:core": "pnpm --filter @maskid/core build",
-    "build:react": "pnpm --filter @maskid/react build",
-    "build:wallet": "pnpm --filter @maskid/wallet build",
+    "build:contracts": "pnpm --filter @midnight-cloak/contracts build",
+    "build:core": "pnpm --filter @midnight-cloak/core build",
+    "build:react": "pnpm --filter @midnight-cloak/react build",
+    "build:wallet": "pnpm --filter @midnight-cloak/wallet build",
     "dev": "pnpm --filter demo dev",
     "test": "pnpm -r test",
     "test:watch": "pnpm -r test:watch",
@@ -47,6 +48,7 @@
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
     "prettier": "^3.4.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }

@@ -1,6 +1,6 @@
 /**
- * @maskid/wallet
- * Wallet utilities for MaskID credential management
+ * @midnight-cloak/wallet
+ * Wallet utilities for Midnight Cloak credential management
  */
 
 export * from './credential-manager';

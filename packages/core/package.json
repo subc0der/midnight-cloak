@@ -1,7 +1,7 @@
 {
-  "name": "@maskid/core",
+  "name": "@midnight-cloak/core",
   "version": "0.1.0",
-  "description": "Core SDK for MaskID zero-knowledge identity verification",
+  "description": "Core SDK for Midnight Cloak zero-knowledge identity verification",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -31,7 +31,7 @@
   },
   "peerDependencies": {},
   "keywords": [
-    "maskid",
+    "midnight-cloak",
     "identity",
     "zero-knowledge",
     "midnight",

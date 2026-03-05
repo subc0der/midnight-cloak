@@ -1,4 +1,4 @@
-# MaskAuth - Future Feature Idea
+# CloakAuth - Future Feature Idea
 
 > **Status**: Parked for later development
 > **Created**: December 2025
@@ -12,7 +12,7 @@ A ZK-enhanced TOTP authenticator app that improves on Google Authenticator with 
 
 ## Differentiators
 
-| Feature | Google Authenticator | MaskAuth |
+| Feature | Google Authenticator | CloakAuth |
 |---------|---------------------|----------|
 | Time step | Fixed 30s | **10-30s configurable slider** |
 | Digits | Fixed 6 | 6-8 configurable |
@@ -50,13 +50,13 @@ Standard TOTP supports these configurable values (ignored by Google Auth):
 
 ## Architecture Options
 
-### Option A: Feature in MaskID Wallet
+### Option A: Feature in Midnight Cloak Wallet
 - Add as a tab/section in the credential wallet
 - Shared encryption and backup infrastructure
 - Lower development overhead
 - Natural cross-promotion
 
-### Option B: Standalone MaskAuth App
+### Option B: Standalone CloakAuth App
 - Separate branding and marketing
 - Different audience (broader than Web3)
 - Can iterate independently
@@ -68,7 +68,7 @@ Standard TOTP supports these configurable values (ignored by Google Auth):
 
 - **Free tier**: Basic TOTP, 10 accounts
 - **Premium** ($2-4/mo): Unlimited accounts, cloud backup, folders
-- **Web3 features**: Free (drives MaskID adoption)
+- **Web3 features**: Free (drives Midnight Cloak adoption)
 
 ## Security Considerations
 
@@ -109,4 +109,4 @@ function generateTOTP(config: TOTPConfig, timestamp?: number): string {
 
 ---
 
-*This document will be revisited after MaskID SDK MVP is complete.*
+*This document will be revisited after Midnight Cloak SDK MVP is complete.*

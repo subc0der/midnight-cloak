@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import {
-  MaskIDProvider,
+  MidnightCloakProvider,
   VerifyButton,
   CredentialGate,
-  useMaskID,
+  useMidnightCloak,
   type CredentialGateRenderProps,
-} from '@maskid/react';
+} from '@midnight-cloak/react';
 
 type WalletStatus = 'disconnected' | 'connecting' | 'connected';
 
@@ -20,7 +20,7 @@ function WalletConnection({
   status: WalletStatus;
   setStatus: (status: WalletStatus) => void;
 }) {
-  const client = useMaskID();
+  const client = useMidnightCloak();
   const [error, setError] = useState<string | null>(null);
   const [useMock, setUseMock] = useState(false);
 
@@ -38,7 +38,9 @@ function WalletConnection({
   };
 
   const handleUseMockWallet = () => {
+    console.log('[MidnightCloak] Setting up mock wallet...');
     client.useMockWallet({ network: 'testnet' });
+    console.log('[MidnightCloak] Mock wallet ready');
     setUseMock(true);
     setStatus('connected');
   };
@@ -102,12 +104,17 @@ function AgeVerificationCard() {
         <VerifyButton
           type="AGE"
           minAge={18}
-          onVerified={() => setStatus('verified')}
+          onVerified={(result) => {
+            console.log('[MidnightCloak] Verification SUCCESS:', result);
+            setStatus('verified');
+          }}
           onDenied={() => {
+            console.log('[MidnightCloak] Verification DENIED');
             setStatus('denied');
             setError('Verification denied');
           }}
           onVerificationError={(err) => {
+            console.log('[MidnightCloak] Verification ERROR:', err);
             setStatus('denied');
             setError(err.message);
           }}
@@ -150,8 +157,8 @@ function GatedContentCard() {
         require={{ type: 'AGE', minAge: 21 }}
         persistSession={true}
         sessionDuration={300}
-        onVerified={(result) => console.log('Gate unlocked!', result)}
-        onError={(err) => console.error('Gate error:', err)}
+        onVerified={(result) => console.log('[MidnightCloak] Gate UNLOCKED:', result)}
+        onError={(err) => console.error('[MidnightCloak] Gate ERROR:', err)}
         loading={<p className="loading">Checking verification status...</p>}
         fallback={({ status, error, verify }: CredentialGateRenderProps) => (
           <div className="gate-fallback">
@@ -185,14 +192,14 @@ export function App() {
   // sets up the mock wallet, it's available to all child components.
 
   return (
-    <MaskIDProvider
+    <MidnightCloakProvider
       apiKey="demo-key"
       network="testnet"
-      onError={(err) => console.error('MaskID Error:', err)}
+      onError={(err) => console.error('Midnight Cloak Error:', err)}
     >
       <div className="app">
         <header>
-          <h1>MaskID Demo</h1>
+          <h1>Midnight Cloak Demo</h1>
           <p>Zero-knowledge identity verification for Midnight</p>
         </header>
 
@@ -224,6 +231,6 @@ export function App() {
           </p>
         </footer>
       </div>
-    </MaskIDProvider>
+    </MidnightCloakProvider>
   );
 }

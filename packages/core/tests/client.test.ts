@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MaskIDClient } from '../src/client';
+import { MidnightCloakClient } from '../src/client';
 
-describe('MaskIDClient', () => {
-  let client: MaskIDClient;
+describe('MidnightCloakClient', () => {
+  let client: MidnightCloakClient;
 
   beforeEach(() => {
-    client = new MaskIDClient({
+    client = new MidnightCloakClient({
       network: 'testnet',
       apiKey: 'test-key',
     });

@@ -3,8 +3,8 @@
  */
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { VerificationType, PolicyConfig, VerificationResult } from '@maskid/core';
-import { useMaskIDContext } from './MaskIDProvider';
+import type { VerificationType, PolicyConfig, VerificationResult } from '@midnight-cloak/core';
+import { useMidnightCloakContext } from './MidnightCloakProvider';
 
 export interface VerificationRequirement {
   type: VerificationType;
@@ -39,7 +39,7 @@ export interface CredentialGateProps {
  * For example, a minAge:18 verification should not satisfy minAge:21.
  */
 function getSessionKey(require: VerificationRequirement): string {
-  const parts = [`maskid:session:${require.type}`];
+  const parts = [`midnight-cloak:session:${require.type}`];
 
   // Include relevant policy params in the key
   if (require.minAge !== undefined) {
@@ -68,7 +68,7 @@ export function CredentialGate({
   sessionDuration = 3600,
   children,
 }: CredentialGateProps) {
-  const { client } = useMaskIDContext();
+  const { client } = useMidnightCloakContext();
   const [status, setStatus] = useState<GateStatus>('loading');
   const [error, setError] = useState<Error | null>(null);
 
