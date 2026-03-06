@@ -116,31 +116,44 @@ npm run lint                         # Lint all packages
 
 ---
 
+## Code Style Policy
+
+> **Keep code readable - no minification or "compacting"**
+
+- Use descriptive variable names (not `x`, `i`, `d`)
+- Keep proper whitespace and formatting
+- Prioritize readability over brevity
+- This applies to all languages (TypeScript, Compact, etc.)
+
+---
+
 ## Compact Language Policy
 
-> **CRITICAL: We do NOT write Compact code.**
+> **Write Compact code carefully, following official Midnight patterns.**
 
-Compact is Midnight's ZK-native smart contract language requiring specialized cryptographic expertise. Writing incorrect ZK circuits can lead to security vulnerabilities, privacy leaks, or broken proofs.
+Compact is Midnight's ZK-native smart contract language. ZK circuits require careful implementation - bugs can cause security vulnerabilities, privacy leaks, or broken proofs.
 
 ### Our Policy
-- **NEVER** write, modify, or generate Compact (.compact) code
-- **NEVER** attempt to create ZK circuits without qualified ZK engineers
-- **USE ONLY** pre-audited Compact contracts from Midnight's official examples or verified sources
-- **REFERENCE ONLY** existing .compact files for understanding - do not create new ones
+- **FOLLOW** official Midnight examples and documentation closely
+- **TEST THOROUGHLY** on preprod before any production consideration
+- **REFERENCE** official contracts (counter, bboard) as patterns
+- **CONSULT** context files in `.claude/context/` for Compact patterns
 
 ### What We DO
-- Use compiled contract outputs via Midnight.js SDK
-- Integrate with deployed contracts using TypeScript
-- Build SDK wrappers around existing ZK functionality
-- Focus on developer experience, not ZK cryptography
+- Write Compact contracts following official patterns
+- Compile using official Midnight tooling (via WSL)
+- Deploy and test on preprod testnet
+- Build TypeScript SDK wrappers around contracts
+- Use proof server for ZK proof generation
 
-### Existing Contracts
-The `.compact` files in this repo are reference implementations based on Midnight's official examples. They should be:
-- Reviewed by ZK experts before production use
-- Compiled using official Midnight tooling only
-- Treated as immutable unless modified by qualified personnel
+### Quality Gates
+Before deploying any Compact contract:
+1. Follows official Midnight patterns
+2. Tested on preprod with real wallet
+3. Code reviewed for ZK security concerns
+4. Consider professional audit for production
 
-### If ZK Changes Are Needed
+### If Unsure About ZK Logic
 1. Document requirements clearly
 2. Consult Midnight documentation and examples
 3. Engage qualified ZK/cryptography expertise
