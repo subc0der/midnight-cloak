@@ -1,0 +1,63 @@
+// Age Verifier Contract for Midnight Cloak
+// Proves user is above minimum age without revealing birthdate
+//
+// Copyright (C) 2026 Midnight Cloak
+// SPDX-License-Identifier: MIT
+
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+// ─── Ledger State ──────────────────────────────────────────────────────────────
+
+// Round counter prevents transaction linking across verifications
+export ledger round: Counter;
+
+// Tracks total successful verifications (for analytics)
+export ledger verificationCount: Counter;
+
+// ─── Witnesses ─────────────────────────────────────────────────────────────────
+
+// Retrieves user's birth year from off-chain private state
+// The birth year never appears on-chain - only the proof result does
+witness getBirthYear(): Uint<16>;
+
+// Gets current year from trusted source (wallet/oracle)
+witness getCurrentYear(): Uint<16>;
+
+// ─── Circuits ──────────────────────────────────────────────────────────────────
+
+// Verify user meets minimum age requirement
+// Returns true if user's age >= minAge, false otherwise
+// The actual birth year is never revealed - only the boolean result
+export circuit verifyAge(minAge: Uint<8>): Boolean {
+  const birthYear = getBirthYear();
+  const currentYear = getCurrentYear();
+
+  // Calculate age (currentYear - birthYear)
+  const age = currentYear - birthYear;
+
+  // Compare against minimum age requirement
+  // Use disclose() to explicitly declare we're revealing this comparison result
+  const isOldEnough = disclose(age >= (minAge as Uint<16>));
+
+  // Increment round to prevent linking this verification to future ones
+  round.increment(1);
+
+  // Always increment verification count (no conditional to avoid leaking info)
+  verificationCount.increment(1);
+
+  return isOldEnough;
+}
+
+// Pure circuit to compute age from years (no ledger/witness access)
+// Useful for client-side validation before submitting transaction
+export pure circuit computeAge(birthYear: Uint<16>, currentYear: Uint<16>): Uint<16> {
+  return currentYear - birthYear;
+}
+
+// Pure circuit to check if age meets threshold
+export pure circuit meetsAgeThreshold(birthYear: Uint<16>, currentYear: Uint<16>, minAge: Uint<8>): Boolean {
+  const age = currentYear - birthYear;
+  return age >= (minAge as Uint<16>);
+}

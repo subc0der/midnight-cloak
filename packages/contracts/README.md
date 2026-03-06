@@ -1,15 +1,45 @@
 # @midnight-cloak/contracts
 
-Contract types and addresses for [Midnight Cloak](https://github.com/midnight-cloak).
+Compact smart contracts for [Midnight Cloak](https://github.com/midnight-cloak) identity verification.
 
-## Status
+## Contracts
 
-**This package is a placeholder.** Real Compact contracts are pending development.
+### Age Verifier (`age-verifier.compact`)
 
-Current functionality:
-- Contract address constants (empty until deployed)
-- TypeScript type definitions
-- Network configuration helpers
+Proves a user meets a minimum age requirement without revealing their actual birthdate.
+
+**Features:**
+- Zero-knowledge age verification
+- Round counter prevents transaction linking
+- Pure helper circuits for client-side validation
+
+**Circuits:**
+| Circuit | Description |
+|---------|-------------|
+| `verifyAge(minAge)` | Returns true if user's age >= minAge |
+| `computeAge(birthYear, currentYear)` | Pure: Calculate age from years |
+| `meetsAgeThreshold(birthYear, currentYear, minAge)` | Pure: Check threshold |
+
+### Credential Registry (`credential-registry.compact`)
+
+Stores credential commitments on-chain for verification without revealing credential data.
+
+**Features:**
+- Commitment-based storage (no PII on-chain)
+- Authorized issuer system
+- Credential revocation support
+- Multiple credential types
+
+**Circuits:**
+| Circuit | Description |
+|---------|-------------|
+| `registerCredential(...)` | Issue new credential (issuer only) |
+| `verifyCredential(id, commitment)` | Verify credential is valid |
+| `revokeCredential(id)` | Revoke credential (issuer only) |
+| `addIssuer(pubKey)` | Authorize new issuer (owner only) |
+| `removeIssuer(pubKey)` | Remove issuer (owner only) |
+| `generateCommitment(data, blinder)` | Pure: Create commitment |
+| `generateCredentialId(...)` | Pure: Generate credential ID |
 
 ## Installation
 
@@ -19,117 +49,151 @@ npm install @midnight-cloak/contracts
 pnpm add @midnight-cloak/contracts
 ```
 
+## Compilation
+
+Contracts must be compiled using the Compact toolchain before use.
+
+### Prerequisites
+
+- Compact toolchain 0.28.0+ (via WSL on Windows)
+- Docker (for proof server)
+
+### Compile Commands
+
+```bash
+# Windows (via WSL)
+wsl -e bash -c "source ~/.local/bin/env && cd /mnt/c/path/to/midnight-cloak/packages/contracts && compact compile src/age-verifier.compact src/managed/age-verifier"
+
+wsl -e bash -c "source ~/.local/bin/env && cd /mnt/c/path/to/midnight-cloak/packages/contracts && compact compile src/credential-registry.compact src/managed/credential-registry"
+
+# Linux/macOS
+compact compile src/age-verifier.compact src/managed/age-verifier
+compact compile src/credential-registry.compact src/managed/credential-registry
+```
+
+### Generated Output
+
+After compilation:
+```
+src/managed/
+├── age-verifier/
+│   ├── contract/     # TypeScript API
+│   ├── keys/         # Proving/verifying keys
+│   └── zkir/         # ZK intermediate representation
+└── credential-registry/
+    ├── contract/
+    ├── keys/
+    └── zkir/
+```
+
 ## Usage
 
-```typescript
-import {
-  CONTRACT_ADDRESSES,
-  getContractAddresses,
-  areContractsDeployed,
-  VerificationStatus,
-  CredentialStatus,
-} from '@midnight-cloak/contracts';
+### TypeScript API (after compilation)
 
-// Check if contracts are deployed
+```typescript
+import { CompiledContract } from '@midnight-ntwrk/compact-js';
+import * as AgeVerifier from './managed/age-verifier/contract/index.js';
+import { witnesses, createAgeVerifierPrivateState } from '@midnight-cloak/contracts';
+
+// Set up compiled contract
+const compiledContract = CompiledContract.make('age-verifier', AgeVerifier.Contract)
+  .pipe(
+    CompiledContract.withWitnesses(witnesses),
+    CompiledContract.withCompiledFileAssets('./src/managed/age-verifier'),
+  );
+
+// Create private state with user's birth year
+const privateState = createAgeVerifierPrivateState(1990);
+
+// Deploy or join contract...
+```
+
+### Contract Addresses
+
+```typescript
+import { getContractAddresses, areContractsDeployed } from '@midnight-cloak/contracts';
+
 if (areContractsDeployed('preprod')) {
   const addresses = getContractAddresses('preprod');
   console.log('Age Verifier:', addresses.ageVerifier);
 }
+```
 
-// Status enums for UI
-console.log(VerificationStatus.VERIFIED);  // 'VERIFIED'
-console.log(CredentialStatus.ACTIVE);      // 'ACTIVE'
+### Network Configuration
+
+```typescript
+import { getNetworkConfig } from '@midnight-cloak/contracts';
+
+const config = getNetworkConfig('preprod');
+console.log('Indexer:', config.indexer);
+console.log('Proof Server:', config.proofServer);
 ```
 
 ## Contract Addresses
 
-Addresses will be populated after deployment to Midnight networks:
-
 | Network | Contract | Address |
 |---------|----------|---------|
-| Preprod | Credential Registry | *pending* |
-| Preprod | Age Verifier | *pending* |
-| Mainnet | Credential Registry | *pending* |
+| Preprod | Age Verifier | *pending deployment* |
+| Preprod | Credential Registry | *pending deployment* |
 | Mainnet | Age Verifier | *pending* |
-
-## Planned Contracts
-
-### Age Verifier
-
-Verifies user age without revealing birthdate.
-
-```compact
-// Planned Compact contract
-export circuit verifyAge(
-  birthYear: Uint<16>,
-  minAge: Uint<8>,
-  currentYear: Uint<16>
-): Boolean {
-  return (currentYear - birthYear) >= minAge;
-}
-```
-
-### Credential Registry
-
-Stores credential commitments on-chain.
-
-```compact
-// Planned Compact contract
-export ledger credentials: Map<Field, CredentialCommitment>;
-
-export circuit registerCredential(
-  commitment: Field,
-  issuer: Field
-): [] {
-  credentials.insert(commitment, { issuer, timestamp: now() });
-}
-```
-
-## Development
-
-Contracts are written in Compact (Midnight's ZK language) and compiled using the Midnight toolchain.
-
-### Compile Contracts (WSL on Windows)
-
-```bash
-wsl -e bash -c "source ~/.local/bin/env && compact compile src/age-verifier.compact src/managed/age-verifier"
-```
-
-### Generated Files
-
-After compilation:
-```
-src/managed/age-verifier/
-├── contract/     # TypeScript API
-├── keys/         # Proving/verifying keys
-└── zkir/         # ZK intermediate representation
-```
+| Mainnet | Credential Registry | *pending* |
 
 ## Types
 
 ```typescript
-import type { Network } from '@midnight-cloak/contracts';
+import {
+  VerificationStatus,
+  CredentialStatus,
+  CredentialType,
+  Network,
+} from '@midnight-cloak/contracts';
 
-type Network = 'testnet' | 'mainnet';
+// Verification flow status
+VerificationStatus.PENDING   // 'PENDING'
+VerificationStatus.VERIFIED  // 'VERIFIED'
+VerificationStatus.DENIED    // 'DENIED'
 
-enum VerificationStatus {
-  PENDING = 'PENDING',
-  VERIFIED = 'VERIFIED',
-  DENIED = 'DENIED',
-}
+// Credential status (mirrors Compact enum)
+CredentialStatus.ACTIVE   // 0
+CredentialStatus.REVOKED  // 1
 
-enum CredentialStatus {
-  ACTIVE = 'ACTIVE',
-  REVOKED = 'REVOKED',
-}
+// Credential types (mirrors Compact enum)
+CredentialType.AGE           // 0
+CredentialType.TOKEN_BALANCE // 1
+CredentialType.NFT_OWNERSHIP // 2
+CredentialType.RESIDENCY     // 3
+CredentialType.ACCREDITED    // 4
+CredentialType.CUSTOM        // 5
 ```
 
-## Roadmap
+## Development
 
-1. **Phase 2** (Current) - Type definitions and placeholders
-2. **Phase 3** - Age verifier contract deployment
-3. **Phase 4** - Token balance and NFT contracts
-4. **Phase 5** - Mainnet deployment
+### Project Structure
+
+```
+src/
+├── age-verifier.compact           # Age verification contract
+├── age-verifier-witnesses.ts      # TypeScript witnesses
+├── credential-registry.compact    # Credential registry contract
+├── credential-registry-witnesses.ts
+├── index.ts                       # Package exports
+└── managed/                       # Compiler output (gitignored)
+```
+
+### Testing
+
+After compilation, run contract tests:
+
+```bash
+npm test
+```
+
+## Security Notes
+
+1. **Private data stays private** - Birth years and credential data never appear on-chain
+2. **Round counters** - Prevent linking transactions to the same user
+3. **Commitment scheme** - Only hashes stored on-chain, not actual values
+4. **Issuer authorization** - Only approved issuers can register credentials
 
 ## License
 

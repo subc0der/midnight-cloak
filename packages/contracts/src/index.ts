@@ -1,24 +1,30 @@
 /**
  * @midnight-cloak/contracts
- * Contract types and interfaces for Midnight Cloak on Midnight
  *
- * IMPORTANT: This is a placeholder package.
+ * Compact smart contracts for Midnight Cloak identity verification.
  *
- * Real contract integration will require:
- * 1. Official Midnight contract examples (we do NOT write Compact code)
- * 2. Testnet access with tDUST
- * 3. ZK expertise for any circuit modifications
+ * Contracts:
+ * - age-verifier: Proves user meets minimum age without revealing birthdate
+ * - credential-registry: Stores credential commitments on-chain
+ *
+ * After compilation, import the generated TypeScript APIs from:
+ * - ./managed/age-verifier/contract
+ * - ./managed/credential-registry/contract
  */
 
-// Contract addresses (to be updated after deployment to Midnight network)
+// Re-export witnesses
+export * from './age-verifier-witnesses.js';
+export * from './credential-registry-witnesses.js';
+
+// Contract addresses (populated after deployment)
 export const CONTRACT_ADDRESSES = {
-  testnet: {
-    credentialRegistry: '',
+  preprod: {
     ageVerifier: '',
+    credentialRegistry: '',
   },
   mainnet: {
-    credentialRegistry: '',
     ageVerifier: '',
+    credentialRegistry: '',
   },
 } as const;
 
@@ -33,14 +39,14 @@ export function getContractAddresses(network: Network) {
 
 /**
  * Check if contracts are deployed on a network
- * Currently returns false - no contracts deployed yet
  */
-export function areContractsDeployed(_network: Network): boolean {
-  return false;
+export function areContractsDeployed(network: Network): boolean {
+  const addresses = CONTRACT_ADDRESSES[network];
+  return addresses.ageVerifier !== '' && addresses.credentialRegistry !== '';
 }
 
 /**
- * Verification status enum (for type compatibility)
+ * Verification status enum
  */
 export enum VerificationStatus {
   PENDING = 'PENDING',
@@ -49,9 +55,50 @@ export enum VerificationStatus {
 }
 
 /**
- * Credential status enum (for type compatibility)
+ * Credential status enum (mirrors Compact enum)
  */
 export enum CredentialStatus {
-  ACTIVE = 'ACTIVE',
-  REVOKED = 'REVOKED',
+  ACTIVE = 0,
+  REVOKED = 1,
+}
+
+/**
+ * Credential type enum (mirrors Compact enum)
+ */
+export enum CredentialType {
+  AGE = 0,
+  TOKEN_BALANCE = 1,
+  NFT_OWNERSHIP = 2,
+  RESIDENCY = 3,
+  ACCREDITED = 4,
+  CUSTOM = 5,
+}
+
+/**
+ * Network configuration for Midnight networks
+ */
+export const NETWORK_CONFIG = {
+  preprod: {
+    indexer: 'https://indexer.preprod.midnight.network/api/v3/graphql',
+    indexerWS: 'wss://indexer.preprod.midnight.network/api/v3/graphql/ws',
+    node: 'https://rpc.preprod.midnight.network',
+    proofServer: 'http://127.0.0.1:6300',
+    faucet: 'https://faucet.preprod.midnight.network',
+    explorer: 'https://preprod.midnightexplorer.io',
+  },
+  mainnet: {
+    indexer: '', // TBD
+    indexerWS: '', // TBD
+    node: '', // TBD
+    proofServer: '', // TBD
+    faucet: '', // N/A for mainnet
+    explorer: '', // TBD
+  },
+} as const;
+
+/**
+ * Get network configuration
+ */
+export function getNetworkConfig(network: Network) {
+  return NETWORK_CONFIG[network];
 }
