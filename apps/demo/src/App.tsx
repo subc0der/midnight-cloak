@@ -45,12 +45,21 @@ function WalletConnection({
     setStatus('connected');
   };
 
+  const handleDisconnect = () => {
+    client.disconnect();
+    setUseMock(false);
+    setStatus('disconnected');
+    setError(null);
+  };
+
+  const isConnecting = status === 'connecting';
+
   return (
     <div className="card" style={{ marginBottom: '1.5rem' }}>
       <h2>Wallet Connection</h2>
       <p>Connect your Midnight wallet to get started.</p>
 
-      <div className="status">
+      <div className="status" aria-live="polite">
         <strong>Status:</strong>{' '}
         {status === 'connected' ? (
           <span style={{ color: 'var(--color-success)' }}>
@@ -66,28 +75,46 @@ function WalletConnection({
       {status === 'disconnected' && (
         <div className="wallet-actions">
           {client.isLaceAvailable() && (
-            <button onClick={handleConnectWallet} className="verify-btn">
-              Connect Lace Wallet
+            <button
+              onClick={handleConnectWallet}
+              className="verify-btn"
+              disabled={isConnecting}
+              aria-busy={isConnecting}
+            >
+              {isConnecting ? 'Connecting...' : 'Connect Lace Wallet'}
             </button>
           )}
           <button
             onClick={handleUseMockWallet}
             className="verify-btn secondary"
             style={{ marginTop: client.isLaceAvailable() ? '0.5rem' : '0' }}
+            disabled={isConnecting}
           >
             Use Demo Mode (No Wallet)
           </button>
         </div>
       )}
 
-      {error && status === 'disconnected' && <p className="error">{error}</p>}
+      {status === 'connecting' && (
+        <div className="wallet-actions">
+          <p className="loading">Connecting to wallet...</p>
+        </div>
+      )}
+
+      {status === 'connected' && (
+        <button onClick={handleDisconnect} className="verify-btn secondary">
+          Disconnect
+        </button>
+      )}
+
+      {error && status === 'disconnected' && <p className="error" role="alert">{error}</p>}
     </div>
   );
 }
 
 function AgeVerificationCard() {
   // No need for useMock prop - wallet state is already shared via provider
-  const [status, setStatus] = useState<'idle' | 'verified' | 'denied'>('idle');
+  const [status, setStatus] = useState<'idle' | 'verified' | 'denied' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
   const handleReset = () => {
@@ -110,11 +137,11 @@ function AgeVerificationCard() {
           onDenied={() => {
             console.log('[MidnightCloak] Verification DENIED');
             setStatus('denied');
-            setError('Verification denied');
+            setError('Age requirement not met');
           }}
           onVerificationError={(err) => {
             console.log('[MidnightCloak] Verification ERROR:', err);
-            setStatus('denied');
+            setStatus('error');
             setError(err.message);
           }}
           className="verify-btn"
@@ -124,7 +151,7 @@ function AgeVerificationCard() {
       )}
 
       {status === 'verified' && (
-        <div className="success">
+        <div className="success" aria-live="polite">
           <h3>Verified!</h3>
           <p>You've proven you are 18+ without revealing your birthdate.</p>
           <button onClick={handleReset} className="verify-btn secondary" style={{ marginTop: '1rem' }}>
@@ -134,9 +161,18 @@ function AgeVerificationCard() {
       )}
 
       {status === 'denied' && (
-        <div>
-          {error && <p className="error">{error}</p>}
-          <button onClick={handleReset} className="verify-btn">
+        <div aria-live="polite">
+          <p className="error" role="alert">{error}</p>
+          <button onClick={handleReset} className="verify-btn" style={{ marginTop: '0.5rem' }}>
+            Try Again
+          </button>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div aria-live="assertive">
+          <p className="error" role="alert">Technical error: {error}</p>
+          <button onClick={handleReset} className="verify-btn" style={{ marginTop: '0.5rem' }}>
             Try Again
           </button>
         </div>
@@ -183,6 +219,12 @@ function GatedContentCard() {
   );
 }
 
+// Configuration from environment (with fallbacks for local development)
+const config = {
+  apiKey: import.meta.env.VITE_MIDNIGHT_CLOAK_API_KEY || 'demo-key',
+  network: (import.meta.env.VITE_MIDNIGHT_NETWORK || 'preprod') as 'preprod' | 'mainnet',
+};
+
 export function App() {
   const [walletStatus, setWalletStatus] = useState<WalletStatus>('disconnected');
 
@@ -192,8 +234,8 @@ export function App() {
 
   return (
     <MidnightCloakProvider
-      apiKey="demo-key"
-      network="preprod"
+      apiKey={config.apiKey}
+      network={config.network}
       onError={(err) => console.error('Midnight Cloak Error:', err)}
     >
       <div className="app">
