@@ -1,21 +1,23 @@
 # Midnight Cloak
 
-This project extends the Midnight Network with additional developer tooling.
+Zero-knowledge identity verification infrastructure for [Midnight](https://midnight.network).
 
-Zero-knowledge identity verification SDK for the Midnight blockchain.
+**Prove who you are without revealing who you are.**
 
-Midnight Cloak enables applications to verify user attributes (age, credentials, token holdings) without exposing the underlying personal data. Users prove claims about themselves while maintaining privacy.
+Midnight Cloak enables dApp developers to verify user attributes (age, credentials, token holdings) using zero-knowledge proofs on the Midnight blockchain. Users prove facts about themselves without exposing underlying personal data.
 
 ## Status
 
-**Phase 2: Core SDK MVP** - Development in progress
+**Phase 2: Core SDK MVP** - Lace wallet integration complete
 
-| Component | Status |
-|-----------|--------|
-| @midnight-cloak/core | Available (mock mode) |
-| @midnight-cloak/react | Available |
-| @midnight-cloak/contracts | Placeholder |
-| Preprod deployment | Blocked (awaiting tDUST) |
+| Component | Status | Notes |
+|-----------|--------|-------|
+| @midnight-cloak/core | 0.2.0 | 15 tests passing |
+| @midnight-cloak/react | 0.1.0 | Components ready |
+| @midnight-cloak/wallet | 0.1.0 | Credential management |
+| @midnight-cloak/contracts | 0.1.0 | Placeholder (awaiting Compact) |
+| Lace Wallet | Working | Real wallet signing |
+| ZK Proofs | Mock | Pending contract deployment |
 
 ## Features
 
@@ -52,18 +54,15 @@ npm install @midnight-cloak/core @midnight-cloak/react
 ```typescript
 import { MidnightCloakClient } from '@midnight-cloak/core';
 
-const client = new MidnightCloakClient({
-  network: 'testnet',
-  apiKey: 'your-api-key'
-});
+const client = new MidnightCloakClient({ network: 'preprod' });
 
-// Connect wallet
+// Connect Lace Midnight wallet
 await client.connectWallet('lace');
 
-// Verify age
+// Verify age (user signs with wallet, ZK proof generated)
 const result = await client.verify({
   type: 'AGE',
-  policy: { minAge: 18 }
+  policy: { kind: 'age', minAge: 18 }
 });
 
 if (result.verified) {
@@ -78,20 +77,21 @@ import { MidnightCloakProvider, VerifyButton, CredentialGate } from '@midnight-c
 
 function App() {
   return (
-    <MidnightCloakProvider apiKey="your-api-key" network="testnet">
+    <MidnightCloakProvider network="preprod">
       {/* Simple verification button */}
       <VerifyButton
-        type="AGE"
-        minAge={18}
+        policy={{ kind: 'age', minAge: 18 }}
         onVerified={(result) => console.log('Verified:', result)}
       >
-        Verify Age
+        Verify Age (18+)
       </VerifyButton>
 
       {/* Gate content behind verification */}
       <CredentialGate
-        require={{ type: 'AGE', minAge: 21 }}
-        fallback={<p>Verification required</p>}
+        policy={{ kind: 'age', minAge: 21 }}
+        fallback={({ verify }) => (
+          <button onClick={verify}>Verify to continue</button>
+        )}
       >
         <RestrictedContent />
       </CredentialGate>
@@ -103,18 +103,15 @@ function App() {
 ### Development Mode (No Wallet)
 
 ```typescript
-const client = new MidnightCloakClient({
-  network: 'testnet',
-  apiKey: 'demo-key'
-});
+const client = new MidnightCloakClient({ network: 'preprod' });
 
-// Use mock wallet for testing
-client.useMockWallet({ network: 'testnet' });
+// Use mock wallet for testing (disabled in production)
+client.useMockWallet({ network: 'preprod' });
 
 // Verification works without a real wallet
 const result = await client.verify({
   type: 'AGE',
-  policy: { minAge: 18 }
+  policy: { kind: 'age', minAge: 18 }
 });
 ```
 
@@ -126,11 +123,11 @@ const result = await client.verify({
 new MidnightCloakClient(config: ClientConfig)
 
 interface ClientConfig {
-  network: 'testnet' | 'mainnet';
-  apiKey: string;
-  proofServerUrl?: string;
-  timeout?: number;
-  preferredWallet?: 'lace' | 'nami' | 'nufi' | 'vespr';
+  network: 'preprod' | 'mainnet' | 'standalone';
+  apiKey?: string;
+  proofServerUrl?: string;  // Default: http://localhost:6300
+  timeout?: number;         // Default: 30000ms
+  preferredWallet?: 'lace' | 'nufi' | 'vespr';
 }
 ```
 
@@ -138,11 +135,13 @@ interface ClientConfig {
 
 | Method | Description |
 |--------|-------------|
-| `verify(request)` | Perform verification |
-| `connectWallet(type?)` | Connect to wallet |
+| `verify(request)` | Perform ZK verification |
+| `connectWallet(type?)` | Connect to Midnight wallet |
 | `disconnectWallet()` | Disconnect wallet |
 | `isWalletConnected()` | Check connection status |
-| `useMockWallet(options?)` | Enable mock mode |
+| `isLaceAvailable()` | Check if Lace is installed |
+| `useMockWallet(options?)` | Enable mock mode (dev only) |
+| `isProofServerAvailable()` | Check proof server health |
 | `on(event, handler)` | Subscribe to events |
 | `off(event, handler)` | Unsubscribe from events |
 
@@ -164,8 +163,8 @@ const policy = new PolicyBuilder()
 
 ```tsx
 <MidnightCloakProvider
-  apiKey="key"
-  network="testnet"
+  network="preprod"
+  apiKey="optional-api-key"
   onError={(err) => console.error(err)}
 >
   {children}
@@ -176,24 +175,30 @@ const policy = new PolicyBuilder()
 
 ```tsx
 <VerifyButton
-  type="AGE"
-  minAge={18}
+  policy={{ kind: 'age', minAge: 18 }}
   onVerified={(result) => {}}
   onDenied={() => {}}
   onVerificationError={(error) => {}}
-/>
+>
+  Verify Age
+</VerifyButton>
 ```
 
 **CredentialGate** - Conditionally render content based on verification
 
 ```tsx
 <CredentialGate
-  require={{ type: 'AGE', minAge: 21 }}
+  policy={{ kind: 'age', minAge: 21 }}
   persistSession={true}
   sessionDuration={3600}
   loading={<Spinner />}
-  fallback={({ verify, error }) => (
-    <button onClick={verify}>Verify to continue</button>
+  fallback={({ verify, error, status }) => (
+    <div>
+      {error && <p>{error.message}</p>}
+      <button onClick={verify}>
+        {status === 'error' ? 'Try Again' : 'Verify to continue'}
+      </button>
+    </div>
   )}
 >
   <ProtectedContent />
@@ -221,13 +226,24 @@ const policy = new PolicyBuilder()
 
 - Node.js 18+
 - pnpm 8+
+- Docker (for proof server)
+- Lace Midnight wallet (Chrome extension)
 
 ### Setup
 
 ```bash
-git clone https://github.com/subc0der/midnight-cloak.git
+git clone <repo-url>
 cd midnight-cloak
 pnpm install
+```
+
+### Start Proof Server
+
+```bash
+docker run -d -p 6300:6300 midnightntwrk/proof-server:7.0.0 midnight-proof-server -v
+
+# Verify it's running
+curl http://localhost:6300/health
 ```
 
 ### Build
