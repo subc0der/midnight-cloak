@@ -31,6 +31,8 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "demo": "tsx scripts/sdk-demo.ts",
+    "deploy:check": "tsx scripts/deploy-contracts.ts",
+    "deploy:contracts": "tsx scripts/deploy-contracts.ts",
     "build": "pnpm -r build",
     "build:contracts": "pnpm --filter @midnight-cloak/contracts build",
     "build:core": "pnpm --filter @midnight-cloak/core build",
@@ -49,6 +51,18 @@
     "prepare": "git config core.hooksPath .hooks || true"
   },
   "devDependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.14.0",
+    "@midnight-ntwrk/midnight-js-contracts": "3.0.0",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "3.0.0",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "3.0.0",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "3.0.0",
+    "@midnight-ntwrk/midnight-js-network-id": "3.0.0",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "3.0.0",
+    "@midnight-ntwrk/wallet-sdk-dust-wallet": "1.0.0",
+    "@midnight-ntwrk/wallet-sdk-facade": "1.0.0",
+    "@midnight-ntwrk/wallet-sdk-hd": "3.0.0",
+    "@midnight-ntwrk/wallet-sdk-shielded": "1.0.0",
+    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "1.0.0",
     "@types/node": "^22.10.2",
     "@typescript-eslint/eslint-plugin": "^8.18.1",
     "@typescript-eslint/parser": "^8.18.1",
