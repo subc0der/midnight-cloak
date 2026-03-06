@@ -113,12 +113,17 @@ export class Verifier {
     try {
       // 1. Get wallet address and sign verification request
       const address = await wallet.getAddress();
-      const payload = JSON.stringify({
+      const payloadObj = {
         requestId,
         type: 'AGE',
         policy,
         timestamp: Date.now(),
-      });
+      };
+      // CIP-30 signData requires hex-encoded payload
+      const payloadJson = JSON.stringify(payloadObj);
+      const encoder = new TextEncoder();
+      const payloadBytes = encoder.encode(payloadJson);
+      const payload = Array.from(payloadBytes).map(b => b.toString(16).padStart(2, '0')).join('');
 
       // 2. Request signature (this prompts user approval in the wallet)
       const signature = await wallet.signData(address, payload);
