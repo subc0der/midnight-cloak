@@ -11,8 +11,15 @@ interface WitnessContext<Ledger, PrivateState> {
   contractAddress: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface CredentialRegistryLedger {}
+/**
+ * Type for the contract's ledger state
+ * Matches the exported ledger fields in credential-registry.compact
+ */
+export interface CredentialRegistryLedger {
+  readonly totalCredentials: bigint;
+  readonly round: bigint;
+  readonly owner: Uint8Array;
+}
 
 /**
  * Private state for credential registry operations

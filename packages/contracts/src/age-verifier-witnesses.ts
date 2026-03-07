@@ -28,9 +28,14 @@ interface WitnessContext<Ledger, PrivateState> {
   contractAddress: string;
 }
 
-// Type for the compiled contract's ledger (will be generated after compilation)
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface AgeVerifierLedger {}
+/**
+ * Type for the contract's ledger state
+ * Matches the exported ledger fields in age-verifier.compact
+ */
+export interface AgeVerifierLedger {
+  readonly round: bigint;
+  readonly verificationCount: bigint;
+}
 
 /**
  * Private state stored locally in the user's wallet/browser
