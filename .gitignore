@@ -105,3 +105,7 @@ DEPLOYMENT_GUIDE.md
 
 # LevelDB (private state storage)
 midnight-cloak-deploy/
+midnight-level-db/
+
+# Test scripts with hardcoded seeds
+scripts/test-deploy.ts

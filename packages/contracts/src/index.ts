@@ -12,6 +12,10 @@
  * - ./managed/credential-registry/contract
  */
 
+// Re-export contract modules as namespaces (like example-counter pattern)
+export * as AgeVerifier from './managed/age-verifier/contract/index.js';
+export * as CredentialRegistry from './managed/credential-registry/contract/index.js';
+
 // Re-export witnesses
 export * from './age-verifier-witnesses.js';
 export * from './credential-registry-witnesses.js';

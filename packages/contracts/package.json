@@ -23,7 +23,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@midnight-ntwrk/midnight-js-types": "2.0.2"
+    "@midnight-ntwrk/midnight-js-types": "3.0.0"
   },
   "devDependencies": {
     "typescript": "^5.7.2",
