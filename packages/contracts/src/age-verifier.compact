@@ -13,7 +13,8 @@ import CompactStandardLibrary;
 // Round counter prevents transaction linking across verifications
 export ledger round: Counter;
 
-// Tracks total successful verifications (for analytics)
+// Tracks total verification attempts (for analytics)
+// Note: Increments on every call regardless of result to avoid leaking verification outcome
 export ledger verificationCount: Counter;
 
 // ─── Witnesses ─────────────────────────────────────────────────────────────────
@@ -34,12 +35,15 @@ export circuit verifyAge(minAge: Uint<8>): Boolean {
   const birthYear = getBirthYear();
   const currentYear = getCurrentYear();
 
-  // Calculate age (currentYear - birthYear)
-  const age = currentYear - birthYear;
+  // Guard against underflow: if birthYear > currentYear, user hasn't been born yet
+  // In Uint<16> subtraction, underflow would wrap to a large positive number
+  // which would incorrectly pass the age check
+  const validBirthYear = currentYear >= birthYear;
+  const age = validBirthYear ? (currentYear - birthYear) : (0 as Uint<16>);
+  const isOldEnough = validBirthYear ? (age >= (minAge as Uint<16>)) : false;
 
-  // Compare against minimum age requirement
   // Use disclose() to explicitly declare we're revealing this comparison result
-  const isOldEnough = disclose(age >= (minAge as Uint<16>));
+  const revealedResult = disclose(isOldEnough);
 
   // Increment round to prevent linking this verification to future ones
   round.increment(1);
@@ -47,17 +51,21 @@ export circuit verifyAge(minAge: Uint<8>): Boolean {
   // Always increment verification count (no conditional to avoid leaking info)
   verificationCount.increment(1);
 
-  return isOldEnough;
+  return revealedResult;
 }
 
 // Pure circuit to compute age from years (no ledger/witness access)
 // Useful for client-side validation before submitting transaction
+// Returns 0 if birthYear > currentYear (invalid input - caller should validate)
 export pure circuit computeAge(birthYear: Uint<16>, currentYear: Uint<16>): Uint<16> {
-  return currentYear - birthYear;
+  const valid = currentYear >= birthYear;
+  return valid ? (currentYear - birthYear) : (0 as Uint<16>);
 }
 
 // Pure circuit to check if age meets threshold
+// Returns false if birthYear > currentYear (guards against underflow)
 export pure circuit meetsAgeThreshold(birthYear: Uint<16>, currentYear: Uint<16>, minAge: Uint<8>): Boolean {
-  const age = currentYear - birthYear;
-  return age >= (minAge as Uint<16>);
+  const valid = currentYear >= birthYear;
+  const age = valid ? (currentYear - birthYear) : (0 as Uint<16>);
+  return valid ? (age >= (minAge as Uint<16>)) : false;
 }
