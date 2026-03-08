@@ -1,5 +1,7 @@
 # Midnight Cloak
 
+> This project is built on the Midnight Network.
+
 Zero-knowledge identity verification infrastructure for [Midnight](https://midnight.network).
 
 **Prove who you are without revealing who you are.**
@@ -8,16 +10,16 @@ Midnight Cloak enables dApp developers to verify user attributes (age, credentia
 
 ## Status
 
-**Phase 2: Core SDK MVP** - Lace wallet integration complete
+**Phase 2: Core SDK MVP** - Complete
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | @midnight-cloak/core | 0.2.0 | 15 tests passing |
-| @midnight-cloak/react | 0.1.0 | Components ready |
-| @midnight-cloak/wallet | 0.1.0 | Credential management |
-| @midnight-cloak/contracts | 0.1.0 | Placeholder (awaiting Compact) |
-| Lace Wallet | Working | Real wallet signing |
-| ZK Proofs | Mock | Pending contract deployment |
+| @midnight-cloak/react | 0.1.0 | 56 tests passing |
+| @midnight-cloak/wallet | 0.1.0 | 70 tests passing |
+| Contracts | Deployed | Age Verifier + Credential Registry on Preprod |
+| Lace Wallet | Working | Real wallet signing tested |
+| ZK Proofs | Working | Mock mode available for development |
 
 ## Features
 
@@ -342,4 +344,4 @@ midnight-cloak/
 
 ## License
 
-MIT
+Apache 2.0 - See [LICENSE](LICENSE) for details.

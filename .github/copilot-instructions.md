@@ -77,8 +77,8 @@ The `.gitignore` excludes `packages/*/src/**/*.js` etc. because TypeScript compi
 
 ## Current Development Status
 
-- **Phase 2 (Current):** Core SDK MVP - building local, waiting for testnet
-- **Blocked:** tDUST faucet unavailable, Midnight Preview network pending
+- **Phase 2 (Complete):** Core SDK MVP - contracts deployed, SDK integrated
+- **Phase 3 (Current):** Wallet Extension + Credentials
 - **Tests:** All passing locally
 - **Demo:** Works in mock mode
 
