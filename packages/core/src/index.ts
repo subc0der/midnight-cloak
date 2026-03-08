@@ -75,6 +75,9 @@ export * from './wallet-connector';
 // Contract interaction
 export * from './contract-client';
 
+// Contract addresses
+export * from './addresses';
+
 // Error handling
 export * from './errors';
 

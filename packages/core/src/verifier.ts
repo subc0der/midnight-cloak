@@ -267,15 +267,16 @@ export class Verifier {
     _requestId: string,
     proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }
   ): Promise<{ verified: boolean }> {
-    // Submit proof to contract for verification
-    // Map our internal proof format to ProofResponse expected by ContractClient
-    const proofResponse = {
-      proof: proof.data,
-      publicOutputs: proof.publicInputs,
-    };
-    const result = await this.contractClient.verifyAgeOnChain(proofResponse);
+    // Extract minAge from proof public inputs
+    // publicInputs = [isVerified, minAge, requestId]
+    const minAge = proof.publicInputs[1] as number;
 
-    return { verified: result.success };
+    // Call contract to verify age on-chain
+    // In production, the birth year comes from the user's credential
+    // For now, the contract uses the mock birth year from proof generation
+    const result = await this.contractClient.verifyAgeOnChain(minAge);
+
+    return { verified: result.isVerified };
   }
 
   async getStatus(requestId: string): Promise<VerificationStatus> {

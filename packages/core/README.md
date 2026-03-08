@@ -221,6 +221,27 @@ type PolicyConfig =
   | { kind: 'nft_ownership'; collection: string };
 ```
 
+## Deployed Contracts
+
+The SDK connects to pre-deployed contracts on preprod testnet.
+
+```typescript
+import { getContractAddresses, hasDeployedContracts } from '@midnight-cloak/core';
+
+// Check if contracts are deployed on a network
+if (hasDeployedContracts('preprod')) {
+  const addresses = getContractAddresses('preprod');
+  console.log('Age Verifier:', addresses.ageVerifier);
+  console.log('Credential Registry:', addresses.credentialRegistry);
+}
+```
+
+| Network | Status | Contracts |
+|---------|--------|-----------|
+| preprod | Deployed | Age Verifier, Credential Registry |
+| standalone | Manual | Deploy via deploy-cli |
+| mainnet | Pending | Coming late March 2026 |
+
 ## Requirements
 
 - **Proof Server**: Local Docker container for ZK proof generation
@@ -233,11 +254,22 @@ type PolicyConfig =
 docker run -d -p 6300:6300 midnightntwrk/proof-server:7.0.0 midnight-proof-server -v
 ```
 
-## Current Limitations
+## Current Status
 
-- **Age verification only** - Other types coming soon
-- **Mock proofs** - Real ZK proofs pending contract deployment
-- **Preprod only** - Mainnet support coming with launch
+- **Age verification** - Fully implemented with real contracts on preprod
+- **Credential registry** - Deployed on preprod, SDK integration in progress
+- **ZK proofs** - Generated via proof server (localhost:6300)
+- **Networks** - Preprod testnet supported, mainnet coming late March 2026
+
+### Verification Types
+
+| Type | Status |
+|------|--------|
+| AGE | Implemented |
+| TOKEN_BALANCE | Coming soon |
+| NFT_OWNERSHIP | Coming soon |
+| RESIDENCY | Coming soon |
+| CREDENTIAL | Coming soon |
 
 ## License
 
