@@ -320,7 +320,7 @@ midnight-cloak/
    - Environment setup
    - Architecture design
 
-2. **Phase 2** - Core SDK MVP (Current)
+2. **Phase 2** - Core SDK MVP (Complete)
    - Age verification flow
    - React components
    - Mock wallet for development
