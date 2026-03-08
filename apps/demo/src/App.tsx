@@ -223,6 +223,8 @@ function GatedContentCard() {
 const config = {
   apiKey: import.meta.env.VITE_MIDNIGHT_CLOAK_API_KEY || 'demo-key',
   network: (import.meta.env.VITE_MIDNIGHT_NETWORK || 'preprod') as 'preprod' | 'mainnet',
+  // Enable mock proofs for development when proof server is unavailable
+  allowMockProofs: import.meta.env.VITE_ALLOW_MOCK_PROOFS !== 'false',
 };
 
 export function App() {
@@ -236,6 +238,7 @@ export function App() {
     <MidnightCloakProvider
       apiKey={config.apiKey}
       network={config.network}
+      allowMockProofs={config.allowMockProofs}
       onError={(err) => console.error('Midnight Cloak Error:', err)}
     >
       <div className="app">

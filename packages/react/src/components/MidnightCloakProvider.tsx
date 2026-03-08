@@ -25,6 +25,11 @@ export interface MidnightCloakProviderProps {
   proofServerUrl?: string;
   /** Preferred wallet type */
   preferredWallet?: WalletType;
+  /**
+   * Allow mock proofs when proof server is unavailable (development only).
+   * SECURITY: Never enable in production.
+   */
+  allowMockProofs?: boolean;
   /** Called when wallet or verification errors occur */
   onError?: (error: Error) => void;
   children: ReactNode;
@@ -54,6 +59,7 @@ export function MidnightCloakProvider({
   network,
   proofServerUrl,
   preferredWallet,
+  allowMockProofs,
   onError,
   children,
 }: MidnightCloakProviderProps) {
@@ -76,8 +82,9 @@ export function MidnightCloakProvider({
       apiKey: apiKey ?? '',
       proofServerUrl,
       preferredWallet,
+      allowMockProofs,
     });
-  }, [providedClient, apiKey, network, proofServerUrl, preferredWallet]);
+  }, [providedClient, apiKey, network, proofServerUrl, preferredWallet, allowMockProofs]);
 
   // Cleanup previous client when a new one is created
   useEffect(() => {
