@@ -45,8 +45,9 @@ ${DIVIDER}
   [4] Join existing Credential Registry
   [5] Call verifyAge circuit
   [6] Call registerCredential circuit
-  [7] Check DUST balance
-  [8] Exit
+  [7] Call checkCommitment circuit
+  [8] Check DUST balance
+  [9] Exit
 ${'─'.repeat(62)}
 > `;
 
@@ -288,7 +289,7 @@ const deploymentLoop = async (
           );
 
           console.log(`\n  ✓ Credential Registered!`);
-          console.log(`    Commitment: ${commitmentHex.slice(0, 16)}...${commitmentHex.slice(-16)}`);
+          console.log(`    Commitment: ${commitmentHex}`);
           console.log(`    Issuer PK:  ${Buffer.from(result.issuerPk).toString('hex').slice(0, 32)}...`);
           console.log(`    Tx Hash:    ${result.txHash}\n`);
 
@@ -310,6 +311,59 @@ const deploymentLoop = async (
       }
 
       case '7': {
+        // Call checkCommitment circuit
+        const address = await rli.question('Enter Credential Registry contract address: ');
+        const commitmentHex = await rli.question('Enter commitment to check (64-char hex): ');
+
+        if (commitmentHex.trim().length !== 64) {
+          console.log('  Invalid commitment length. Expected 64 hex characters.\n');
+          break;
+        }
+
+        try {
+          const providers = await api.withStatus('Configuring providers', () =>
+            api.configureCredentialRegistryProviders(walletCtx, config)
+          );
+
+          // Generate a random secret key for this caller
+          const secretKey = new Uint8Array(32);
+          crypto.getRandomValues(secretKey);
+
+          const contract = await api.withStatus('Joining contract', () =>
+            api.joinCredentialRegistry(providers, address.trim(), secretKey)
+          );
+
+          // Convert hex to Uint8Array
+          const commitment = new Uint8Array(
+            commitmentHex.trim().match(/.{2}/g)!.map((byte: string) => parseInt(byte, 16))
+          );
+
+          const result = await api.withStatus(`Calling checkCommitment - generating ZK proof`, () =>
+            api.callCheckCommitment(contract, commitment)
+          );
+
+          console.log(`\n  ✓ Check Result: ${result.exists ? 'FOUND' : 'NOT FOUND'}`);
+          console.log(`    Commitment ${result.exists ? 'IS' : 'is NOT'} registered on-chain`);
+          console.log(`    Tx Hash: ${result.txHash}\n`);
+
+          // Show updated ledger state
+          const state = await api.getCredentialRegistryLedgerState(providers, address.trim());
+          if (state) {
+            console.log(`  Updated Ledger State:`);
+            console.log(`    Total Credentials: ${state.totalCredentials}`);
+            console.log(`    Round: ${state.round}\n`);
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.log(`\n  ✗ Check failed: ${msg}\n`);
+          if (e instanceof Error && e.cause) {
+            console.log(`    cause: ${e.cause}`);
+          }
+        }
+        break;
+      }
+
+      case '8': {
         // Check DUST balance
         try {
           const dust = await api.getDustBalance(walletCtx.wallet);
@@ -323,7 +377,7 @@ const deploymentLoop = async (
         break;
       }
 
-      case '8':
+      case '9':
         return;
 
       default:
