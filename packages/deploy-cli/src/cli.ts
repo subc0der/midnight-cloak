@@ -9,6 +9,7 @@ import { type Config } from './config.js';
 import * as api from './api.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { Buffer } from 'buffer';
 
 let logger: Logger;
 
@@ -43,8 +44,9 @@ ${DIVIDER}
   [3] Join existing Age Verifier
   [4] Join existing Credential Registry
   [5] Call verifyAge circuit
-  [6] Check DUST balance
-  [7] Exit
+  [6] Call registerCredential circuit
+  [7] Check DUST balance
+  [8] Exit
 ${'─'.repeat(62)}
 > `;
 
@@ -145,16 +147,12 @@ const deploymentLoop = async (
             api.configureCredentialRegistryProviders(walletCtx, config)
           );
 
-          // Generate a random owner public key for now (32 bytes)
-          const ownerPubKey = new Uint8Array(32);
-          crypto.getRandomValues(ownerPubKey);
+          // Generate a random secret key for the deployer (32 bytes)
+          const secretKey = new Uint8Array(32);
+          crypto.getRandomValues(secretKey);
 
           const contract = await api.withStatus('Deploying Credential Registry contract', () =>
-            api.deployCredentialRegistry(
-              providers,
-              { secretKey: new Uint8Array(32) },
-              ownerPubKey
-            )
+            api.deployCredentialRegistry(providers, { secretKey })
           );
 
           const address = contract.deployTxData.public.contractAddress;
@@ -264,6 +262,54 @@ const deploymentLoop = async (
       }
 
       case '6': {
+        // Call registerCredential circuit
+        const address = await rli.question('Enter Credential Registry contract address: ');
+        try {
+          const providers = await api.withStatus('Configuring providers', () =>
+            api.configureCredentialRegistryProviders(walletCtx, config)
+          );
+
+          // Generate a random secret key for this caller
+          const secretKey = new Uint8Array(32);
+          crypto.getRandomValues(secretKey);
+
+          // Join with the random secret key
+          const contract = await api.withStatus('Joining contract', () =>
+            api.joinCredentialRegistry(providers, address.trim(), secretKey)
+          );
+
+          // Generate a test commitment (random 32 bytes)
+          const commitment = new Uint8Array(32);
+          crypto.getRandomValues(commitment);
+          const commitmentHex = Buffer.from(commitment).toString('hex');
+
+          const result = await api.withStatus(`Calling registerCredential - generating ZK proof`, () =>
+            api.callRegisterCredential(contract, commitment)
+          );
+
+          console.log(`\n  ✓ Credential Registered!`);
+          console.log(`    Commitment: ${commitmentHex.slice(0, 16)}...${commitmentHex.slice(-16)}`);
+          console.log(`    Issuer PK:  ${Buffer.from(result.issuerPk).toString('hex').slice(0, 32)}...`);
+          console.log(`    Tx Hash:    ${result.txHash}\n`);
+
+          // Show updated ledger state
+          const state = await api.getCredentialRegistryLedgerState(providers, address.trim());
+          if (state) {
+            console.log(`  Updated Ledger State:`);
+            console.log(`    Total Credentials: ${state.totalCredentials}`);
+            console.log(`    Round: ${state.round}\n`);
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.log(`\n  ✗ Registration failed: ${msg}\n`);
+          if (e instanceof Error && e.cause) {
+            console.log(`    cause: ${e.cause}`);
+          }
+        }
+        break;
+      }
+
+      case '7': {
         // Check DUST balance
         try {
           const dust = await api.getDustBalance(walletCtx.wallet);
@@ -277,7 +323,7 @@ const deploymentLoop = async (
         break;
       }
 
-      case '7':
+      case '8':
         return;
 
       default:

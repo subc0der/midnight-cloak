@@ -482,14 +482,12 @@ export const joinAgeVerifier = async (
 export const deployCredentialRegistry = async (
   providers: CredentialRegistryProviders,
   privateState: CredentialRegistryPrivateState,
-  ownerPubKey: Uint8Array,
 ): Promise<DeployedCredentialRegistryContract> => {
   logger?.info('Deploying credential-registry contract...');
   const contract = await deployContract(providers as any, {
     compiledContract: credentialRegistryCompiledContract as any,
     privateStateId: CredentialRegistryPrivateStateId,
     initialPrivateState: privateState,
-    args: [ownerPubKey],
   } as any);
   logger?.info(`Deployed credential-registry at: ${contract.deployTxData.public.contractAddress}`);
   return contract;
@@ -498,13 +496,22 @@ export const deployCredentialRegistry = async (
 export const joinCredentialRegistry = async (
   providers: CredentialRegistryProviders,
   contractAddress: string,
+  secretKey?: Uint8Array,
 ): Promise<DeployedCredentialRegistryContract> => {
   assertIsContractAddress(contractAddress);
+
+  // Generate random secret key if not provided
+  const sk = secretKey ?? (() => {
+    const key = new Uint8Array(32);
+    crypto.getRandomValues(key);
+    return key;
+  })();
+
   const contract = await findDeployedContract(providers as any, {
     contractAddress,
     compiledContract: credentialRegistryCompiledContract as any,
     privateStateId: CredentialRegistryPrivateStateId,
-    initialPrivateState: { secretKey: new Uint8Array(32) },
+    initialPrivateState: { secretKey: sk },
   } as any);
   logger?.info(`Joined credential-registry at: ${contract.deployTxData.public.contractAddress}`);
   return contract;
@@ -529,6 +536,39 @@ export const callVerifyAge = async (
   return { isVerified: Boolean(isVerified), txHash };
 };
 
+export const callRegisterCredential = async (
+  contract: DeployedCredentialRegistryContract,
+  commitment: Uint8Array,
+): Promise<{ issuerPk: Uint8Array; txHash: string }> => {
+  logger?.info(`Calling registerCredential circuit...`);
+
+  // Call the circuit - generates ZK proof and submits transaction
+  const txData = await contract.callTx.registerCredential(commitment);
+
+  // The circuit returns the issuer's public key
+  const issuerPk = (txData as any).private?.result as Uint8Array;
+  const txHash = txData.public?.txHash || (txData.public as any)?.txId || 'unknown';
+
+  logger?.info(`registerCredential completed, txHash: ${txHash}`);
+  return { issuerPk, txHash };
+};
+
+export const callCheckCommitment = async (
+  contract: DeployedCredentialRegistryContract,
+  commitment: Uint8Array,
+): Promise<{ exists: boolean; txHash: string }> => {
+  logger?.info(`Calling checkCommitment circuit...`);
+
+  // Call the circuit to check if commitment exists
+  const txData = await contract.callTx.checkCommitment(commitment);
+
+  const exists = (txData as any).private?.result as boolean;
+  const txHash = txData.public?.txHash || (txData.public as any)?.txId || 'unknown';
+
+  logger?.info(`checkCommitment result: ${exists}, txHash: ${txHash}`);
+  return { exists: Boolean(exists), txHash };
+};
+
 // ─── Contract Queries ───────────────────────────────────────────────────────
 
 export const getAgeVerifierLedgerState = async (
@@ -545,12 +585,12 @@ export const getAgeVerifierLedgerState = async (
 export const getCredentialRegistryLedgerState = async (
   providers: CredentialRegistryProviders,
   contractAddress: ContractAddress,
-): Promise<{ totalCredentials: bigint; round: bigint; owner: Uint8Array } | null> => {
+): Promise<{ totalCredentials: bigint; round: bigint } | null> => {
   assertIsContractAddress(contractAddress);
   const contractState = await providers.publicDataProvider.queryContractState(contractAddress);
   if (!contractState) return null;
   const state = CredentialRegistry.ledger(contractState.data);
-  return { totalCredentials: state.totalCredentials, round: state.round, owner: state.owner };
+  return { totalCredentials: state.totalCredentials, round: state.round };
 };
 
 // ─── DUST Balance ───────────────────────────────────────────────────────────
