@@ -20,14 +20,9 @@ import { ProviderFactory, type WalletContext, fromHex } from './providers';
 import { NotInitializedError, ContractError } from './errors';
 import { getContractAddresses, hasDeployedContracts } from './addresses';
 
-/**
- * Proof generation request
- */
-export interface ProofRequest {
-  circuit: string;
-  publicInputs: unknown[];
-  privateInputs: unknown[];
-}
+// Constants for validation
+const MIN_VALID_BIRTH_YEAR = 1900;
+const MAX_AGE_YEARS = 150;
 
 /**
  * Proof generation response
@@ -35,6 +30,8 @@ export interface ProofRequest {
 export interface ProofResponse {
   proof: Uint8Array;
   publicOutputs: unknown[];
+  /** Whether this is a mock proof (for development only) */
+  isMock?: boolean;
 }
 
 /**
@@ -46,18 +43,8 @@ export interface ContractCallResult {
   txId?: string;
   blockHeight?: number;
   error?: string;
-}
-
-/**
- * Contract deployment result
- */
-export interface DeploymentResult {
-  success: boolean;
-  contractAddress?: string;
-  txHash?: string;
-  txId?: string;
-  blockHeight?: number;
-  error?: string;
+  /** Whether this result is from a mock implementation */
+  isMock?: boolean;
 }
 
 /**
@@ -95,16 +82,6 @@ export interface DeployedContract {
 }
 
 /**
- * Contract configuration
- */
-export interface ContractConfig {
-  /** Name for private state storage */
-  privateStateStoreName: string;
-  /** Path to compiled ZK circuit assets */
-  zkConfigPath: string;
-}
-
-/**
  * Service health status returned by initialize()
  */
 export interface ServiceHealth {
@@ -133,11 +110,45 @@ export interface DeployedContractInfo {
 }
 
 /**
+ * Parameters for age proof generation
+ */
+export interface AgeProofParams {
+  /** User's birth year */
+  birthYear: number;
+  /** Minimum age to verify */
+  minAge: number;
+  /** Current year (defaults to system year if not provided) */
+  currentYear?: number;
+  /** Request identifier for tracking */
+  requestId: string;
+}
+
+/**
+ * Parameters for on-chain age verification
+ */
+export interface VerifyAgeParams {
+  /** Minimum age to verify */
+  minAge: number;
+  /** User's birth year (required - no defaults for security) */
+  birthYear: number;
+}
+
+/**
  * Age verification result from contract
  */
 export interface AgeVerificationResult {
   isVerified: boolean;
   txHash: string;
+  /** Whether this result is from a mock implementation */
+  isMock?: boolean;
+}
+
+/**
+ * Parameters for credential registration
+ */
+export interface RegisterCredentialParams {
+  /** 32-byte commitment hash */
+  commitment: Uint8Array;
 }
 
 /**
@@ -146,6 +157,16 @@ export interface AgeVerificationResult {
 export interface CredentialRegistrationResult {
   issuerPk: Uint8Array;
   txHash: string;
+  /** Whether this result is from a mock implementation */
+  isMock?: boolean;
+}
+
+/**
+ * Parameters for commitment check
+ */
+export interface CheckCommitmentParams {
+  /** 32-byte commitment hash to check */
+  commitment: Uint8Array;
 }
 
 /**
@@ -154,6 +175,8 @@ export interface CredentialRegistrationResult {
 export interface CommitmentCheckResult {
   exists: boolean;
   txHash: string;
+  /** Whether this result is from a mock implementation */
+  isMock?: boolean;
 }
 
 /**
@@ -170,14 +193,11 @@ export interface CommitmentCheckResult {
  * const client = new ContractClient(config);
  * await client.initialize(walletContext);
  *
- * // Deploy a new contract
- * const deployed = await client.deploy('age-verifier', initialState);
+ * // Join existing contract
+ * const existing = await client.join({ contractType: 'age-verifier' });
  *
- * // Or join existing
- * const existing = await client.join('age-verifier', contractAddress);
- *
- * // Call contract function
- * const result = await client.call(deployed, 'verify', { minAge: 18 });
+ * // Verify age
+ * const result = await client.verifyAgeOnChain({ minAge: 18, birthYear: 1990 });
  * ```
  */
 export class ContractClient {
@@ -209,6 +229,13 @@ export class ContractClient {
   }
 
   /**
+   * Check if mock proofs are allowed
+   */
+  get allowMockProofs(): boolean {
+    return this.config.allowMockProofs ?? false;
+  }
+
+  /**
    * Get the wallet context (null if not initialized)
    */
   getWalletContext(): WalletContext | null {
@@ -223,6 +250,62 @@ export class ContractClient {
     if (!this._isInitialized) {
       throw new NotInitializedError('ContractClient');
     }
+  }
+
+  /**
+   * Validate birth year is within reasonable bounds
+   * @throws ContractError if birth year is invalid
+   */
+  private validateBirthYear(birthYear: number): void {
+    const currentYear = new Date().getFullYear();
+    if (!Number.isInteger(birthYear)) {
+      throw new ContractError('birthYear must be an integer');
+    }
+    if (birthYear < MIN_VALID_BIRTH_YEAR) {
+      throw new ContractError(`birthYear must be ${MIN_VALID_BIRTH_YEAR} or later`);
+    }
+    if (birthYear > currentYear) {
+      throw new ContractError('birthYear cannot be in the future');
+    }
+    if (currentYear - birthYear > MAX_AGE_YEARS) {
+      throw new ContractError(`birthYear indicates age over ${MAX_AGE_YEARS} years`);
+    }
+  }
+
+  /**
+   * Validate minAge is a positive integer
+   * @throws ContractError if minAge is invalid
+   */
+  private validateMinAge(minAge: number): void {
+    if (!Number.isInteger(minAge)) {
+      throw new ContractError('minAge must be an integer');
+    }
+    if (minAge < 0) {
+      throw new ContractError('minAge must be non-negative');
+    }
+    if (minAge > MAX_AGE_YEARS) {
+      throw new ContractError(`minAge cannot exceed ${MAX_AGE_YEARS}`);
+    }
+  }
+
+  /**
+   * Validate commitment is exactly 32 bytes
+   * @throws ContractError if commitment is invalid
+   */
+  private validateCommitment(commitment: Uint8Array): void {
+    if (!(commitment instanceof Uint8Array)) {
+      throw new ContractError('commitment must be a Uint8Array');
+    }
+    if (commitment.length !== 32) {
+      throw new ContractError('commitment must be exactly 32 bytes');
+    }
+  }
+
+  /**
+   * Generate a mock transaction hash (clearly identifiable as mock)
+   */
+  private generateMockTxHash(): string {
+    return `MOCK_tx_${Date.now().toString(16)}`;
   }
 
   /**
@@ -307,16 +390,10 @@ export class ContractClient {
   /**
    * Deploy a new contract
    *
-   * In production, this will:
-   * 1. Load CompiledContract for the contract type
-   * 2. Create initial state
-   * 3. Deploy via deployContract()
-   * 4. Return contract handle with address
+   * NOTE: Contract deployment is not supported in the SDK.
+   * Use the deploy-cli package to deploy contracts.
    *
-   * @param contractType - Type of contract to deploy
-   * @param initialState - Initial private state for the contract
-   * @throws NotInitializedError if not initialized
-   * @throws ContractError if deployment fails or not yet implemented
+   * @throws ContractError always - deployment not supported in SDK
    */
   async deploy(
     contractType: string,
@@ -324,8 +401,6 @@ export class ContractClient {
   ): Promise<DeployedContractInfo> {
     this.ensureInitialized();
 
-    // For SDK users, deployment should go through deploy-cli
-    // The SDK is designed for joining existing contracts
     throw new ContractError(
       `Contract deployment is not supported in the SDK. ` +
         `Use the deploy-cli package to deploy contracts, then use join() to connect. ` +
@@ -336,22 +411,23 @@ export class ContractClient {
   /**
    * Join an existing deployed contract
    *
-   * @param contractType - Type of contract to join ('age-verifier' | 'credential-registry')
-   * @param contractAddress - Address of deployed contract (optional, uses default if not provided)
+   * @param params - Join parameters
+   * @param params.contractType - Type of contract to join
+   * @param params.contractAddress - Address of deployed contract (optional, uses default if not provided)
    * @throws NotInitializedError if not initialized
    * @throws ContractError if joining fails
    */
-  async join(
-    contractType: 'age-verifier' | 'credential-registry',
-    contractAddress?: string
-  ): Promise<DeployedContractInfo> {
+  async join(params: {
+    contractType: 'age-verifier' | 'credential-registry';
+    contractAddress?: string;
+  }): Promise<DeployedContractInfo> {
     this.ensureInitialized();
 
     // Get address from config if not provided
     const addresses = this.getDeployedAddresses();
     const address =
-      contractAddress ||
-      (contractType === 'age-verifier' ? addresses.ageVerifier : addresses.credentialRegistry);
+      params.contractAddress ||
+      (params.contractType === 'age-verifier' ? addresses.ageVerifier : addresses.credentialRegistry);
 
     // For now, return success with the address
     // Real contract joining will be implemented when we have browser-compatible providers
@@ -369,14 +445,17 @@ export class ContractClient {
    *
    * @param params - Proof parameters
    * @returns Proof response with proof bytes and public outputs
+   * @throws ContractError if proof generation fails and mocks are not allowed
    */
-  async generateAgeProof(params: {
-    birthYear: number;
-    minAge: number;
-    currentYear: number;
-    requestId: string;
-  }): Promise<ProofResponse> {
-    const age = params.currentYear - params.birthYear;
+  async generateAgeProof(params: AgeProofParams): Promise<ProofResponse> {
+    this.ensureInitialized();
+
+    // Validate inputs
+    this.validateBirthYear(params.birthYear);
+    this.validateMinAge(params.minAge);
+
+    const currentYear = params.currentYear ?? new Date().getFullYear();
+    const age = currentYear - params.birthYear;
     const isVerified = age >= params.minAge;
 
     // Check if proof server is available
@@ -394,33 +473,45 @@ export class ContractClient {
             inputs: {
               birthYear: params.birthYear,
               minAge: params.minAge,
-              currentYear: params.currentYear,
+              currentYear,
             },
           }),
         });
 
-        if (response.ok) {
-          const data = await response.json();
-          return {
-            proof: fromHex(data.proof),
-            publicOutputs: [isVerified, params.minAge, params.requestId],
-          };
+        if (!response.ok) {
+          throw new Error(`Proof server returned ${response.status}: ${response.statusText}`);
         }
+
+        const data = await response.json();
+        return {
+          proof: fromHex(data.proof),
+          publicOutputs: [isVerified, params.minAge, params.requestId],
+          isMock: false,
+        };
       } catch (error) {
-        // Fall through to mock proof
-        console.warn('Proof server request failed, using mock proof:', error);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+
+        // Only fall back to mock if explicitly allowed
+        if (!this.allowMockProofs) {
+          throw new ContractError(`Failed to generate ZK proof: ${message}`);
+        }
+
+        console.warn('Proof server request failed, using mock proof (allowMockProofs=true):', message);
       }
+    } else if (!this.allowMockProofs) {
+      throw new ContractError('Proof server is unavailable and mock proofs are not allowed');
     }
 
-    // Mock proof for development (64-byte placeholder)
+    // Mock proof for development (only if allowMockProofs is true)
     const proofData = new Uint8Array(64);
     const encoder = new TextEncoder();
-    const data = encoder.encode(`${params.requestId}:${isVerified}`);
+    const data = encoder.encode(`MOCK:${params.requestId}:${isVerified}`);
     proofData.set(data.slice(0, 64));
 
     return {
       proof: proofData,
       publicOutputs: [isVerified, params.minAge, params.requestId],
+      isMock: true,
     };
   }
 
@@ -430,68 +521,75 @@ export class ContractClient {
    * This calls the verifyAge circuit on the deployed contract.
    * The proof is generated and verified in a single transaction.
    *
-   * @param minAge - Minimum age to verify
-   * @param birthYear - User's birth year (will be private in ZK proof)
+   * @param params - Verification parameters (minAge and birthYear are required)
    * @returns Verification result with transaction hash
+   * @throws ContractError if validation fails or mock proofs not allowed
    */
-  async verifyAgeOnChain(
-    minAge: number,
-    birthYear?: number
-  ): Promise<AgeVerificationResult> {
-    // Use provided birth year or default to 30 years old
+  async verifyAgeOnChain(params: VerifyAgeParams): Promise<AgeVerificationResult> {
+    this.ensureInitialized();
+
+    // Validate inputs - no defaults for security-critical parameters
+    this.validateMinAge(params.minAge);
+    this.validateBirthYear(params.birthYear);
+
     const currentYear = new Date().getFullYear();
-    const year = birthYear ?? currentYear - 30;
-    const age = currentYear - year;
-    const isVerified = age >= minAge;
+    const age = currentYear - params.birthYear;
+    const isVerified = age >= params.minAge;
 
     // For full integration, this would call the actual contract circuit
     // using the patterns from deploy-cli/api.ts
     //
     // const contract = await this.getAgeVerifierContract();
-    // const txData = await contract.callTx.verifyAge(BigInt(minAge));
+    // const txData = await contract.callTx.verifyAge(BigInt(params.minAge));
     // return {
     //   isVerified: txData.private.result,
     //   txHash: txData.public.txHash,
+    //   isMock: false,
     // };
+
+    // Check if mocks are allowed
+    if (!this.allowMockProofs) {
+      throw new ContractError(
+        'Real contract integration not yet available. Enable allowMockProofs for development.'
+      );
+    }
 
     // Mock implementation for development
     return {
       isVerified,
-      txHash: `mock_tx_${Date.now().toString(16)}`,
-    };
-  }
-
-  /**
-   * Verify age proof on-chain (legacy method)
-   *
-   * @deprecated Use verifyAgeOnChain instead
-   */
-  async verifyAgeOnChainLegacy(_proof: ProofResponse): Promise<ContractCallResult> {
-    // Mock implementation - does not require initialization
-    return {
-      success: true,
-      txHash: `mock_tx_${Date.now().toString(16)}`,
+      txHash: this.generateMockTxHash(),
+      isMock: true,
     };
   }
 
   /**
    * Register a credential commitment on-chain
    *
-   * @param commitment - 32-byte commitment hash
+   * @param params - Registration parameters
    * @returns Registration result with issuer public key and transaction hash
+   * @throws ContractError if validation fails or mock proofs not allowed
    */
-  async registerCredential(commitment: Uint8Array): Promise<CredentialRegistrationResult> {
-    if (commitment.length !== 32) {
-      throw new ContractError('Commitment must be 32 bytes');
-    }
+  async registerCredential(params: RegisterCredentialParams): Promise<CredentialRegistrationResult> {
+    this.ensureInitialized();
+
+    // Validate commitment
+    this.validateCommitment(params.commitment);
 
     // For full integration, this would call the actual contract circuit
     // const contract = await this.getCredentialRegistryContract();
-    // const txData = await contract.callTx.registerCredential(commitment);
+    // const txData = await contract.callTx.registerCredential(params.commitment);
     // return {
     //   issuerPk: txData.private.result,
     //   txHash: txData.public.txHash,
+    //   isMock: false,
     // };
+
+    // Check if mocks are allowed
+    if (!this.allowMockProofs) {
+      throw new ContractError(
+        'Real contract integration not yet available. Enable allowMockProofs for development.'
+      );
+    }
 
     // Mock implementation
     const mockIssuerPk = new Uint8Array(32);
@@ -499,73 +597,91 @@ export class ContractClient {
 
     return {
       issuerPk: mockIssuerPk,
-      txHash: `mock_tx_${Date.now().toString(16)}`,
+      txHash: this.generateMockTxHash(),
+      isMock: true,
     };
   }
 
   /**
    * Check if a commitment exists on-chain
    *
-   * @param commitment - 32-byte commitment hash to check
+   * @param params - Check parameters
    * @returns Check result with existence flag and transaction hash
+   * @throws ContractError if validation fails or mock proofs not allowed
    */
-  async checkCommitment(commitment: Uint8Array): Promise<CommitmentCheckResult> {
-    if (commitment.length !== 32) {
-      throw new ContractError('Commitment must be 32 bytes');
-    }
+  async checkCommitment(params: CheckCommitmentParams): Promise<CommitmentCheckResult> {
+    this.ensureInitialized();
+
+    // Validate commitment
+    this.validateCommitment(params.commitment);
 
     // For full integration, this would call the actual contract circuit
     // const contract = await this.getCredentialRegistryContract();
-    // const txData = await contract.callTx.checkCommitment(commitment);
+    // const txData = await contract.callTx.checkCommitment(params.commitment);
     // return {
     //   exists: txData.private.result,
     //   txHash: txData.public.txHash,
+    //   isMock: false,
     // };
+
+    // Check if mocks are allowed
+    if (!this.allowMockProofs) {
+      throw new ContractError(
+        'Real contract integration not yet available. Enable allowMockProofs for development.'
+      );
+    }
 
     // Mock implementation - always returns false for mock
     return {
       exists: false,
-      txHash: `mock_tx_${Date.now().toString(16)}`,
+      txHash: this.generateMockTxHash(),
+      isMock: true,
     };
   }
 
   /**
    * Query contract state from the blockchain
    *
-   * @param contractAddress - Address of the contract
-   * @param stateName - Name of the state to query
+   * @param params - Query parameters
+   * @throws ContractError if not initialized or mocks not allowed
    */
-  async queryContractState(
-    _contractAddress: string,
-    _stateName: string
-  ): Promise<unknown> {
+  async queryContractState(_params: {
+    contractAddress: string;
+    stateName: string;
+  }): Promise<unknown> {
+    this.ensureInitialized();
+
+    // Check if mocks are allowed
+    if (!this.allowMockProofs) {
+      throw new ContractError(
+        'Real contract integration not yet available. Enable allowMockProofs for development.'
+      );
+    }
+
     // Mock implementation - returns null
     return null;
   }
 
   /**
-   * Issue a credential (legacy method)
-   *
-   * @deprecated Use registerCredential instead
-   */
-  async issueCredential(_params: {
-    issuer: string;
-    credentialId: string;
-    credentialSecret: Uint8Array;
-  }): Promise<ContractCallResult> {
-    return {
-      success: true,
-      txHash: `mock_tx_${Date.now().toString(16)}`,
-    };
-  }
-
-  /**
    * Prove credential ownership
+   *
+   * @param params - Proof parameters
+   * @throws ContractError if not initialized or mocks not allowed
    */
-  async proveCredentialOwnership(credentialId: string): Promise<ProofResponse> {
+  async proveCredentialOwnership(params: { credentialId: string }): Promise<ProofResponse> {
+    this.ensureInitialized();
+
+    // Check if mocks are allowed
+    if (!this.allowMockProofs) {
+      throw new ContractError(
+        'Real contract integration not yet available. Enable allowMockProofs for development.'
+      );
+    }
+
     return {
       proof: new Uint8Array(64),
-      publicOutputs: [credentialId],
+      publicOutputs: [params.credentialId],
+      isMock: true,
     };
   }
 

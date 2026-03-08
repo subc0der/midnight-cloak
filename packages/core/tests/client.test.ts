@@ -8,6 +8,7 @@ describe('MidnightCloakClient', () => {
     client = new MidnightCloakClient({
       network: 'preprod',
       apiKey: 'test-key',
+      allowMockProofs: true, // Enable mocks for testing
     });
   });
 

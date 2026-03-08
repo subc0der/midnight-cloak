@@ -56,6 +56,7 @@ export class MidnightCloakClient {
       timeout: config.timeout || 30000,
       preferredWallet: config.preferredWallet || 'lace',
       zkConfigPath: config.zkConfigPath ?? '',
+      allowMockProofs: config.allowMockProofs ?? false,
     };
 
     this.walletConnector = new WalletConnector({

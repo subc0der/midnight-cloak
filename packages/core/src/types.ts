@@ -67,6 +67,12 @@ export interface ClientConfig {
    * Path to compiled ZK circuit files
    */
   zkConfigPath?: string;
+
+  /**
+   * Allow mock proofs when proof server is unavailable (default: false)
+   * WARNING: Only enable for development/testing. Never use in production.
+   */
+  allowMockProofs?: boolean;
 }
 
 /**

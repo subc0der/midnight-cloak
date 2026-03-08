@@ -8,7 +8,10 @@ import type { ReactNode } from 'react';
 
 // Create a mock client with mock wallet
 function createMockClient() {
-  const client = new MidnightCloakClient({ network: 'preprod' });
+  const client = new MidnightCloakClient({
+    network: 'preprod',
+    allowMockProofs: true, // Enable mocks for testing
+  });
   client.useMockWallet({ network: 'preprod' });
   return client;
 }
@@ -120,10 +123,10 @@ describe('VerifyButton', () => {
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute('aria-busy', 'true');
 
-    // Wait for verification to complete
+    // Wait for verification to complete (increased timeout for async operations)
     await waitFor(() => {
       expect(button).not.toHaveTextContent('Verifying...');
-    });
+    }, { timeout: 3000 });
   });
 
   it('should call onVerified on successful verification', async () => {

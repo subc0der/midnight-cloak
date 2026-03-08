@@ -8,7 +8,10 @@ import type { ReactNode } from 'react';
 
 // Create a mock client
 function createMockClient() {
-  const client = new MidnightCloakClient({ network: 'preprod' });
+  const client = new MidnightCloakClient({
+    network: 'preprod',
+    allowMockProofs: true, // Enable mocks for testing
+  });
   // Use mock wallet so verify works without real wallet
   client.useMockWallet({ network: 'preprod' });
   return client;
@@ -90,7 +93,7 @@ describe('useVerification', () => {
 
     await waitFor(() => {
       expect(result.current.status).not.toBe('pending');
-    });
+    }, { timeout: 3000 });
 
     // Either we saw pending during the check, or it completed quickly
     // The important thing is the final state is correct

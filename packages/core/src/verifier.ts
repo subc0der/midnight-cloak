@@ -29,11 +29,30 @@ export class Verifier {
   private contractClient: ContractClient;
   private mockWallet: ConnectedWallet | null = null;
   private pendingRequests: Map<string, VerificationRequest> = new Map();
+  private contractClientInitialized = false;
 
   constructor(config: Required<ClientConfig>, walletConnector: WalletConnector) {
     this._config = config;
     this.walletConnector = walletConnector;
     this.contractClient = new ContractClient(config);
+  }
+
+  /**
+   * Ensure contract client is initialized before use
+   */
+  private async ensureContractClientInitialized(): Promise<void> {
+    if (this.contractClientInitialized) return;
+
+    // Initialize with minimal wallet context for SDK usage
+    // Full wallet context will come from Phase 3 wallet extension
+    await this.contractClient.initialize({
+      wallet: null,
+      shieldedSecretKeys: null,
+      dustSecretKey: null,
+      unshieldedKeystore: null,
+      walletId: 'sdk-verifier',
+    });
+    this.contractClientInitialized = true;
   }
 
   get config(): Required<ClientConfig> {
@@ -220,8 +239,11 @@ export class Verifier {
     _type: string,
     policy: AgePolicy
   ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
+    // Ensure contract client is ready
+    await this.ensureContractClientInitialized();
+
     // Use ContractClient for proof generation
-    // In production, birthYear would come from the user's credential
+    // NOTE: In Phase 3, birthYear will come from the user's credential in the wallet.
     // For now, we use a mock value that will always pass (age 30)
     const currentYear = new Date().getFullYear();
     const mockBirthYear = currentYear - 30; // Mock: user is 30 years old
@@ -267,14 +289,23 @@ export class Verifier {
     _requestId: string,
     proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }
   ): Promise<{ verified: boolean }> {
+    // Ensure contract client is ready
+    await this.ensureContractClientInitialized();
+
     // Extract minAge from proof public inputs
     // publicInputs = [isVerified, minAge, requestId]
     const minAge = proof.publicInputs[1] as number;
 
     // Call contract to verify age on-chain
-    // In production, the birth year comes from the user's credential
-    // For now, the contract uses the mock birth year from proof generation
-    const result = await this.contractClient.verifyAgeOnChain(minAge);
+    // NOTE: In Phase 3, birthYear will come from the user's credential in the wallet.
+    // For now, we use a mock birthYear that matches the proof generation.
+    const currentYear = new Date().getFullYear();
+    const mockBirthYear = currentYear - 30; // Must match generateProof mock value
+
+    const result = await this.contractClient.verifyAgeOnChain({
+      minAge,
+      birthYear: mockBirthYear,
+    });
 
     return { verified: result.isVerified };
   }
