@@ -54,10 +54,10 @@
     "prepare": "git config core.hooksPath .hooks || true"
   },
   "dependencies": {
-    "@midnight-ntwrk/compact-js": "2.4.0",
+    "@midnight-ntwrk/compact-js": "2.4.3",
     "@midnight-ntwrk/compact-runtime": "0.14.0",
     "@midnight-ntwrk/ledger": "^4.0.0",
-    "@midnight-ntwrk/ledger-v7": "7.0.0",
+    "@midnight-ntwrk/ledger-v7": "7.0.2",
     "@midnight-ntwrk/midnight-js-contracts": "3.1.0",
     "@midnight-ntwrk/midnight-js-http-client-proof-provider": "3.1.0",
     "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "3.1.0",
@@ -75,18 +75,18 @@
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
     "rxjs": "^7.8.1",
-    "ws": "^8.18.0"
+    "ws": "^8.19.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/ws": "^8.5.13",
-    "@typescript-eslint/eslint-plugin": "^8.18.1",
-    "@typescript-eslint/parser": "^8.18.1",
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
-    "prettier": "^3.4.2",
+    "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",
