@@ -30,6 +30,11 @@ export interface MidnightCloakProviderProps {
    * SECURITY: Never enable in production.
    */
   allowMockProofs?: boolean;
+  /**
+   * Automatically reconnect to the last connected wallet on page load.
+   * Stores wallet preference in localStorage.
+   */
+  autoReconnect?: boolean;
   /** Called when wallet or verification errors occur */
   onError?: (error: Error) => void;
   children: ReactNode;
@@ -60,6 +65,7 @@ export function MidnightCloakProvider({
   proofServerUrl,
   preferredWallet,
   allowMockProofs,
+  autoReconnect,
   onError,
   children,
 }: MidnightCloakProviderProps) {
@@ -83,8 +89,9 @@ export function MidnightCloakProvider({
       proofServerUrl,
       preferredWallet,
       allowMockProofs,
+      autoReconnect,
     });
-  }, [providedClient, apiKey, network, proofServerUrl, preferredWallet, allowMockProofs]);
+  }, [providedClient, apiKey, network, proofServerUrl, preferredWallet, allowMockProofs, autoReconnect]);
 
   // Cleanup previous client when a new one is created
   useEffect(() => {

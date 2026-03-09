@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   MidnightCloakProvider,
   VerifyButton,
@@ -6,13 +6,182 @@ import {
   useMidnightCloak,
   type CredentialGateRenderProps,
 } from '@midnight-cloak/react';
+import { getErrorGuidance, type ErrorGuidance, type ErrorAction } from '@midnight-cloak/core';
 
 type WalletStatus = 'disconnected' | 'connecting' | 'connected';
+
+/**
+ * ErrorDisplay - Shows actionable error messages with guidance
+ */
+function ErrorDisplay({
+  error,
+  onRetry,
+  onDismiss,
+}: {
+  error: Error | unknown;
+  onRetry?: () => void;
+  onDismiss?: () => void;
+}) {
+  const guidance: ErrorGuidance = getErrorGuidance(error);
+
+  const handleAction = (action: ErrorAction) => {
+    switch (action.type) {
+      case 'link':
+        if (action.url) {
+          window.open(action.url, '_blank');
+        }
+        break;
+      case 'retry':
+        onRetry?.();
+        break;
+      case 'dismiss':
+        onDismiss?.();
+        break;
+      case 'connect-wallet':
+        // This would be handled by parent component
+        onDismiss?.();
+        break;
+    }
+  };
+
+  return (
+    <div className="error-display" role="alert">
+      <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--color-error, #dc3545)' }}>
+        {guidance.title}
+      </h4>
+      <p style={{ margin: '0 0 0.75rem 0' }}>{guidance.description}</p>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        {guidance.actions.map((action, index) => (
+          <button
+            key={index}
+            onClick={() => handleAction(action)}
+            className={`verify-btn ${action.type === 'retry' ? '' : 'secondary'}`}
+            style={{ fontSize: '0.875rem', padding: '0.375rem 0.75rem' }}
+          >
+            {action.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * NetworkWarningBanner - Shows when wallet is on wrong network
+ */
+function NetworkWarningBanner({
+  expected,
+  actual,
+}: {
+  expected: string;
+  actual: string;
+}) {
+  return (
+    <div
+      className="card network-warning"
+      role="alert"
+      style={{
+        backgroundColor: '#f8d7da',
+        border: '1px solid #f5c6cb',
+        marginBottom: '1.5rem',
+      }}
+    >
+      <h3 style={{ marginTop: 0, color: '#721c24' }}>
+        Network Mismatch
+      </h3>
+      <p style={{ color: '#721c24' }}>
+        Your wallet is connected to <strong>{actual}</strong>, but this app expects{' '}
+        <strong>{expected}</strong>.
+      </p>
+      <p style={{ marginBottom: 0, color: '#721c24' }}>
+        Please switch networks in your Lace wallet settings.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * InstallWalletBanner - Shows when Lace wallet is not installed
+ */
+function InstallWalletBanner({ onInstalled }: { onInstalled: () => void }) {
+  const { client } = useMidnightCloak();
+  const [isPolling, setIsPolling] = useState(false);
+
+  const handleInstallClick = useCallback(() => {
+    const url = client.getWalletInstallUrl('lace');
+    window.open(url, '_blank');
+
+    // Start polling for installation
+    setIsPolling(true);
+    client.pollForWalletInstallation('lace', {
+      maxDuration: 120000, // 2 minutes
+      onDetected: () => {
+        setIsPolling(false);
+        onInstalled();
+      },
+    });
+  }, [client, onInstalled]);
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      client.stopInstallPolling();
+    };
+  }, [client]);
+
+  return (
+    <div className="card install-banner" style={{
+      backgroundColor: '#fff3cd',
+      border: '1px solid #ffc107',
+      marginBottom: '1.5rem'
+    }}>
+      <h3 style={{ marginTop: 0, color: '#856404' }}>Lace Wallet Required</h3>
+      <p style={{ color: '#856404' }}>
+        To use Midnight Cloak with real credentials, you need the Lace wallet extension.
+      </p>
+      <button
+        onClick={handleInstallClick}
+        className="verify-btn"
+        disabled={isPolling}
+      >
+        {isPolling ? 'Checking for Lace...' : 'Install Lace Wallet'}
+      </button>
+      {isPolling && (
+        <div style={{ marginTop: '0.75rem', color: '#856404' }}>
+          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>
+            After installing Lace, click below to continue.
+          </p>
+          <button
+            onClick={() => {
+              // Force re-check - if detected, proceed; otherwise refresh
+              if (client.isLaceAvailable()) {
+                setIsPolling(false);
+                onInstalled();
+              } else {
+                // Extension may need page refresh to inject into this tab
+                window.location.reload();
+              }
+            }}
+            className="verify-btn secondary"
+            style={{ fontSize: '0.875rem', padding: '0.375rem 0.75rem' }}
+          >
+            I've installed Lace
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * WalletConnection component - uses the provider's client via useMidnightCloak hook
  * to ensure wallet state is shared across all components.
  */
+interface NetworkMismatch {
+  expected: string;
+  actual: string;
+}
+
 function WalletConnection({
   status,
   setStatus,
@@ -23,6 +192,57 @@ function WalletConnection({
   const { client } = useMidnightCloak();
   const [error, setError] = useState<string | null>(null);
   const [useMock, setUseMock] = useState(false);
+  const [laceAvailable, setLaceAvailable] = useState(() => client.isLaceAvailable());
+  const [networkMismatch, setNetworkMismatch] = useState<NetworkMismatch | null>(null);
+
+  // Listen for wallet becoming available (after installation)
+  useEffect(() => {
+    const handleWalletAvailable = () => {
+      setLaceAvailable(true);
+    };
+    client.on('wallet:available', handleWalletAvailable);
+    return () => {
+      client.off('wallet:available', handleWalletAvailable);
+    };
+  }, [client]);
+
+  // Listen for network mismatch/match events
+  useEffect(() => {
+    const handleNetworkMismatch = (info: NetworkMismatch) => {
+      setNetworkMismatch(info);
+    };
+    const handleNetworkMatched = () => {
+      setNetworkMismatch(null);
+    };
+    client.on('network:mismatch', handleNetworkMismatch);
+    client.on('network:matched', handleNetworkMatched);
+    return () => {
+      client.off('network:mismatch', handleNetworkMismatch);
+      client.off('network:matched', handleNetworkMatched);
+    };
+  }, [client]);
+
+  // Attempt auto-reconnect on mount
+  useEffect(() => {
+    const attemptAutoReconnect = async () => {
+      if (status !== 'disconnected') return;
+
+      const lastWallet = client.getLastConnectedWallet();
+      if (!lastWallet) return;
+
+      setStatus('connecting');
+      const wallet = await client.tryAutoReconnect();
+      if (wallet) {
+        setStatus('connected');
+      } else {
+        setStatus('disconnected');
+      }
+    };
+
+    attemptAutoReconnect();
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleConnectWallet = async () => {
     setStatus('connecting');
@@ -46,80 +266,98 @@ function WalletConnection({
   };
 
   const handleDisconnect = () => {
+    // Clear wallet preference when user explicitly disconnects
+    client.disconnectWallet(true);
     client.disconnect();
     setUseMock(false);
     setStatus('disconnected');
     setError(null);
+    setNetworkMismatch(null);
   };
 
   const isConnecting = status === 'connecting';
 
   return (
-    <div className="card" style={{ marginBottom: '1.5rem' }}>
-      <h2>Wallet Connection</h2>
-      <p>Connect your Midnight wallet to get started.</p>
+    <>
+      {/* Show install banner when Lace is not available */}
+      {!laceAvailable && status === 'disconnected' && (
+        <InstallWalletBanner onInstalled={() => setLaceAvailable(true)} />
+      )}
 
-      <div className="status" aria-live="polite">
-        <strong>Status:</strong>{' '}
-        {status === 'connected' ? (
-          <span style={{ color: 'var(--color-success)' }}>
-            Connected {useMock && '(Mock Mode)'}
-          </span>
-        ) : status === 'connecting' ? (
-          'Connecting...'
-        ) : (
-          'Disconnected'
-        )}
-      </div>
+      {/* Show network warning when connected to wrong network */}
+      {networkMismatch && status === 'connected' && (
+        <NetworkWarningBanner
+          expected={networkMismatch.expected}
+          actual={networkMismatch.actual}
+        />
+      )}
 
-      {status === 'disconnected' && (
-        <div className="wallet-actions">
-          {client.isLaceAvailable() && (
-            <button
-              onClick={handleConnectWallet}
-              className="verify-btn"
-              disabled={isConnecting}
-              aria-busy={isConnecting}
-            >
-              {isConnecting ? 'Connecting...' : 'Connect Lace Wallet'}
-            </button>
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <h2>Wallet Connection</h2>
+        <p>Connect your Midnight wallet to get started.</p>
+
+        <div className="status" aria-live="polite">
+          <strong>Status:</strong>{' '}
+          {status === 'connected' ? (
+            <span style={{ color: 'var(--color-success)' }}>
+              Connected {useMock && '(Mock Mode)'}
+            </span>
+          ) : status === 'connecting' ? (
+            'Connecting...'
+          ) : (
+            'Disconnected'
           )}
-          <button
-            onClick={handleUseMockWallet}
-            className="verify-btn secondary"
-            style={{ marginTop: client.isLaceAvailable() ? '0.5rem' : '0' }}
-            disabled={isConnecting}
-          >
-            Use Demo Mode (No Wallet)
+        </div>
+
+        {status === 'disconnected' && (
+          <div className="wallet-actions">
+            {laceAvailable && (
+              <button
+                onClick={handleConnectWallet}
+                className="verify-btn"
+                disabled={isConnecting}
+                aria-busy={isConnecting}
+              >
+                {isConnecting ? 'Connecting...' : 'Connect Lace Wallet'}
+              </button>
+            )}
+            <button
+              onClick={handleUseMockWallet}
+              className="verify-btn secondary"
+              style={{ marginTop: laceAvailable ? '0.5rem' : '0' }}
+              disabled={isConnecting}
+            >
+              Use Demo Mode (No Wallet)
+            </button>
+          </div>
+        )}
+
+        {status === 'connecting' && (
+          <div className="wallet-actions">
+            <p className="loading">Connecting to wallet...</p>
+          </div>
+        )}
+
+        {status === 'connected' && (
+          <button onClick={handleDisconnect} className="verify-btn secondary">
+            Disconnect
           </button>
-        </div>
-      )}
+        )}
 
-      {status === 'connecting' && (
-        <div className="wallet-actions">
-          <p className="loading">Connecting to wallet...</p>
-        </div>
-      )}
-
-      {status === 'connected' && (
-        <button onClick={handleDisconnect} className="verify-btn secondary">
-          Disconnect
-        </button>
-      )}
-
-      {error && status === 'disconnected' && <p className="error" role="alert">{error}</p>}
-    </div>
+        {error && status === 'disconnected' && <p className="error" role="alert">{error}</p>}
+      </div>
+    </>
   );
 }
 
 function AgeVerificationCard() {
   // No need for useMock prop - wallet state is already shared via provider
   const [status, setStatus] = useState<'idle' | 'verified' | 'denied' | 'error'>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const [lastError, setLastError] = useState<Error | null>(null);
 
   const handleReset = () => {
     setStatus('idle');
-    setError(null);
+    setLastError(null);
   };
 
   return (
@@ -137,12 +375,12 @@ function AgeVerificationCard() {
           onDenied={() => {
             console.log('[MidnightCloak] Verification DENIED');
             setStatus('denied');
-            setError('Age requirement not met');
+            setLastError(new Error('Age requirement not met'));
           }}
           onVerificationError={(err) => {
             console.log('[MidnightCloak] Verification ERROR:', err);
             setStatus('error');
-            setError(err.message);
+            setLastError(err);
           }}
           className="verify-btn"
         >
@@ -160,21 +398,23 @@ function AgeVerificationCard() {
         </div>
       )}
 
-      {status === 'denied' && (
+      {status === 'denied' && lastError && (
         <div aria-live="polite">
-          <p className="error" role="alert">{error}</p>
-          <button onClick={handleReset} className="verify-btn" style={{ marginTop: '0.5rem' }}>
-            Try Again
-          </button>
+          <ErrorDisplay
+            error={lastError}
+            onRetry={handleReset}
+            onDismiss={handleReset}
+          />
         </div>
       )}
 
-      {status === 'error' && (
+      {status === 'error' && lastError && (
         <div aria-live="assertive">
-          <p className="error" role="alert">Technical error: {error}</p>
-          <button onClick={handleReset} className="verify-btn" style={{ marginTop: '0.5rem' }}>
-            Try Again
-          </button>
+          <ErrorDisplay
+            error={lastError}
+            onRetry={handleReset}
+            onDismiss={handleReset}
+          />
         </div>
       )}
     </div>
@@ -225,6 +465,8 @@ const config = {
   network: (import.meta.env.VITE_MIDNIGHT_NETWORK || 'preprod') as 'preprod' | 'mainnet',
   // Enable mock proofs for development when proof server is unavailable
   allowMockProofs: import.meta.env.VITE_ALLOW_MOCK_PROOFS !== 'false',
+  // Enable auto-reconnect to remember wallet preference
+  autoReconnect: true,
 };
 
 export function App() {
@@ -239,6 +481,7 @@ export function App() {
       apiKey={config.apiKey}
       network={config.network}
       allowMockProofs={config.allowMockProofs}
+      autoReconnect={config.autoReconnect}
       onError={(err) => console.error('Midnight Cloak Error:', err)}
     >
       <div className="app">

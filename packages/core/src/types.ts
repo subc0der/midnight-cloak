@@ -73,6 +73,13 @@ export interface ClientConfig {
    * WARNING: Only enable for development/testing. Never use in production.
    */
   allowMockProofs?: boolean;
+
+  /**
+   * Automatically reconnect to the last connected wallet on page load (default: false)
+   * When enabled, stores the wallet preference in localStorage and attempts
+   * to reconnect silently when the client is initialized.
+   */
+  autoReconnect?: boolean;
 }
 
 /**

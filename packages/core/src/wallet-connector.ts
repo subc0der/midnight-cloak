@@ -31,7 +31,17 @@ export interface WalletConnectorConfig {
   onConnect?: (wallet: ConnectedWallet) => void;
   onDisconnect?: () => void;
   onError?: (error: Error) => void;
+  onWalletAvailable?: (wallet: WalletType) => void;
 }
+
+/**
+ * Chrome Web Store URLs for supported wallets
+ */
+export const WALLET_INSTALL_URLS: Record<WalletType, string> = {
+  lace: 'https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk',
+  nufi: 'https://chromewebstore.google.com/detail/nufi/gpnihlnnodeiiaakbikldcihojploeca',
+  vespr: 'https://chromewebstore.google.com/detail/vespr/ohjohjecegcdjfpokfgekhfafahcgbkd',
+} as const;
 
 /**
  * Midnight network identifiers
@@ -90,9 +100,58 @@ declare global {
 export class WalletConnector {
   private config: WalletConnectorConfig;
   private connectedWallet: ConnectedWallet | null = null;
+  private installPollingTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(config: WalletConnectorConfig = {}) {
     this.config = config;
+  }
+
+  /**
+   * Get the Chrome Web Store install URL for a wallet
+   */
+  getInstallUrl(wallet: WalletType): string {
+    return WALLET_INSTALL_URLS[wallet];
+  }
+
+  /**
+   * Poll for wallet installation
+   * Checks every 2 seconds for up to maxDuration (default 60s)
+   * Calls onWalletAvailable when wallet is detected
+   * Returns a cleanup function to stop polling
+   */
+  pollForWalletInstallation(
+    wallet: WalletType,
+    options: { maxDuration?: number; interval?: number; onDetected?: () => void } = {}
+  ): () => void {
+    const { maxDuration = 60000, interval = 2000, onDetected } = options;
+    const startTime = Date.now();
+
+    // Clear any existing polling
+    this.stopInstallPolling();
+
+    this.installPollingTimer = setInterval(() => {
+      if (this.isWalletAvailable(wallet)) {
+        this.stopInstallPolling();
+        this.config.onWalletAvailable?.(wallet);
+        onDetected?.();
+      } else if (Date.now() - startTime >= maxDuration) {
+        // Stop polling after max duration
+        this.stopInstallPolling();
+      }
+    }, interval);
+
+    // Return cleanup function
+    return () => this.stopInstallPolling();
+  }
+
+  /**
+   * Stop polling for wallet installation
+   */
+  stopInstallPolling(): void {
+    if (this.installPollingTimer) {
+      clearInterval(this.installPollingTimer);
+      this.installPollingTimer = null;
+    }
   }
 
   /**
@@ -194,13 +253,15 @@ export class WalletConnector {
 
   /**
    * Get the current network
+   * Returns 'unknown' if the network cannot be reliably determined
    */
-  async getNetwork(): Promise<Network> {
+  async getNetwork(): Promise<Network | 'unknown'> {
     if (!this.connectedWallet) {
       throw new Error('Wallet not connected');
     }
 
     const networkId = await this.connectedWallet.getNetworkId();
+    if (networkId === 'unknown') return 'unknown';
     if (networkId === NETWORK_IDS.mainnet) return 'mainnet';
     if (networkId === NETWORK_IDS.standalone) return 'standalone';
     return 'preprod';
@@ -211,8 +272,18 @@ export class WalletConnector {
       getNetworkId: async () => {
         if (api.getNetworkId) {
           const id = await api.getNetworkId();
-          // Convert numeric ID to string network ID for Midnight
-          return id === 1 ? NETWORK_IDS.mainnet : NETWORK_IDS.preprod;
+          // Lace Midnight returns numeric IDs but with different semantics than Cardano:
+          // - Lace Midnight preprod returns 1
+          // - We can't reliably distinguish mainnet vs preprod from this alone
+          // For now, trust the configured network and skip strict validation
+          // TODO: Revisit when Midnight has clearer network ID conventions
+          if (typeof id === 'string') {
+            // If Midnight ever returns string IDs directly, use them
+            return id as string;
+          }
+          // For numeric IDs, we can't reliably determine the network
+          // Return 'unknown' to signal that validation should be skipped
+          return 'unknown';
         }
         return NETWORK_IDS.preprod; // Default to preprod
       },

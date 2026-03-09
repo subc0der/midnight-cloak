@@ -23,6 +23,14 @@ import {
 import { assertNotProduction } from './constants';
 
 /**
+ * Network mismatch information
+ */
+export interface NetworkMismatchInfo {
+  expected: Network;
+  actual: Network;
+}
+
+/**
  * Type-safe event definitions for MidnightCloakClient.
  * Use with `client.on()` and `client.off()` for IntelliSense support.
  */
@@ -30,6 +38,9 @@ export interface ClientEvents {
   'wallet:connected': (wallet: ConnectedWallet) => void;
   'wallet:disconnected': () => void;
   'wallet:error': (error: Error) => void;
+  'wallet:available': (wallet: WalletType) => void;
+  'network:mismatch': (info: NetworkMismatchInfo) => void;
+  'network:matched': (network: Network) => void;
   'verification:requested': (request: VerificationRequest) => void;
   'verification:approved': (result: VerificationResult) => void;
   'verification:denied': (result: VerificationResult) => void;
@@ -39,8 +50,10 @@ export interface ClientEvents {
 /** All valid event names for the client */
 export type ClientEventName = keyof ClientEvents;
 
+const STORAGE_KEY_LAST_WALLET = 'midnight-cloak:lastConnectedWallet';
+
 export class MidnightCloakClient {
-  private config: Required<ClientConfig>;
+  private config: Required<ClientConfig> & { autoReconnect: boolean };
   private networkConfig: NetworkConfig;
   private verifier: Verifier;
   private walletConnector: WalletConnector;
@@ -57,6 +70,7 @@ export class MidnightCloakClient {
       preferredWallet: config.preferredWallet || 'lace',
       zkConfigPath: config.zkConfigPath ?? '',
       allowMockProofs: config.allowMockProofs ?? false,
+      autoReconnect: config.autoReconnect ?? false,
     };
 
     this.walletConnector = new WalletConnector({
@@ -64,6 +78,7 @@ export class MidnightCloakClient {
       onConnect: (wallet) => this.emit('wallet:connected', wallet),
       onDisconnect: () => this.emit('wallet:disconnected'),
       onError: (error) => this.emit('wallet:error', error),
+      onWalletAvailable: (wallet) => this.emit('wallet:available', wallet),
     });
 
     this.verifier = new Verifier(this.config, this.walletConnector);
@@ -171,11 +186,148 @@ export class MidnightCloakClient {
 
   // Wallet connection methods
   async connectWallet(wallet?: WalletType): Promise<ConnectedWallet> {
-    return this.walletConnector.connect(wallet);
+    const walletToConnect = wallet || this.config.preferredWallet;
+    const connectedWallet = await this.walletConnector.connect(walletToConnect);
+
+    // Store preference for auto-reconnect
+    if (this.config.autoReconnect) {
+      this.saveLastConnectedWallet(walletToConnect);
+    }
+
+    // Check network after connection
+    await this.validateNetwork();
+
+    return connectedWallet;
   }
 
-  disconnectWallet(): void {
+  /**
+   * Attempt to reconnect to the last connected wallet.
+   * Only works if autoReconnect is enabled and a wallet was previously connected.
+   *
+   * @returns The connected wallet, or null if no previous connection or reconnect failed
+   */
+  async tryAutoReconnect(): Promise<ConnectedWallet | null> {
+    if (!this.config.autoReconnect) {
+      return null;
+    }
+
+    const lastWallet = this.getLastConnectedWallet();
+    if (!lastWallet) {
+      return null;
+    }
+
+    // Check if the wallet is available
+    if (!this.walletConnector.isWalletAvailable(lastWallet)) {
+      return null;
+    }
+
+    try {
+      return await this.connectWallet(lastWallet);
+    } catch {
+      // Reconnect failed (wallet locked, user denied, etc.)
+      // Clear the saved preference
+      this.clearLastConnectedWallet();
+      return null;
+    }
+  }
+
+  /**
+   * Get the last connected wallet from storage
+   */
+  getLastConnectedWallet(): WalletType | null {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return null;
+    }
+    const stored = localStorage.getItem(STORAGE_KEY_LAST_WALLET);
+    if (stored && (stored === 'lace' || stored === 'nufi' || stored === 'vespr')) {
+      return stored as WalletType;
+    }
+    return null;
+  }
+
+  /**
+   * Save the last connected wallet to storage
+   */
+  private saveLastConnectedWallet(wallet: WalletType): void {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY_LAST_WALLET, wallet);
+  }
+
+  /**
+   * Clear the last connected wallet from storage
+   */
+  clearLastConnectedWallet(): void {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
+    }
+    localStorage.removeItem(STORAGE_KEY_LAST_WALLET);
+  }
+
+  /**
+   * Check if auto-reconnect is enabled
+   */
+  isAutoReconnectEnabled(): boolean {
+    return this.config.autoReconnect;
+  }
+
+  /**
+   * Validate that the connected wallet is on the expected network.
+   * Emits 'network:mismatch' or 'network:matched' event.
+   *
+   * Note: Lace Midnight currently returns numeric IDs that don't reliably
+   * indicate the network. When we can't determine the network, we skip
+   * validation and assume it's correct.
+   *
+   * @returns Object with validation result and network info
+   */
+  async validateNetwork(): Promise<{ valid: boolean; expected: Network; actual: Network | 'unknown' }> {
+    const expected = this.config.network;
+    const actual = await this.walletConnector.getNetwork();
+
+    // If we can't determine the network, skip validation
+    if (actual === 'unknown') {
+      this.emit('network:matched', expected);
+      return { valid: true, expected, actual: 'unknown' };
+    }
+
+    if (actual !== expected) {
+      this.emit('network:mismatch', { expected, actual });
+      return { valid: false, expected, actual };
+    }
+
+    this.emit('network:matched', actual);
+    return { valid: true, expected, actual };
+  }
+
+  /**
+   * Get the currently connected wallet's network
+   * Returns 'unknown' if the network cannot be reliably determined
+   */
+  async getConnectedNetwork(): Promise<Network | 'unknown' | null> {
+    if (!this.isWalletConnected()) {
+      return null;
+    }
+    return this.walletConnector.getNetwork();
+  }
+
+  /**
+   * Get the expected network from client configuration
+   */
+  getExpectedNetwork(): Network {
+    return this.config.network;
+  }
+
+  /**
+   * Disconnect from wallet
+   * @param clearPreference - If true, also clears the saved wallet preference (default: false)
+   */
+  disconnectWallet(clearPreference = false): void {
     this.walletConnector.disconnect();
+    if (clearPreference) {
+      this.clearLastConnectedWallet();
+    }
   }
 
   isWalletConnected(): boolean {
@@ -188,6 +340,58 @@ export class MidnightCloakClient {
 
   isLaceAvailable(): boolean {
     return this.walletConnector.isLaceAvailable();
+  }
+
+  /**
+   * Check if a specific wallet is available
+   */
+  isWalletAvailable(wallet: WalletType): boolean {
+    return this.walletConnector.isWalletAvailable(wallet);
+  }
+
+  /**
+   * Get the Chrome Web Store install URL for a wallet
+   *
+   * @example
+   * ```typescript
+   * const url = client.getWalletInstallUrl('lace');
+   * window.open(url, '_blank');
+   * ```
+   */
+  getWalletInstallUrl(wallet: WalletType): string {
+    return this.walletConnector.getInstallUrl(wallet);
+  }
+
+  /**
+   * Poll for wallet installation after user clicks install link.
+   * Checks every 2 seconds for up to 60 seconds by default.
+   * Emits 'wallet:available' event when wallet is detected.
+   *
+   * @returns Cleanup function to stop polling
+   *
+   * @example
+   * ```typescript
+   * // Start polling when user clicks install
+   * const stopPolling = client.pollForWalletInstallation('lace', {
+   *   onDetected: () => console.log('Lace installed!')
+   * });
+   *
+   * // Optional: stop polling early
+   * stopPolling();
+   * ```
+   */
+  pollForWalletInstallation(
+    wallet: WalletType,
+    options?: { maxDuration?: number; interval?: number; onDetected?: () => void }
+  ): () => void {
+    return this.walletConnector.pollForWalletInstallation(wallet, options);
+  }
+
+  /**
+   * Stop polling for wallet installation
+   */
+  stopInstallPolling(): void {
+    this.walletConnector.stopInstallPolling();
   }
 
   /**
