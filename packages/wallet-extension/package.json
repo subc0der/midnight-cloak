@@ -5,8 +5,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite build --watch",
-    "build": "echo 'Skipping: wallet-extension is Phase 3 placeholder'",
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
@@ -15,10 +16,13 @@
   "dependencies": {
     "@midnight-cloak/core": "workspace:*",
     "@midnight-cloak/wallet": "workspace:*",
+    "hash-wasm": "^4.11.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.1"
   },
   "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.28",
     "@types/chrome": "^0.0.287",
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
@@ -34,5 +38,5 @@
     "credentials"
   ],
   "author": "subcoder",
-  "license": "MIT"
+  "license": "Apache-2.0"
 }

@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Midnight Cloak",
+  "version": "0.1.0",
+  "description": "Zero-knowledge identity verification for Midnight. Prove who you are without revealing your data.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "offscreen",
+    "alarms"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Midnight Cloak"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/injected.ts"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/page-api.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
