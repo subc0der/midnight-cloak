@@ -7,6 +7,7 @@ settings:
 overrides:
   minimatch@<3.1.4: 3.1.4
   minimatch@>=9.0.0 <9.0.7: 9.0.7
+  rollup@<2.80.0: 2.80.0
   rollup@>=4.0.0 <4.59.0: 4.59.0
   ajv@<6.14.0: 6.14.0
   esbuild@<=0.24.2: 0.25.0
@@ -3513,8 +3514,8 @@ packages:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
 
-  rollup@2.79.2:
-    resolution: {integrity: sha512-fS6iqSPZDs3dr/y7Od6y5nha8dW1YnbgtsyotCVvoFGKbERG++CVRFv1meyGDE1SNItQA8BrnCw7ScdAhRJ3XQ==}
+  rollup@2.80.0:
+    resolution: {integrity: sha512-cIFJOD1DESzpjOBl763Kp1AH7UE/0fcdHe6rZXUdQ9c50uvgigvW97u3IcSeBwOkgqL/PXPBktBCh0KEu5L8XQ==}
     engines: {node: '>=10.0.0'}
     hasBin: true
 
@@ -4309,7 +4310,7 @@ snapshots:
       pathe: 2.0.3
       picocolors: 1.1.1
       react-refresh: 0.13.0
-      rollup: 2.79.2
+      rollup: 2.80.0
       rxjs: 7.5.7
     transitivePeerDependencies:
       - supports-color
@@ -7810,7 +7811,7 @@ snapshots:
 
   reusify@1.1.0: {}
 
-  rollup@2.79.2:
+  rollup@2.80.0:
     optionalDependencies:
       fsevents: 2.3.3
 
