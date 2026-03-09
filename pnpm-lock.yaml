@@ -37,7 +37,7 @@ importers:
         version: 3.1.0
       '@midnight-ntwrk/midnight-js-indexer-public-data-provider':
         specifier: 3.1.0
-        version: 3.1.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 3.1.0(@types/react@18.3.27)(react-dom@19.2.4(react@18.3.1))(react@18.3.1)
       '@midnight-ntwrk/midnight-js-level-private-state-provider':
         specifier: 3.1.0
         version: 3.1.0
@@ -136,15 +136,15 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
+        specifier: ^19.2.4
+        version: 19.2.4(react@18.3.1)
     devDependencies:
       '@types/react':
         specifier: ^18.3.17
         version: 18.3.27
       '@types/react-dom':
-        specifier: ^18.3.5
-        version: 18.3.7(@types/react@18.3.27)
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@18.3.27)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.1(@types/node@22.19.3)(tsx@4.21.0)(yaml@2.8.2))
@@ -187,7 +187,7 @@ importers:
         version: 3.0.0
       '@midnight-ntwrk/midnight-js-indexer-public-data-provider':
         specifier: 3.0.0
-        version: 3.0.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 3.0.0(@types/react@18.3.27)(react-dom@19.2.4(react@18.3.1))(react@18.3.1)
       '@midnight-ntwrk/midnight-js-level-private-state-provider':
         specifier: 3.0.0
         version: 3.0.0
@@ -246,13 +246,13 @@ importers:
         version: 6.9.1
       '@testing-library/react':
         specifier: ^16.1.0
-        version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@19.2.4(react@18.3.1))(react@18.3.1)
       '@types/react':
         specifier: ^18.3.17
         version: 18.3.27
       '@types/react-dom':
-        specifier: ^18.3.5
-        version: 18.3.7(@types/react@18.3.27)
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@18.3.27)
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -260,8 +260,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
+        specifier: ^19.2.4
+        version: 19.2.4(react@18.3.1)
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -297,11 +297,11 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
+        specifier: ^19.2.4
+        version: 19.2.4(react@18.3.1)
       react-router-dom:
         specifier: ^7.1.1
-        version: 7.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 7.13.1(react-dom@19.2.4(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@crxjs/vite-plugin':
         specifier: ^2.0.0-beta.28
@@ -313,8 +313,8 @@ importers:
         specifier: ^18.3.17
         version: 18.3.27
       '@types/react-dom':
-        specifier: ^18.3.5
-        version: 18.3.7(@types/react@18.3.27)
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@18.3.27)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.1(@types/node@22.19.3)(tsx@4.21.0)(yaml@2.8.2))
@@ -356,6 +356,10 @@ packages:
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/code-frame@7.29.0':
+    resolution: {integrity: sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/compat-data@7.28.5':
@@ -427,6 +431,10 @@ packages:
 
   '@babel/runtime@7.28.4':
     resolution: {integrity: sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/runtime@7.28.6':
+    resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.27.2':
@@ -1759,10 +1767,10 @@ packages:
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
 
-  '@types/react-dom@18.3.7':
-    resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
+  '@types/react-dom@19.2.3':
+    resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
     peerDependencies:
-      '@types/react': ^18.0.0
+      '@types/react': ^19.2.0
 
   '@types/react@18.3.27':
     resolution: {integrity: sha512-cisd7gxkzjBKU2GgdYrTdtQx1SORymWyaAFhaxQPK9bYO9ot3Y5OikQRvY0VYQtvwjeQnizCINJAenh/V7MK2w==}
@@ -3410,10 +3418,10 @@ packages:
   quick-format-unescaped@4.0.4:
     resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
 
-  react-dom@18.3.1:
-    resolution: {integrity: sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==}
+  react-dom@19.2.4:
+    resolution: {integrity: sha512-AXJdLo8kgMbimY95O2aKQqsz2iWi9jMgKJhRBAxECE4IFxfcazB2LmzloIoibJI3C12IlY20+KFaLv+71bUJeQ==}
     peerDependencies:
-      react: ^18.3.1
+      react: ^19.2.4
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -3571,8 +3579,8 @@ packages:
   scale-ts@1.6.1:
     resolution: {integrity: sha512-PBMc2AWc6wSEqJYBDPcyCLUj9/tMKnLX70jLOSndMtcUoLQucP/DM0vnQo1wJAYjTrQiq8iG9rD0q6wFzgjH7g==}
 
-  scheduler@0.23.2:
-    resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
+  scheduler@0.27.0:
+    resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
 
   secure-json-parse@4.1.0:
     resolution: {integrity: sha512-l4KnYfEyqYJxDwlNVyRfO2E4NTHfMKAWdUuA8J0yve2Dz/E/PdBepY03RvyJpssIpRFwJoCD55wA+mEDs6ByWA==}
@@ -4030,6 +4038,7 @@ packages:
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-mimetype@4.0.0:
     resolution: {integrity: sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg==}
@@ -4147,7 +4156,7 @@ snapshots:
 
   '@adobe/css-tools@4.4.4': {}
 
-  '@apollo/client@3.14.0(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.18.3))(graphql@16.13.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@apollo/client@3.14.0(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.18.3))(graphql@16.13.1)(react-dom@19.2.4(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.13.1)
       '@wry/caches': 1.0.1
@@ -4166,7 +4175,7 @@ snapshots:
     optionalDependencies:
       graphql-ws: 6.0.7(graphql@16.13.1)(ws@8.18.3)
       react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react-dom: 19.2.4(react@18.3.1)
     transitivePeerDependencies:
       - '@types/react'
 
@@ -4179,6 +4188,12 @@ snapshots:
       lru-cache: 10.4.3
 
   '@babel/code-frame@7.27.1':
+    dependencies:
+      '@babel/helper-validator-identifier': 7.28.5
+      js-tokens: 4.0.0
+      picocolors: 1.1.1
+
+  '@babel/code-frame@7.29.0':
     dependencies:
       '@babel/helper-validator-identifier': 7.28.5
       js-tokens: 4.0.0
@@ -4268,6 +4283,8 @@ snapshots:
       '@babel/helper-plugin-utils': 7.27.1
 
   '@babel/runtime@7.28.4': {}
+
+  '@babel/runtime@7.28.6': {}
 
   '@babel/template@7.27.2':
     dependencies:
@@ -4762,9 +4779,9 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@midnight-ntwrk/midnight-js-indexer-public-data-provider@3.0.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@midnight-ntwrk/midnight-js-indexer-public-data-provider@3.0.0(@types/react@18.3.27)(react-dom@19.2.4(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@apollo/client': 3.14.0(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.18.3))(graphql@16.13.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@apollo/client': 3.14.0(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.18.3))(graphql@16.13.1)(react-dom@19.2.4(react@18.3.1))(react@18.3.1)
       '@midnight-ntwrk/midnight-js-network-id': 3.0.0
       '@midnight-ntwrk/midnight-js-types': 3.0.0
       '@midnight-ntwrk/midnight-js-utils': 3.0.0
@@ -4787,9 +4804,9 @@ snapshots:
       - subscriptions-transport-ws
       - utf-8-validate
 
-  '@midnight-ntwrk/midnight-js-indexer-public-data-provider@3.1.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@midnight-ntwrk/midnight-js-indexer-public-data-provider@3.1.0(@types/react@18.3.27)(react-dom@19.2.4(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@apollo/client': 3.14.0(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.18.3))(graphql@16.13.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@apollo/client': 3.14.0(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.18.3))(graphql@16.13.1)(react-dom@19.2.4(react@18.3.1))(react@18.3.1)
       '@midnight-ntwrk/midnight-js-network-id': 3.1.0
       '@midnight-ntwrk/midnight-js-types': 3.1.0
       '@midnight-ntwrk/midnight-js-utils': 3.1.0
@@ -5662,8 +5679,8 @@ snapshots:
 
   '@testing-library/dom@10.4.1':
     dependencies:
-      '@babel/code-frame': 7.27.1
-      '@babel/runtime': 7.28.4
+      '@babel/code-frame': 7.29.0
+      '@babel/runtime': 7.28.6
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
@@ -5680,15 +5697,15 @@ snapshots:
       picocolors: 1.1.1
       redent: 3.0.0
 
-  '@testing-library/react@16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@testing-library/react@16.3.1(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@19.2.4(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.28.4
       '@testing-library/dom': 10.4.1
       react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
+      react-dom: 19.2.4(react@18.3.1)
     optionalDependencies:
       '@types/react': 18.3.27
-      '@types/react-dom': 18.3.7(@types/react@18.3.27)
+      '@types/react-dom': 19.2.3(@types/react@18.3.27)
 
   '@tsconfig/node10@1.0.12': {}
 
@@ -5765,7 +5782,7 @@ snapshots:
 
   '@types/prop-types@15.7.15': {}
 
-  '@types/react-dom@18.3.7(@types/react@18.3.27)':
+  '@types/react-dom@19.2.3(@types/react@18.3.27)':
     dependencies:
       '@types/react': 18.3.27
 
@@ -7703,11 +7720,10 @@ snapshots:
 
   quick-format-unescaped@4.0.4: {}
 
-  react-dom@18.3.1(react@18.3.1):
+  react-dom@19.2.4(react@18.3.1):
     dependencies:
-      loose-envify: 1.4.0
       react: 18.3.1
-      scheduler: 0.23.2
+      scheduler: 0.27.0
 
   react-is@16.13.1: {}
 
@@ -7717,19 +7733,19 @@ snapshots:
 
   react-refresh@0.17.0: {}
 
-  react-router-dom@7.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-router-dom@7.13.1(react-dom@19.2.4(react@18.3.1))(react@18.3.1):
     dependencies:
       react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-router: 7.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-dom: 19.2.4(react@18.3.1)
+      react-router: 7.13.1(react-dom@19.2.4(react@18.3.1))(react@18.3.1)
 
-  react-router@7.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  react-router@7.13.1(react-dom@19.2.4(react@18.3.1))(react@18.3.1):
     dependencies:
       cookie: 1.1.1
       react: 18.3.1
       set-cookie-parser: 2.7.2
     optionalDependencies:
-      react-dom: 18.3.1(react@18.3.1)
+      react-dom: 19.2.4(react@18.3.1)
 
   react@18.3.1:
     dependencies:
@@ -7895,9 +7911,7 @@ snapshots:
 
   scale-ts@1.6.1: {}
 
-  scheduler@0.23.2:
-    dependencies:
-      loose-envify: 1.4.0
+  scheduler@0.27.0: {}
 
   secure-json-parse@4.1.0: {}
 
