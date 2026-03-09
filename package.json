@@ -11,7 +11,8 @@
       "rollup@>=4.0.0 <4.59.0": "4.59.0",
       "ajv@<6.14.0": "6.14.0",
       "esbuild@<=0.24.2": "0.25.0",
-      "smoldot": "npm:empty-npm-package@1.0.0"
+      "smoldot": "npm:empty-npm-package@1.0.0",
+      "@midnight-ntwrk/ledger-v7": "7.0.2"
     }
   },
   "keywords": [
