@@ -9,10 +9,19 @@
  */
 
 import { EncryptedStorage } from '../shared/storage/encrypted-storage';
+import type { PendingVerificationRequest, PendingCredentialOffer } from '../shared/messaging/types';
 
 const AUTO_LOCK_ALARM = 'midnight-cloak-auto-lock';
 
 let storage: EncryptedStorage | null = null;
+
+// Pending requests/offers waiting for user approval
+let pendingVerificationRequest: PendingVerificationRequest | null = null;
+let pendingCredentialOffer: PendingCredentialOffer | null = null;
+
+// Callbacks to resolve pending requests
+let pendingRequestResolve: ((result: unknown) => void) | null = null;
+let pendingOfferResolve: ((result: unknown) => void) | null = null;
 
 // Initialize on install
 chrome.runtime.onInstalled.addListener(() => {
@@ -41,7 +50,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 checkAutoLockOnStartup();
 
 // Handle messages from popup and content scripts
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // Ignore messages meant for offscreen document
   if (message.type === 'DERIVE_KEY') {
     // Don't handle - let offscreen document handle it
@@ -100,7 +109,31 @@ async function handleMessage(message: { type: string; [key: string]: unknown }):
       return updateAutoLock(message.minutes as number);
 
     case 'VERIFICATION_REQUEST':
-      return handleVerificationRequest(message);
+      return handleVerificationRequest(message as { policyConfig?: unknown; origin?: string });
+
+    case 'GET_PENDING_REQUEST':
+      return getPendingRequest();
+
+    case 'APPROVE_VERIFICATION':
+      return approveVerification();
+
+    case 'DENY_VERIFICATION':
+      return denyVerification();
+
+    case 'CREDENTIAL_OFFER':
+      return handleCredentialOffer(message as { credential?: unknown; origin?: string });
+
+    case 'GET_PENDING_OFFER':
+      return getPendingOffer();
+
+    case 'ACCEPT_CREDENTIAL':
+      return acceptCredential();
+
+    case 'REJECT_CREDENTIAL':
+      return rejectCredential();
+
+    case 'GET_AVAILABLE_CREDENTIALS':
+      return getAvailableCredentials();
 
     default:
       return { success: false, error: 'Unknown message type' };
@@ -212,6 +245,27 @@ async function deleteCredential(id: string): Promise<{ success: boolean; error?:
   }
 }
 
+async function getAvailableCredentials(): Promise<{
+  success: boolean;
+  credentials?: Array<{ type: string; id: string }>;
+  error?: string;
+}> {
+  if (!storage) {
+    return { success: false, error: 'Vault is locked' };
+  }
+
+  try {
+    const data = await storage.load();
+    const credentials = (data?.credentials || []) as Array<{ id: string; type: string }>;
+    // Return only type and id for privacy - don't expose full claims to dApps
+    const available = credentials.map((c) => ({ id: c.id, type: c.type }));
+    await resetAutoLockTimer();
+    return { success: true, credentials: available };
+  } catch (err) {
+    return { success: false, error: (err as Error).message };
+  }
+}
+
 async function updateAutoLock(minutes: number): Promise<{ success: boolean }> {
   await chrome.storage.local.set({ autoLockMinutes: minutes });
   await resetAutoLockTimer();
@@ -273,10 +327,265 @@ async function checkAutoLockOnStartup(): Promise<void> {
   }
 }
 
-async function handleVerificationRequest(message: unknown): Promise<{ success: boolean; error?: string }> {
-  // TODO: Implement verification request handling
-  // This will open the popup and show the request approval screen
-  console.log('Verification request received:', message);
+async function handleVerificationRequest(
+  message: { policyConfig?: unknown; origin?: string }
+): Promise<unknown> {
+  console.log('[Background] Verification request received:', message);
+
+  // Create pending request
+  const request: PendingVerificationRequest = {
+    id: crypto.randomUUID(),
+    origin: (message.origin as string) || 'unknown',
+    policyConfig: (message.policyConfig as PendingVerificationRequest['policyConfig']) || { type: 'UNKNOWN' },
+    timestamp: Date.now(),
+  };
+
+  pendingVerificationRequest = request;
+
+  // Return a promise that resolves when user approves/denies
+  return new Promise((resolve) => {
+    pendingRequestResolve = resolve;
+
+    // Open popup for user to approve/deny
+    chrome.action.openPopup().catch(() => {
+      // openPopup may fail if popup is already open or not available
+      // In that case, the popup will check for pending requests on load
+      console.log('[Background] Could not open popup automatically');
+    });
+
+    // Timeout after 5 minutes
+    setTimeout(() => {
+      if (pendingVerificationRequest?.id === request.id) {
+        pendingVerificationRequest = null;
+        pendingRequestResolve = null;
+        resolve({ success: false, error: 'Request timed out' });
+      }
+    }, 5 * 60 * 1000);
+  });
+}
+
+function getPendingRequest(): { success: boolean; request?: PendingVerificationRequest | null } {
+  return { success: true, request: pendingVerificationRequest };
+}
+
+async function approveVerification(): Promise<{ success: boolean; proof?: unknown; error?: string }> {
+  if (!pendingVerificationRequest) {
+    return { success: false, error: 'No pending request' };
+  }
+
+  if (!storage) {
+    return { success: false, error: 'Vault is locked' };
+  }
+
+  try {
+    // Load credentials and find matching one
+    const data = await storage.load();
+    const credentials = (data?.credentials || []) as Array<{
+      id: string;
+      type: string;
+      claims: Record<string, unknown>;
+      expiresAt: number | null;
+    }>;
+
+    const matchingCredential = findMatchingCredential(pendingVerificationRequest.policyConfig, credentials);
+
+    if (!matchingCredential) {
+      const result = { success: false, error: 'No matching credential found' };
+      if (pendingRequestResolve) {
+        pendingRequestResolve(result);
+        pendingRequestResolve = null;
+      }
+      pendingVerificationRequest = null;
+      return result;
+    }
+
+    // Generate mock proof (real proof generation in Phase 3D)
+    const proof = {
+      type: pendingVerificationRequest.policyConfig.type,
+      verified: true,
+      timestamp: Date.now(),
+      credentialId: matchingCredential.id,
+      // Mock proof data
+      proofData: btoa(JSON.stringify({
+        request: pendingVerificationRequest.policyConfig,
+        credentialType: matchingCredential.type,
+        nonce: crypto.randomUUID(),
+      })),
+    };
+
+    const result = { success: true, verified: true, proof };
+
+    if (pendingRequestResolve) {
+      pendingRequestResolve(result);
+      pendingRequestResolve = null;
+    }
+
+    pendingVerificationRequest = null;
+    await resetAutoLockTimer();
+
+    return result;
+  } catch (err) {
+    const result = { success: false, error: (err as Error).message };
+    if (pendingRequestResolve) {
+      pendingRequestResolve(result);
+      pendingRequestResolve = null;
+    }
+    pendingVerificationRequest = null;
+    return result;
+  }
+}
+
+function denyVerification(): { success: boolean } {
+  const result = { success: false, error: 'User denied the request' };
+
+  if (pendingRequestResolve) {
+    pendingRequestResolve(result);
+    pendingRequestResolve = null;
+  }
+
+  pendingVerificationRequest = null;
   return { success: true };
+}
+
+async function handleCredentialOffer(
+  message: { credential?: unknown; origin?: string }
+): Promise<unknown> {
+  console.log('[Background] Credential offer received:', message);
+
+  const credential = message.credential as PendingCredentialOffer['credential'];
+  if (!credential || !credential.type) {
+    return { success: false, error: 'Invalid credential data' };
+  }
+
+  // Create pending offer
+  const offer: PendingCredentialOffer = {
+    id: crypto.randomUUID(),
+    origin: (message.origin as string) || 'unknown',
+    credential,
+    timestamp: Date.now(),
+  };
+
+  pendingCredentialOffer = offer;
+
+  // Return a promise that resolves when user accepts/rejects
+  return new Promise((resolve) => {
+    pendingOfferResolve = resolve;
+
+    // Open popup for user to accept/reject
+    chrome.action.openPopup().catch(() => {
+      console.log('[Background] Could not open popup automatically');
+    });
+
+    // Timeout after 5 minutes
+    setTimeout(() => {
+      if (pendingCredentialOffer?.id === offer.id) {
+        pendingCredentialOffer = null;
+        pendingOfferResolve = null;
+        resolve({ success: false, error: 'Offer timed out' });
+      }
+    }, 5 * 60 * 1000);
+  });
+}
+
+function getPendingOffer(): { success: boolean; offer?: PendingCredentialOffer | null } {
+  return { success: true, offer: pendingCredentialOffer };
+}
+
+async function acceptCredential(): Promise<{ success: boolean; error?: string }> {
+  if (!pendingCredentialOffer) {
+    return { success: false, error: 'No pending offer' };
+  }
+
+  if (!storage) {
+    return { success: false, error: 'Vault is locked' };
+  }
+
+  try {
+    // Create full credential from offer
+    const newCredential = {
+      id: crypto.randomUUID(),
+      type: pendingCredentialOffer.credential.type,
+      issuer: pendingCredentialOffer.credential.issuer,
+      subject: '', // Will be set when we have wallet address
+      claims: pendingCredentialOffer.credential.claims,
+      issuedAt: Date.now(),
+      expiresAt: pendingCredentialOffer.credential.expiresAt,
+      signature: new Uint8Array(0), // Mock signature
+    };
+
+    // Add to vault
+    const data = await storage.load();
+    const credentials = data?.credentials || [];
+    credentials.push(newCredential);
+    await storage.save({ credentials });
+
+    const result = { success: true, credentialId: newCredential.id };
+
+    if (pendingOfferResolve) {
+      pendingOfferResolve(result);
+      pendingOfferResolve = null;
+    }
+
+    pendingCredentialOffer = null;
+    await resetAutoLockTimer();
+
+    return result;
+  } catch (err) {
+    const result = { success: false, error: (err as Error).message };
+    if (pendingOfferResolve) {
+      pendingOfferResolve(result);
+      pendingOfferResolve = null;
+    }
+    pendingCredentialOffer = null;
+    return result;
+  }
+}
+
+function rejectCredential(): { success: boolean } {
+  const result = { success: false, error: 'User rejected the credential' };
+
+  if (pendingOfferResolve) {
+    pendingOfferResolve(result);
+    pendingOfferResolve = null;
+  }
+
+  pendingCredentialOffer = null;
+  return { success: true };
+}
+
+function findMatchingCredential(
+  policyConfig: { type: string; minAge?: number; [key: string]: unknown },
+  credentials: Array<{ id: string; type: string; claims: Record<string, unknown>; expiresAt: number | null }>
+): { id: string; type: string; claims: Record<string, unknown>; expiresAt: number | null } | null {
+  return credentials.find((cred) => {
+    // Type must match
+    if (cred.type !== policyConfig.type) return false;
+
+    // Check expiration
+    if (cred.expiresAt && cred.expiresAt < Date.now()) return false;
+
+    // Type-specific checks
+    if (policyConfig.type === 'AGE' && policyConfig.minAge) {
+      const birthDate = cred.claims.birthDate as string;
+      if (!birthDate) return false;
+
+      const age = calculateAge(new Date(birthDate));
+      if (age < policyConfig.minAge) return false;
+    }
+
+    return true;
+  }) || null;
+}
+
+function calculateAge(birthDate: Date): number {
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  return age;
 }
 

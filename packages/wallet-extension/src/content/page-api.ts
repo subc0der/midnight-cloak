@@ -5,7 +5,10 @@
  * and provides window.midnightCloak API for dApps.
  */
 
-const EXTENSION_ID = 'midnight-cloak';
+// Make this a module so declare global works
+export {};
+
+const PAGE_API_EXTENSION_ID = 'midnight-cloak';
 
 declare global {
   interface Window {
@@ -14,6 +17,12 @@ declare global {
       version: string;
       requestVerification: (config: unknown) => Promise<unknown>;
       getAvailableCredentials: () => Promise<unknown[]>;
+      issueCredential: (credential: {
+        type: string;
+        claims: Record<string, unknown>;
+        issuer: string;
+        expiresAt?: number | null;
+      }) => Promise<unknown>;
     };
   }
 }
@@ -26,7 +35,7 @@ window.midnightCloak = {
     return new Promise((resolve, reject) => {
       const handler = (event: MessageEvent) => {
         if (
-          event.data?.source === EXTENSION_ID &&
+          event.data?.source === PAGE_API_EXTENSION_ID &&
           event.data?.type === 'VERIFICATION_REQUEST_RESPONSE'
         ) {
           window.removeEventListener('message', handler);
@@ -62,7 +71,7 @@ window.midnightCloak = {
     return new Promise((resolve, reject) => {
       const handler = (event: MessageEvent) => {
         if (
-          event.data?.source === EXTENSION_ID &&
+          event.data?.source === PAGE_API_EXTENSION_ID &&
           event.data?.type === 'GET_AVAILABLE_CREDENTIALS_RESPONSE'
         ) {
           window.removeEventListener('message', handler);
@@ -90,6 +99,53 @@ window.midnightCloak = {
         window.removeEventListener('message', handler);
         reject(new Error('Request timed out'));
       }, 30000);
+    });
+  },
+
+  async issueCredential(credential: {
+    type: string;
+    claims: Record<string, unknown>;
+    issuer: string;
+    expiresAt?: number | null;
+  }): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      const handler = (event: MessageEvent) => {
+        if (
+          event.data?.source === PAGE_API_EXTENSION_ID &&
+          event.data?.type === 'CREDENTIAL_OFFER_RESPONSE'
+        ) {
+          window.removeEventListener('message', handler);
+          const payload = event.data.payload;
+          if (payload.success) {
+            resolve(payload);
+          } else {
+            reject(new Error(payload.error || 'Credential issuance failed'));
+          }
+        }
+      };
+
+      window.addEventListener('message', handler);
+
+      window.postMessage(
+        {
+          type: 'CREDENTIAL_OFFER',
+          source: 'midnight-cloak-dapp',
+          payload: {
+            credential: {
+              ...credential,
+              expiresAt: credential.expiresAt ?? null,
+            },
+            origin: window.location.origin,
+          },
+        },
+        '*'
+      );
+
+      // Timeout after 5 minutes
+      setTimeout(() => {
+        window.removeEventListener('message', handler);
+        reject(new Error('Credential offer timed out'));
+      }, 5 * 60 * 1000);
     });
   },
 };

@@ -5,8 +5,10 @@ import Onboarding from './pages/Onboarding';
 import LockScreen from './pages/LockScreen';
 import CredentialDetail from './pages/CredentialDetail';
 import Settings from './pages/Settings';
+import VerificationRequest from './pages/VerificationRequest';
+import CredentialOffer from './pages/CredentialOffer';
 
-type AppState = 'loading' | 'onboarding' | 'locked' | 'unlocked';
+type AppState = 'loading' | 'onboarding' | 'locked' | 'unlocked' | 'verification-request' | 'credential-offer';
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>('loading');
@@ -36,10 +38,23 @@ export default function App() {
 
       // Check if vault is unlocked in background
       const status = await chrome.runtime.sendMessage({ type: 'GET_VAULT_STATUS' });
-      if (status?.isUnlocked) {
-        setAppState('unlocked');
-      } else {
+      if (!status?.isUnlocked) {
         setAppState('locked');
+        return;
+      }
+
+      // Check for pending requests/offers
+      const [requestResponse, offerResponse] = await Promise.all([
+        chrome.runtime.sendMessage({ type: 'GET_PENDING_REQUEST' }),
+        chrome.runtime.sendMessage({ type: 'GET_PENDING_OFFER' }),
+      ]);
+
+      if (requestResponse?.success && requestResponse.request) {
+        setAppState('verification-request');
+      } else if (offerResponse?.success && offerResponse.offer) {
+        setAppState('credential-offer');
+      } else {
+        setAppState('unlocked');
       }
     } catch {
       setAppState('onboarding');
@@ -72,6 +87,14 @@ export default function App() {
 
   if (appState === 'locked') {
     return <LockScreen onUnlock={handleUnlock} />;
+  }
+
+  if (appState === 'verification-request') {
+    return <VerificationRequest onComplete={() => setAppState('unlocked')} />;
+  }
+
+  if (appState === 'credential-offer') {
+    return <CredentialOffer onComplete={() => setAppState('unlocked')} />;
   }
 
   return (

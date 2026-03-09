@@ -50,6 +50,41 @@ export interface VerificationRequestMessage {
   origin: string;
 }
 
+export interface GetPendingRequestMessage {
+  type: 'GET_PENDING_REQUEST';
+}
+
+export interface ApproveVerificationMessage {
+  type: 'APPROVE_VERIFICATION';
+}
+
+export interface DenyVerificationMessage {
+  type: 'DENY_VERIFICATION';
+}
+
+export interface CredentialOfferMessage {
+  type: 'CREDENTIAL_OFFER';
+  credential: {
+    type: string;
+    claims: Record<string, unknown>;
+    issuer: string;
+    expiresAt: number | null;
+  };
+  origin: string;
+}
+
+export interface GetPendingOfferMessage {
+  type: 'GET_PENDING_OFFER';
+}
+
+export interface AcceptCredentialMessage {
+  type: 'ACCEPT_CREDENTIAL';
+}
+
+export interface RejectCredentialMessage {
+  type: 'REJECT_CREDENTIAL';
+}
+
 export type ExtensionMessage =
   | InitVaultMessage
   | UnlockVaultMessage
@@ -59,7 +94,14 @@ export type ExtensionMessage =
   | AddCredentialMessage
   | DeleteCredentialMessage
   | UpdateAutoLockMessage
-  | VerificationRequestMessage;
+  | VerificationRequestMessage
+  | GetPendingRequestMessage
+  | ApproveVerificationMessage
+  | DenyVerificationMessage
+  | CredentialOfferMessage
+  | GetPendingOfferMessage
+  | AcceptCredentialMessage
+  | RejectCredentialMessage;
 
 export interface SuccessResponse {
   success: true;
@@ -72,3 +114,27 @@ export interface ErrorResponse {
 }
 
 export type ExtensionResponse = SuccessResponse | ErrorResponse;
+
+// Pending request/offer types for popup
+export interface PendingVerificationRequest {
+  id: string;
+  origin: string;
+  policyConfig: {
+    type: string;
+    minAge?: number;
+    [key: string]: unknown;
+  };
+  timestamp: number;
+}
+
+export interface PendingCredentialOffer {
+  id: string;
+  origin: string;
+  credential: {
+    type: string;
+    claims: Record<string, unknown>;
+    issuer: string;
+    expiresAt: number | null;
+  };
+  timestamp: number;
+}
