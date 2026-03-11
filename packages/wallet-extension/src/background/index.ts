@@ -50,7 +50,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 checkAutoLockOnStartup();
 
 // Handle messages from popup and content scripts
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Ignore messages meant for offscreen document
   if (message.type === 'DERIVE_KEY') {
     // Don't handle - let offscreen document handle it
@@ -65,7 +65,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   console.log('[Background] Received message:', message.type);
 
-  handleMessage(message)
+  // SECURITY: Use sender.origin for content script messages, not message.origin
+  // This prevents origin spoofing attacks where malicious dApps could fake their origin
+  const trustedOrigin = sender.origin || sender.url ? new URL(sender.url || '').origin : 'unknown';
+
+  handleMessage(message, trustedOrigin)
     .then((response) => {
       console.log('[Background] Sending response:', response);
       sendResponse(response);
@@ -79,7 +83,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
-async function handleMessage(message: { type: string; [key: string]: unknown }): Promise<unknown> {
+async function handleMessage(
+  message: { type: string; [key: string]: unknown },
+  trustedOrigin: string
+): Promise<unknown> {
   switch (message.type) {
     case 'GET_VAULT_STATUS':
       return { success: true, isUnlocked: storage !== null };
@@ -109,7 +116,8 @@ async function handleMessage(message: { type: string; [key: string]: unknown }):
       return updateAutoLock(message.minutes as number);
 
     case 'VERIFICATION_REQUEST':
-      return handleVerificationRequest(message as { policyConfig?: unknown; origin?: string });
+      // SECURITY: Use trustedOrigin from sender, not message.origin
+      return handleVerificationRequest(message as { policyConfig?: unknown }, trustedOrigin);
 
     case 'GET_PENDING_REQUEST':
       return getPendingRequest();
@@ -121,7 +129,8 @@ async function handleMessage(message: { type: string; [key: string]: unknown }):
       return denyVerification();
 
     case 'CREDENTIAL_OFFER':
-      return handleCredentialOffer(message as { credential?: unknown; origin?: string });
+      // SECURITY: Use trustedOrigin from sender, not message.origin
+      return handleCredentialOffer(message as { credential?: unknown }, trustedOrigin);
 
     case 'GET_PENDING_OFFER':
       return getPendingOffer();
@@ -328,14 +337,16 @@ async function checkAutoLockOnStartup(): Promise<void> {
 }
 
 async function handleVerificationRequest(
-  message: { policyConfig?: unknown; origin?: string }
+  message: { policyConfig?: unknown },
+  trustedOrigin: string
 ): Promise<unknown> {
-  console.log('[Background] Verification request received:', message);
+  console.log('[Background] Verification request received from:', trustedOrigin);
 
   // Create pending request
+  // SECURITY: Use trustedOrigin from sender, not message payload (prevents spoofing)
   const request: PendingVerificationRequest = {
     id: crypto.randomUUID(),
-    origin: (message.origin as string) || 'unknown',
+    origin: trustedOrigin,
     policyConfig: (message.policyConfig as PendingVerificationRequest['policyConfig']) || { type: 'UNKNOWN' },
     timestamp: Date.now(),
   };
@@ -400,14 +411,14 @@ async function approveVerification(): Promise<{ success: boolean; proof?: unknow
     }
 
     // Generate mock proof (real proof generation in Phase 3D)
+    // PRIVACY: Do NOT include credentialId - it would enable cross-dApp tracking
+    // Real ZK proofs will use nullifiers that are dApp-specific
     const proof = {
       type: pendingVerificationRequest.policyConfig.type,
       verified: true,
       timestamp: Date.now(),
-      credentialId: matchingCredential.id,
-      // Mock proof data
+      // Mock proof data - in production, this will be actual ZK proof bytes
       proofData: btoa(JSON.stringify({
-        request: pendingVerificationRequest.policyConfig,
         credentialType: matchingCredential.type,
         nonce: crypto.randomUUID(),
       })),
@@ -448,9 +459,10 @@ function denyVerification(): { success: boolean } {
 }
 
 async function handleCredentialOffer(
-  message: { credential?: unknown; origin?: string }
+  message: { credential?: unknown },
+  trustedOrigin: string
 ): Promise<unknown> {
-  console.log('[Background] Credential offer received:', message);
+  console.log('[Background] Credential offer received from:', trustedOrigin);
 
   const credential = message.credential as PendingCredentialOffer['credential'];
   if (!credential || !credential.type) {
@@ -458,9 +470,10 @@ async function handleCredentialOffer(
   }
 
   // Create pending offer
+  // SECURITY: Use trustedOrigin from sender, not message payload (prevents spoofing)
   const offer: PendingCredentialOffer = {
     id: crypto.randomUUID(),
-    origin: (message.origin as string) || 'unknown',
+    origin: trustedOrigin,
     credential,
     timestamp: Date.now(),
   };
