@@ -32,6 +32,11 @@ export default function Home({ onLock }: HomeProps) {
 
       if (response.success) {
         setCredentials(response.credentials || []);
+      } else if (response.error === 'Vault is locked') {
+        // Service worker restarted and lost the storage instance
+        // Trigger lock screen so user can re-authenticate
+        onLock();
+        return;
       }
     } catch (err) {
       console.error('Failed to load credentials:', err);

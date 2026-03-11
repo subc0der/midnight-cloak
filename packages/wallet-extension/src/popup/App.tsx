@@ -65,8 +65,24 @@ export default function App() {
     setAppState('unlocked');
   }
 
-  function handleUnlock() {
-    setAppState('unlocked');
+  async function handleUnlock() {
+    // After unlocking, check for pending requests/offers
+    try {
+      const [requestResponse, offerResponse] = await Promise.all([
+        chrome.runtime.sendMessage({ type: 'GET_PENDING_REQUEST' }),
+        chrome.runtime.sendMessage({ type: 'GET_PENDING_OFFER' }),
+      ]);
+
+      if (requestResponse?.success && requestResponse.request) {
+        setAppState('verification-request');
+      } else if (offerResponse?.success && offerResponse.offer) {
+        setAppState('credential-offer');
+      } else {
+        setAppState('unlocked');
+      }
+    } catch {
+      setAppState('unlocked');
+    }
   }
 
   function handleLock() {

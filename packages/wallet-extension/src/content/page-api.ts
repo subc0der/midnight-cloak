@@ -54,7 +54,10 @@ window.midnightCloak = {
         {
           type: 'VERIFICATION_REQUEST',
           source: 'midnight-cloak-dapp',
-          payload: config,
+          payload: {
+            policyConfig: config,
+            origin: window.location.origin,
+          },
         },
         '*'
       );
