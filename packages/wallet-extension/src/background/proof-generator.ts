@@ -2,17 +2,17 @@
  * Proof Generator for Midnight Cloak Extension
  *
  * Handles ZK proof generation using the official Midnight SDK pattern.
- * Uses FetchZkConfigProvider for circuit assets and httpClientProofProvider
- * for proof server communication.
  *
- * This follows the same pattern as the official Midnight bboard-ui example.
+ * IMPORTANT: The Midnight SDK requires DOM access (`document`), which is not
+ * available in Chrome extension service workers. Therefore, actual proof
+ * generation is delegated to the offscreen document, which has DOM access.
  *
- * NOTE: SDK imports are dynamic to avoid crashing the background script
- * if WASM fails to load in the service worker context.
+ * Flow:
+ * 1. Background script receives verification request
+ * 2. ProofGenerator sends message to offscreen document
+ * 3. Offscreen document loads SDK and generates proof
+ * 4. Result is sent back to background script
  */
-
-// SDK imports are dynamic (in initialize()) to avoid crashing background script
-// if WASM modules fail to load in the service worker context.
 
 /**
  * Service URIs from Lace wallet (matches LaceConfiguration)
@@ -57,21 +57,14 @@ export interface ProofGeneratorConfig {
 }
 
 /**
- * Circuit keys type for age-verifier
- */
-type AgeVerifierCircuitKeys = 'verifyAge';
-
-/**
- * ProofGenerator - Generates ZK proofs using official Midnight SDK
+ * ProofGenerator - Generates ZK proofs via offscreen document
  *
- * This class wraps the Midnight proof server communication using the
- * official SDK providers: FetchZkConfigProvider and httpClientProofProvider.
+ * Since Chrome extension service workers don't have DOM access (no `document`),
+ * and the Midnight SDK requires DOM, we delegate proof generation to an
+ * offscreen document that has full DOM capabilities.
  */
 export class ProofGenerator {
   private serviceUris: ServiceUris | null = null;
-  private zkConfigProvider: unknown = null;
-  private proofProvider: unknown = null;
-  private sdkLoaded = false;
   private config: ProofGeneratorConfig = { allowMockProofs: false };
 
   /**
@@ -87,55 +80,20 @@ export class ProofGenerator {
 
   /**
    * Initialize the proof generator with service URIs from Lace wallet
-   *
-   * This follows the official pattern from bboard-ui:
-   * 1. Create FetchZkConfigProvider for circuit assets
-   * 2. Create httpClientProofProvider with prover server URI and zkConfigProvider
-   *
-   * Uses dynamic imports to avoid crashing background script if WASM fails.
+   * The actual SDK initialization happens in the offscreen document.
    */
   async initialize(uris: ServiceUris): Promise<void> {
     this.serviceUris = uris;
-
-    try {
-      // Dynamically import SDK modules to avoid crashing on startup
-      const [zkConfigModule, proofProviderModule] = await Promise.all([
-        import('@midnight-ntwrk/midnight-js-fetch-zk-config-provider'),
-        import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
-      ]);
-
-      const { FetchZkConfigProvider } = zkConfigModule;
-      const { httpClientProofProvider } = proofProviderModule;
-
-      // Circuit assets are bundled in the extension at /circuits/age-verifier/
-      const zkConfigPath = chrome.runtime.getURL('circuits/age-verifier/');
-
-      // Create ZK config provider for loading circuit keys (browser-compatible)
-      // Uses fetch bound to globalThis for service worker context
-      this.zkConfigProvider = new FetchZkConfigProvider<AgeVerifierCircuitKeys>(
-        zkConfigPath,
-        fetch.bind(globalThis)
-      );
-
-      // Create HTTP client proof provider with the prover server URI
-      this.proofProvider = httpClientProofProvider(uris.proverServerUri, this.zkConfigProvider);
-      this.sdkLoaded = true;
-
-      console.log('[ProofGenerator] Initialized with official Midnight SDK pattern');
-      console.log('[ProofGenerator] Prover server:', uris.proverServerUri);
-      console.log('[ProofGenerator] Circuit path:', zkConfigPath);
-    } catch (error) {
-      console.error('[ProofGenerator] Failed to load Midnight SDK:', error);
-      this.sdkLoaded = false;
-      // Note: Mock proofs will only be used if allowMockProofs is explicitly enabled
-    }
+    console.log('[ProofGenerator] Service URIs stored');
+    console.log('[ProofGenerator] Prover server:', uris.proverServerUri);
+    // Note: SDK initialization happens in offscreen document on first proof request
   }
 
   /**
-   * Check if the proof generator is initialized with SDK
+   * Check if the proof generator has service URIs configured
    */
   isInitialized(): boolean {
-    return this.sdkLoaded && this.proofProvider !== null && this.zkConfigProvider !== null;
+    return this.serviceUris !== null;
   }
 
   /**
@@ -146,10 +104,29 @@ export class ProofGenerator {
   }
 
   /**
+   * Ensure offscreen document exists for proof generation
+   */
+  private async ensureOffscreenDocument(): Promise<void> {
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+    });
+
+    if (existingContexts.length > 0) {
+      return; // Already exists
+    }
+
+    console.log('[ProofGenerator] Creating offscreen document for proof generation');
+    await chrome.offscreen.createDocument({
+      url: 'offscreen.html',
+      reasons: [chrome.offscreen.Reason.WORKERS],
+      justification: 'Midnight SDK requires DOM access for WASM/proof generation',
+    });
+  }
+
+  /**
    * Generate an age verification proof
    *
-   * This uses the httpClientProofProvider to communicate with the
-   * Midnight proof server and generate a real ZK proof.
+   * Delegates to offscreen document since Midnight SDK requires DOM access.
    *
    * @param input - Age proof input parameters
    * @returns Proof result with proof bytes and verification status
@@ -159,50 +136,49 @@ export class ProofGenerator {
     const age = input.currentYear - input.birthYear;
     const isVerified = age >= input.minAge;
 
-    // If SDK not loaded, check if mock proofs are allowed
-    if (!this.sdkLoaded || !this.proofProvider || !this.zkConfigProvider || !this.serviceUris) {
+    // Check if we have service URIs
+    if (!this.serviceUris) {
       if (!this.config.allowMockProofs) {
-        throw new Error('ZK proof generation unavailable: SDK not loaded. Enable allowMockProofs for development.');
+        throw new Error('ZK proof generation unavailable: No service URIs. Enable allowMockProofs for development.');
       }
-      console.warn('[ProofGenerator] SDK not available, using mock proof (allowMockProofs=true)');
+      console.warn('[ProofGenerator] No service URIs, using mock proof (allowMockProofs=true)');
       return this.createMockProof(isVerified, input.minAge, input.currentYear);
     }
 
     try {
       // Log only public inputs, never private data like birthYear
-      console.log('[ProofGenerator] Generating age proof via Midnight SDK');
+      console.log('[ProofGenerator] Generating age proof via offscreen document');
       console.log('[ProofGenerator] Public inputs:', {
         minAge: input.minAge,
         currentYear: input.currentYear,
       });
 
-      // The proofProvider.prove() method handles the proof generation
-      // It communicates with the proof server using the configured URI
-      // and loads circuit assets via the zkConfigProvider
-      const provider = this.proofProvider as { prove: (circuit: string, inputs: unknown) => Promise<{ proof: Uint8Array }> };
-      const proofResult = await provider.prove(
-        'verifyAge',
-        {
-          privateInput: {
-            birthYear: BigInt(input.birthYear),
-          },
-          publicInput: {
-            minAge: BigInt(input.minAge),
-            currentYear: BigInt(input.currentYear),
-          },
-        }
-      );
+      // Ensure offscreen document exists
+      await this.ensureOffscreenDocument();
 
-      console.log('[ProofGenerator] Proof generated successfully');
+      // Send proof generation request to offscreen document
+      const response = await chrome.runtime.sendMessage({
+        type: 'GENERATE_AGE_PROOF',
+        serviceUris: this.serviceUris,
+        birthYear: input.birthYear,
+        minAge: input.minAge,
+        currentYear: input.currentYear,
+      });
+
+      if (!response || !response.success) {
+        throw new Error(response?.error || 'Proof generation failed in offscreen document');
+      }
+
+      console.log('[ProofGenerator] Proof generated successfully via offscreen');
 
       return {
-        proof: proofResult.proof,
-        publicOutputs: [isVerified, input.minAge, input.currentYear],
-        isVerified,
-        isMock: false,
+        proof: new Uint8Array(response.proof),
+        publicOutputs: [response.isVerified, input.minAge, input.currentYear],
+        isVerified: response.isVerified,
+        isMock: response.isMock,
       };
     } catch (error) {
-      console.error('[ProofGenerator] SDK proof generation failed:', error);
+      console.error('[ProofGenerator] Proof generation failed:', error);
 
       // Only fall back to mock if explicitly allowed
       if (!this.config.allowMockProofs) {

@@ -138,7 +138,10 @@ async function handleMessage(
 
     case 'VERIFICATION_REQUEST':
       // SECURITY: Use trustedOrigin from sender, not message.origin
-      return handleVerificationRequest(message as { policyConfig?: unknown }, trustedOrigin);
+      return handleVerificationRequest(
+        message as { policyConfig?: unknown; serviceUris?: ServiceUris },
+        trustedOrigin
+      );
 
     case 'GET_PENDING_REQUEST':
       return getPendingRequest();
@@ -361,10 +364,20 @@ async function checkAutoLockOnStartup(): Promise<void> {
 }
 
 async function handleVerificationRequest(
-  message: { policyConfig?: unknown },
+  message: { policyConfig?: unknown; serviceUris?: ServiceUris },
   trustedOrigin: string
 ): Promise<unknown> {
   console.log('[Background] Verification request received from:', trustedOrigin);
+
+  // Initialize ProofGenerator with Lace service URIs if provided
+  if (message.serviceUris) {
+    console.log('[Background] Initializing ProofGenerator with Lace service URIs');
+    const generator = getProofGenerator();
+    generator.configure({ allowMockProofs: ALLOW_MOCK_PROOFS });
+    await generator.initialize(message.serviceUris);
+  } else {
+    console.warn('[Background] No service URIs provided - proof generation may fail or use mock');
+  }
 
   // Create pending request
   // SECURITY: Use trustedOrigin from sender, not message payload (prevents spoofing)

@@ -1,9 +1,13 @@
 /**
- * Offscreen document for Argon2 key derivation
+ * Offscreen document for computations requiring DOM/WASM
  *
- * This runs in an offscreen document context where WASM is allowed.
- * The service worker cannot run WASM due to Manifest V3 CSP restrictions,
- * so we offload Argon2 computation here.
+ * This runs in an offscreen document context where:
+ * - WASM is allowed (service workers have CSP restrictions)
+ * - DOM APIs like `document` are available (SDK compatibility)
+ *
+ * Handles:
+ * - Argon2id key derivation
+ * - Midnight SDK ZK proof generation
  */
 
 import { argon2id } from 'hash-wasm';
@@ -13,6 +17,8 @@ const ARGON2_MEMORY = 65536; // 64 MB
 const ARGON2_ITERATIONS = 3;
 const ARGON2_PARALLELISM = 1;
 const ARGON2_HASH_LENGTH = 32; // 256 bits for AES-256
+
+// === Message Types ===
 
 interface DeriveKeyMessage {
   type: 'DERIVE_KEY';
@@ -27,31 +33,87 @@ interface DeriveKeyResponse {
   error?: string;
 }
 
-// Listen for messages from the service worker
-chrome.runtime.onMessage.addListener((message: DeriveKeyMessage, _sender, sendResponse) => {
-  if (message.type === 'DERIVE_KEY') {
-    deriveKey(message.password, message.salt)
-      .then((keyBytes) => {
-        const response: DeriveKeyResponse = {
-          type: 'DERIVE_KEY_RESULT',
-          success: true,
-          keyBytes: Array.from(keyBytes),
-        };
-        sendResponse(response);
-      })
-      .catch((err) => {
-        const response: DeriveKeyResponse = {
-          type: 'DERIVE_KEY_RESULT',
-          success: false,
-          error: (err as Error).message,
-        };
-        sendResponse(response);
-      });
+interface ServiceUris {
+  proverServerUri: string;
+  indexerUri: string;
+  indexerWsUri: string;
+  substrateNodeUri: string;
+}
 
-    // Return true to indicate async response
-    return true;
+interface GenerateProofMessage {
+  type: 'GENERATE_AGE_PROOF';
+  serviceUris: ServiceUris;
+  birthYear: number;
+  minAge: number;
+  currentYear: number;
+}
+
+interface GenerateProofResponse {
+  type: 'GENERATE_AGE_PROOF_RESULT';
+  success: boolean;
+  proof?: number[]; // Array of bytes
+  isVerified?: boolean;
+  isMock: boolean;
+  error?: string;
+}
+
+// === Proof Generation State ===
+
+let proofProviderInitialized = false;
+let zkConfigProvider: unknown = null;
+let proofProvider: unknown = null;
+
+// Listen for messages from the service worker
+chrome.runtime.onMessage.addListener(
+  (message: DeriveKeyMessage | GenerateProofMessage, _sender, sendResponse) => {
+    if (message.type === 'DERIVE_KEY') {
+      deriveKey(message.password, message.salt)
+        .then((keyBytes) => {
+          const response: DeriveKeyResponse = {
+            type: 'DERIVE_KEY_RESULT',
+            success: true,
+            keyBytes: Array.from(keyBytes),
+          };
+          sendResponse(response);
+        })
+        .catch((err) => {
+          const response: DeriveKeyResponse = {
+            type: 'DERIVE_KEY_RESULT',
+            success: false,
+            error: (err as Error).message,
+          };
+          sendResponse(response);
+        });
+
+      return true;
+    }
+
+    if (message.type === 'GENERATE_AGE_PROOF') {
+      generateAgeProof(message)
+        .then((result) => {
+          const response: GenerateProofResponse = {
+            type: 'GENERATE_AGE_PROOF_RESULT',
+            success: true,
+            proof: result.proof,
+            isVerified: result.isVerified,
+            isMock: result.isMock,
+          };
+          sendResponse(response);
+        })
+        .catch((err) => {
+          const response: GenerateProofResponse = {
+            type: 'GENERATE_AGE_PROOF_RESULT',
+            success: false,
+            isMock: true,
+            error: (err as Error).message,
+          };
+          sendResponse(response);
+        });
+
+      return true;
+    }
   }
-});
+);
 
 async function deriveKey(password: string, saltArray: number[]): Promise<Uint8Array> {
   const salt = new Uint8Array(saltArray);
@@ -79,4 +141,141 @@ async function deriveKey(password: string, saltArray: number[]): Promise<Uint8Ar
   return keyBytes;
 }
 
-console.log('[Offscreen] Offscreen document ready');
+// === Proof Generation ===
+
+/**
+ * Get the URL where circuit assets are hosted.
+ *
+ * For real ZK proof generation, circuit files (ZKIR, prover keys) must be
+ * served over HTTP/HTTPS. The Midnight SDK doesn't support chrome-extension:// URLs.
+ *
+ * Options:
+ * 1. CIRCUIT_ASSETS_URL env var - Set to your circuit hosting URL
+ * 2. Local proof server - Run `docker run -p 6300:6300 ...` with circuit volume
+ * 3. Fallback to mock proofs - For development only
+ *
+ * To host circuits for production:
+ * - Upload circuit files to a CDN or web server
+ * - Set CIRCUIT_ASSETS_URL to that URL
+ * - Or run your own proof server with the circuit files
+ */
+function getCircuitAssetsUrl(): string | null {
+  // Check for environment variable (set during build)
+  // @ts-expect-error - injected at build time
+  if (typeof CIRCUIT_ASSETS_URL !== 'undefined' && CIRCUIT_ASSETS_URL) {
+    // @ts-expect-error - injected at build time
+    return CIRCUIT_ASSETS_URL;
+  }
+
+  // Check localStorage for development override
+  const override = localStorage.getItem('MIDNIGHT_CLOAK_CIRCUIT_URL');
+  if (override) {
+    return override;
+  }
+
+  // No URL configured - will need to use mock proofs
+  return null;
+}
+
+async function initializeProofProvider(serviceUris: ServiceUris): Promise<void> {
+  if (proofProviderInitialized && proofProvider) {
+    console.log('[Offscreen] Proof provider already initialized');
+    return;
+  }
+
+  console.log('[Offscreen] Initializing Midnight SDK proof provider...');
+  console.log('[Offscreen] Prover server URI:', serviceUris.proverServerUri);
+
+  // Get circuit assets URL
+  const circuitUrl = getCircuitAssetsUrl();
+
+  if (!circuitUrl) {
+    console.warn('[Offscreen] No circuit assets URL configured.');
+    console.warn('[Offscreen] Real ZK proofs require circuit files hosted over HTTPS.');
+    console.warn('[Offscreen] Set localStorage "MIDNIGHT_CLOAK_CIRCUIT_URL" for development.');
+    throw new Error(
+      'Circuit assets URL not configured. ' +
+      'Real ZK proofs require circuits hosted over HTTPS. ' +
+      'For development, use mock proofs or configure MIDNIGHT_CLOAK_CIRCUIT_URL.'
+    );
+  }
+
+  try {
+    // Dynamic imports work in offscreen document (has DOM context)
+    const [zkConfigModule, proofProviderModule] = await Promise.all([
+      import('@midnight-ntwrk/midnight-js-fetch-zk-config-provider'),
+      import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
+    ]);
+
+    const { FetchZkConfigProvider } = zkConfigModule;
+    const { httpClientProofProvider } = proofProviderModule;
+
+    console.log('[Offscreen] Using circuit assets URL:', circuitUrl);
+
+    // Create ZK config provider for loading circuit keys
+    zkConfigProvider = new FetchZkConfigProvider<'verifyAge'>(circuitUrl, fetch.bind(window));
+
+    // Create HTTP client proof provider
+    proofProvider = httpClientProofProvider(serviceUris.proverServerUri, zkConfigProvider);
+
+    proofProviderInitialized = true;
+    console.log('[Offscreen] Midnight SDK initialized successfully');
+  } catch (error) {
+    console.error('[Offscreen] Failed to initialize Midnight SDK:', error);
+    throw error;
+  }
+}
+
+interface ProofResult {
+  proof: number[];
+  isVerified: boolean;
+  isMock: boolean;
+}
+
+async function generateAgeProof(message: GenerateProofMessage): Promise<ProofResult> {
+  const { serviceUris, birthYear, minAge, currentYear } = message;
+
+  // Calculate verification locally (proof server result is authoritative)
+  const age = currentYear - birthYear;
+  const isVerified = age >= minAge;
+
+  console.log('[Offscreen] Generating age proof...');
+  console.log('[Offscreen] Public inputs:', { minAge, currentYear });
+
+  try {
+    // Initialize if needed
+    await initializeProofProvider(serviceUris);
+
+    if (!proofProvider) {
+      throw new Error('Proof provider not initialized');
+    }
+
+    // Generate proof using SDK
+    const provider = proofProvider as {
+      prove: (circuit: string, inputs: unknown) => Promise<{ proof: Uint8Array }>;
+    };
+
+    const proofResult = await provider.prove('verifyAge', {
+      privateInput: {
+        birthYear: BigInt(birthYear),
+      },
+      publicInput: {
+        minAge: BigInt(minAge),
+        currentYear: BigInt(currentYear),
+      },
+    });
+
+    console.log('[Offscreen] Proof generated successfully!');
+
+    return {
+      proof: Array.from(proofResult.proof),
+      isVerified,
+      isMock: false,
+    };
+  } catch (error) {
+    console.error('[Offscreen] Proof generation failed:', error);
+    throw error;
+  }
+}
+
+console.log('[Offscreen] Offscreen document ready (with proof generation support)');

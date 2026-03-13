@@ -173,9 +173,21 @@ window.midnightCloak = {
   version: '0.1.0',
 
   async requestVerification(config: unknown): Promise<unknown> {
+    // Get Lace service URIs for real proof generation
+    // This allows the background script to initialize the ProofGenerator
+    let serviceUris: LaceConfiguration | null = null;
+    try {
+      serviceUris = await this.getLaceServiceUris();
+      if (serviceUris) {
+        console.log('[MidnightCloak] Got Lace service URIs for proof generation');
+      }
+    } catch (err) {
+      console.warn('[MidnightCloak] Could not get Lace URIs, proof generation may use mock:', err);
+    }
+
     return sendRequest(
       'VERIFICATION_REQUEST',
-      { policyConfig: config },
+      { policyConfig: config, serviceUris },
       5 * 60 * 1000 // 5 minutes for user interaction
     );
   },
