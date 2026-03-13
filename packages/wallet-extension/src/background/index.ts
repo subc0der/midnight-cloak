@@ -10,7 +10,27 @@
 
 import { EncryptedStorage } from '../shared/storage/encrypted-storage';
 import type { PendingVerificationRequest, PendingCredentialOffer } from '../shared/messaging/types';
-import { getProofGenerator, type ServiceUris } from './proof-generator';
+import { getProofGenerator, type ServiceUris, type ProofGeneratorConfig } from './proof-generator';
+
+/**
+ * ⚠️ PRODUCTION SECURITY FLAG ⚠️
+ *
+ * ALLOW_MOCK_PROOFS = true  → Allows fake proofs (DEVELOPMENT ONLY)
+ * ALLOW_MOCK_PROOFS = false → Requires real ZK proofs (PRODUCTION)
+ *
+ * Mock proofs bypass all ZK security guarantees. Users will think
+ * they're protected when they're not. NEVER deploy to production
+ * with this set to true.
+ *
+ * Checklist before production:
+ * 1. Set ALLOW_MOCK_PROOFS = false
+ * 2. Verify SDK loads without errors (check service worker console)
+ * 3. Test verification flow - should fail gracefully if SDK unavailable
+ * 4. Confirm proof results have isMock: false
+ *
+ * See: .claude/context/package-status.md → PRODUCTION CHECKLIST
+ */
+const ALLOW_MOCK_PROOFS = true; // ← CHANGE TO false FOR PRODUCTION
 
 const AUTO_LOCK_ALARM = 'midnight-cloak-auto-lock';
 
@@ -426,45 +446,41 @@ async function approveVerification(): Promise<{ success: boolean; proof?: unknow
 
       const proofGenerator = getProofGenerator();
 
-      if (proofGenerator.isInitialized()) {
-        // Use real proof generation with Midnight SDK
-        console.log('[Background] Generating real ZK proof via Midnight SDK');
-        const proofResult = await proofGenerator.generateAgeProof({
-          birthYear,
-          minAge,
-          currentYear,
-        });
+      // Configure mock proofs setting
+      proofGenerator.configure({ allowMockProofs: ALLOW_MOCK_PROOFS });
 
-        proof = {
-          type: 'AGE',
-          verified: proofResult.isVerified,
-          timestamp: Date.now(),
-          proofData: Array.from(proofResult.proof),
-          publicOutputs: proofResult.publicOutputs,
-          isMock: false,
-        };
-      } else {
-        // Fall back to mock proof (development mode)
-        console.log('[Background] ProofGenerator not initialized, using mock proof');
-        proof = {
-          type: 'AGE',
-          verified: true,
-          timestamp: Date.now(),
-          proofData: btoa(JSON.stringify({
-            credentialType: matchingCredential.type,
-            nonce: crypto.randomUUID(),
-          })),
-          isMock: true,
-        };
+      // Generate proof - will throw if SDK unavailable and mocks disabled
+      console.log('[Background] Generating ZK proof via ProofGenerator');
+      const proofResult = await proofGenerator.generateAgeProof({
+        birthYear,
+        minAge,
+        currentYear,
+      });
+
+      if (proofResult.isMock) {
+        console.warn('[Background] Using mock proof - NOT FOR PRODUCTION');
       }
+
+      proof = {
+        type: 'AGE',
+        verified: proofResult.isVerified,
+        timestamp: Date.now(),
+        proofData: Array.from(proofResult.proof),
+        publicOutputs: proofResult.publicOutputs,
+        isMock: proofResult.isMock,
+      };
     } else {
-      // Other credential types - mock proof for now
+      // Other credential types - require explicit mock opt-in
+      if (!ALLOW_MOCK_PROOFS) {
+        throw new Error(`ZK proofs not yet implemented for credential type: ${pendingVerificationRequest.policyConfig.type}`);
+      }
+
+      console.warn('[Background] Using mock proof for non-AGE credential - NOT FOR PRODUCTION');
       proof = {
         type: pendingVerificationRequest.policyConfig.type,
         verified: true,
         timestamp: Date.now(),
         proofData: btoa(JSON.stringify({
-          credentialType: matchingCredential.type,
           nonce: crypto.randomUUID(),
         })),
         isMock: true,

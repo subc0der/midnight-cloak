@@ -3,12 +3,28 @@
  *
  * This script runs in the page context (not content script context)
  * and provides window.midnightCloak API for dApps.
+ *
+ * Security features:
+ * - Request correlation IDs prevent response spoofing
+ * - postMessage restricted to same origin
+ * - Wallet discovery uses rdns (harder to spoof than name)
  */
 
 // Make this a module so declare global works
 export {};
 
 const PAGE_API_EXTENSION_ID = 'midnight-cloak';
+const DAPP_SOURCE = 'midnight-cloak-dapp';
+
+// Lace Midnight's reverse domain name identifier
+const LACE_MIDNIGHT_RDNS = 'io.lace.midnight';
+
+/**
+ * Generate a unique request ID for correlation
+ */
+function generateRequestId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+}
 
 /**
  * Lace Midnight wallet announcement in window.midnight registry.
@@ -73,82 +89,104 @@ declare global {
   }
 }
 
+/**
+ * Send a request to the extension with correlation ID
+ *
+ * @param type - Message type
+ * @param payload - Message payload
+ * @param timeoutMs - Timeout in milliseconds
+ * @returns Promise resolving to the response payload
+ */
+async function sendRequest<T>(
+  type: string,
+  payload: Record<string, unknown>,
+  timeoutMs: number = 30000
+): Promise<T> {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve, reject) => {
+    const handler = (event: MessageEvent) => {
+      // Verify response is from our extension and matches our request
+      if (
+        event.data?.source === PAGE_API_EXTENSION_ID &&
+        event.data?.type === `${type}_RESPONSE` &&
+        event.data?.requestId === requestId
+      ) {
+        window.removeEventListener('message', handler);
+        const responsePayload = event.data.payload;
+
+        if (responsePayload?.success) {
+          resolve(responsePayload as T);
+        } else {
+          reject(new Error(responsePayload?.error || `${type} failed`));
+        }
+      }
+    };
+
+    window.addEventListener('message', handler);
+
+    // Send request with correlation ID
+    // Use window.location.origin instead of '*' to restrict to same origin
+    window.postMessage(
+      {
+        type,
+        source: DAPP_SOURCE,
+        requestId,
+        payload,
+      },
+      window.location.origin
+    );
+
+    // Timeout handler
+    setTimeout(() => {
+      window.removeEventListener('message', handler);
+      reject(new Error(`${type} timed out`));
+    }, timeoutMs);
+  });
+}
+
+/**
+ * Find Lace Midnight wallet in window.midnight registry
+ * Uses rdns for more secure discovery (harder to spoof than name)
+ */
+function findLaceWallet(): MidnightWalletAnnouncement | null {
+  if (!window.midnight) return null;
+
+  const wallets = Object.values(window.midnight) as MidnightWalletAnnouncement[];
+
+  // Primary: Find by rdns (more secure - harder to spoof)
+  let lace = wallets.find(w => w.rdns === LACE_MIDNIGHT_RDNS);
+
+  // Fallback: Find by name (for compatibility)
+  if (!lace) {
+    lace = wallets.find(w => w.name === 'lace');
+    if (lace) {
+      console.warn('[MidnightCloak] Found Lace by name, not rdns. Consider updating Lace extension.');
+    }
+  }
+
+  return lace || null;
+}
+
 window.midnightCloak = {
   isInstalled: true,
   version: '0.1.0',
 
   async requestVerification(config: unknown): Promise<unknown> {
-    return new Promise((resolve, reject) => {
-      const handler = (event: MessageEvent) => {
-        if (
-          event.data?.source === PAGE_API_EXTENSION_ID &&
-          event.data?.type === 'VERIFICATION_REQUEST_RESPONSE'
-        ) {
-          window.removeEventListener('message', handler);
-          const payload = event.data.payload;
-          if (payload.success) {
-            resolve(payload);
-          } else {
-            reject(new Error(payload.error || 'Verification failed'));
-          }
-        }
-      };
-
-      window.addEventListener('message', handler);
-
-      window.postMessage(
-        {
-          type: 'VERIFICATION_REQUEST',
-          source: 'midnight-cloak-dapp',
-          payload: {
-            policyConfig: config,
-            origin: window.location.origin,
-          },
-        },
-        '*'
-      );
-
-      // Timeout after 5 minutes
-      setTimeout(() => {
-        window.removeEventListener('message', handler);
-        reject(new Error('Verification request timed out'));
-      }, 5 * 60 * 1000);
-    });
+    return sendRequest(
+      'VERIFICATION_REQUEST',
+      { policyConfig: config },
+      5 * 60 * 1000 // 5 minutes for user interaction
+    );
   },
 
   async getAvailableCredentials(): Promise<unknown[]> {
-    return new Promise((resolve, reject) => {
-      const handler = (event: MessageEvent) => {
-        if (
-          event.data?.source === PAGE_API_EXTENSION_ID &&
-          event.data?.type === 'GET_AVAILABLE_CREDENTIALS_RESPONSE'
-        ) {
-          window.removeEventListener('message', handler);
-          const payload = event.data.payload;
-          if (payload.success) {
-            resolve(payload.credentials);
-          } else {
-            reject(new Error(payload.error || 'Failed to get credentials'));
-          }
-        }
-      };
-
-      window.addEventListener('message', handler);
-
-      window.postMessage(
-        {
-          type: 'GET_AVAILABLE_CREDENTIALS',
-          source: 'midnight-cloak-dapp',
-          payload: {},
-        },
-        '*'
-      );
-
-      setTimeout(() => {
-        window.removeEventListener('message', handler);
-        reject(new Error('Request timed out'));
-      }, 30000);
-    });
+    const response = await sendRequest<{ credentials: unknown[] }>(
+      'GET_AVAILABLE_CREDENTIALS',
+      {},
+      30000
+    );
+    return response.credentials;
   },
 
   async issueCredential(credential: {
@@ -157,78 +195,51 @@ window.midnightCloak = {
     issuer: string;
     expiresAt?: number | null;
   }): Promise<unknown> {
-    return new Promise((resolve, reject) => {
-      const handler = (event: MessageEvent) => {
-        if (
-          event.data?.source === PAGE_API_EXTENSION_ID &&
-          event.data?.type === 'CREDENTIAL_OFFER_RESPONSE'
-        ) {
-          window.removeEventListener('message', handler);
-          const payload = event.data.payload;
-          if (payload.success) {
-            resolve(payload);
-          } else {
-            reject(new Error(payload.error || 'Credential issuance failed'));
-          }
-        }
-      };
-
-      window.addEventListener('message', handler);
-
-      window.postMessage(
-        {
-          type: 'CREDENTIAL_OFFER',
-          source: 'midnight-cloak-dapp',
-          payload: {
-            credential: {
-              ...credential,
-              expiresAt: credential.expiresAt ?? null,
-            },
-            origin: window.location.origin,
-          },
+    return sendRequest(
+      'CREDENTIAL_OFFER',
+      {
+        credential: {
+          ...credential,
+          expiresAt: credential.expiresAt ?? null,
         },
-        '*'
-      );
-
-      // Timeout after 5 minutes
-      setTimeout(() => {
-        window.removeEventListener('message', handler);
-        reject(new Error('Credential offer timed out'));
-      }, 5 * 60 * 1000);
-    });
+      },
+      5 * 60 * 1000 // 5 minutes for user interaction
+    );
   },
 
   isLaceAvailable(): boolean {
-    // Lace Midnight registers in window.midnight with UUID keys
-    // Find wallet by name property
-    if (!window.midnight) return false;
-    const wallets = Object.values(window.midnight) as MidnightWalletAnnouncement[];
-    return wallets.some(w => w.name === 'lace');
+    return findLaceWallet() !== null;
   },
 
+  /**
+   * Get Midnight service URIs from Lace wallet.
+   *
+   * SECURITY NOTE: This exposes public infrastructure endpoints (prover server,
+   * indexer, RPC node). This is intentional and safe because:
+   * 1. These are PUBLIC endpoints documented in Midnight's official docs
+   * 2. Same endpoints for all users on a given network (not user-specific)
+   * 3. dApps require these URIs to interact with Midnight
+   * 4. No private data (keys, addresses, credentials) is exposed
+   *
+   * We're simply passing through what Lace provides - not exposing secrets.
+   */
   async getLaceServiceUris(): Promise<LaceConfiguration | null> {
-    if (!window.midnight) {
-      console.log('[MidnightCloak] window.midnight not available');
-      return null;
-    }
-
-    // Find Lace wallet by name (registered with UUID key)
-    const wallets = Object.values(window.midnight) as MidnightWalletAnnouncement[];
-    const lace = wallets.find(w => w.name === 'lace');
+    const lace = findLaceWallet();
 
     if (!lace) {
-      console.log('[MidnightCloak] Lace wallet not found in window.midnight');
+      console.log('[MidnightCloak] Lace Midnight wallet not found');
       return null;
     }
 
     try {
       // Connect to wallet with network ID (triggers authorization popup if needed)
+      // TODO: Make network configurable (Phase 5 - mainnet support)
       console.log('[MidnightCloak] Connecting to Lace Midnight wallet...');
       const api = await lace.connect('preprod');
 
       // Get configuration including service URIs
       const config = await api.getConfiguration();
-      console.log('[MidnightCloak] Got Lace configuration:', config);
+      console.log('[MidnightCloak] Got Lace configuration for network:', config.networkId);
 
       return config;
     } catch (error) {

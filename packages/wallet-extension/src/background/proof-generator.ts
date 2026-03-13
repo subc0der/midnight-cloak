@@ -41,6 +41,19 @@ export interface ProofResult {
   proof: Uint8Array;
   publicOutputs: unknown[];
   isVerified: boolean;
+  /** True if this is a mock proof (development only) */
+  isMock: boolean;
+}
+
+/**
+ * Proof generator configuration
+ */
+export interface ProofGeneratorConfig {
+  /**
+   * Allow mock proofs when SDK is unavailable (default: false)
+   * WARNING: Only enable for development/testing. Never use in production.
+   */
+  allowMockProofs?: boolean;
 }
 
 /**
@@ -59,6 +72,18 @@ export class ProofGenerator {
   private zkConfigProvider: unknown = null;
   private proofProvider: unknown = null;
   private sdkLoaded = false;
+  private config: ProofGeneratorConfig = { allowMockProofs: false };
+
+  /**
+   * Configure the proof generator
+   * @param config - Configuration options
+   */
+  configure(config: ProofGeneratorConfig): void {
+    this.config = { ...this.config, ...config };
+    if (this.config.allowMockProofs) {
+      console.warn('[ProofGenerator] Mock proofs enabled - FOR DEVELOPMENT ONLY');
+    }
+  }
 
   /**
    * Initialize the proof generator with service URIs from Lace wallet
@@ -101,8 +126,8 @@ export class ProofGenerator {
       console.log('[ProofGenerator] Circuit path:', zkConfigPath);
     } catch (error) {
       console.error('[ProofGenerator] Failed to load Midnight SDK:', error);
-      console.warn('[ProofGenerator] Will use mock proofs as fallback');
       this.sdkLoaded = false;
+      // Note: Mock proofs will only be used if allowMockProofs is explicitly enabled
     }
   }
 
@@ -130,38 +155,30 @@ export class ProofGenerator {
    * @returns Proof result with proof bytes and verification status
    */
   async generateAgeProof(input: AgeProofInput): Promise<ProofResult> {
-    // Calculate age locally for verification
+    // Calculate age locally for UI hint (proof server result is authoritative)
     const age = input.currentYear - input.birthYear;
     const isVerified = age >= input.minAge;
 
-    // If SDK not loaded, use mock proof
+    // If SDK not loaded, check if mock proofs are allowed
     if (!this.sdkLoaded || !this.proofProvider || !this.zkConfigProvider || !this.serviceUris) {
-      console.warn('[ProofGenerator] SDK not available, using mock proof');
-      const mockProof = new Uint8Array(64);
-      crypto.getRandomValues(mockProof);
-      return {
-        proof: mockProof,
-        publicOutputs: [isVerified, input.minAge, input.currentYear],
-        isVerified,
-      };
+      if (!this.config.allowMockProofs) {
+        throw new Error('ZK proof generation unavailable: SDK not loaded. Enable allowMockProofs for development.');
+      }
+      console.warn('[ProofGenerator] SDK not available, using mock proof (allowMockProofs=true)');
+      return this.createMockProof(isVerified, input.minAge, input.currentYear);
     }
 
     try {
+      // Log only public inputs, never private data like birthYear
       console.log('[ProofGenerator] Generating age proof via Midnight SDK');
-      console.log('[ProofGenerator] Inputs:', {
-        birthYear: input.birthYear,
+      console.log('[ProofGenerator] Public inputs:', {
         minAge: input.minAge,
         currentYear: input.currentYear,
-        calculatedAge: age,
-        expectedResult: isVerified,
       });
 
       // The proofProvider.prove() method handles the proof generation
       // It communicates with the proof server using the configured URI
       // and loads circuit assets via the zkConfigProvider
-      //
-      // Note: The exact API depends on how the age-verifier circuit is structured.
-      // This follows the pattern from Midnight's official examples.
       const provider = this.proofProvider as { prove: (circuit: string, inputs: unknown) => Promise<{ proof: Uint8Array }> };
       const proofResult = await provider.prove(
         'verifyAge',
@@ -182,22 +199,34 @@ export class ProofGenerator {
         proof: proofResult.proof,
         publicOutputs: [isVerified, input.minAge, input.currentYear],
         isVerified,
+        isMock: false,
       };
     } catch (error) {
       console.error('[ProofGenerator] SDK proof generation failed:', error);
 
-      // If SDK proof generation fails, fall back to mock proof with warning
-      console.warn('[ProofGenerator] Falling back to mock proof (development mode)');
+      // Only fall back to mock if explicitly allowed
+      if (!this.config.allowMockProofs) {
+        throw new Error(`ZK proof generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
 
-      const mockProof = new Uint8Array(64);
-      crypto.getRandomValues(mockProof);
-
-      return {
-        proof: mockProof,
-        publicOutputs: [isVerified, input.minAge, input.currentYear],
-        isVerified,
-      };
+      console.warn('[ProofGenerator] Falling back to mock proof (allowMockProofs=true)');
+      return this.createMockProof(isVerified, input.minAge, input.currentYear);
     }
+  }
+
+  /**
+   * Create a mock proof for development/testing only
+   * @private
+   */
+  private createMockProof(isVerified: boolean, minAge: number, currentYear: number): ProofResult {
+    const mockProof = new Uint8Array(64);
+    crypto.getRandomValues(mockProof);
+    return {
+      proof: mockProof,
+      publicOutputs: [isVerified, minAge, currentYear],
+      isVerified,
+      isMock: true,
+    };
   }
 
   /**
