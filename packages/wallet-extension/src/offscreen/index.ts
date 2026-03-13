@@ -149,15 +149,14 @@ async function deriveKey(password: string, saltArray: number[]): Promise<Uint8Ar
  * For real ZK proof generation, circuit files (ZKIR, prover keys) must be
  * served over HTTP/HTTPS. The Midnight SDK doesn't support chrome-extension:// URLs.
  *
- * Options:
- * 1. CIRCUIT_ASSETS_URL env var - Set to your circuit hosting URL
- * 2. Local proof server - Run `docker run -p 6300:6300 ...` with circuit volume
- * 3. Fallback to mock proofs - For development only
+ * Development Setup:
+ * 1. Run the demo app: `cd apps/demo && pnpm dev`
+ * 2. Demo app serves circuits at http://localhost:5173/circuits/age-verifier/
+ * 3. Extension automatically uses this URL for proof generation
  *
- * To host circuits for production:
- * - Upload circuit files to a CDN or web server
- * - Set CIRCUIT_ASSETS_URL to that URL
- * - Or run your own proof server with the circuit files
+ * Production Setup:
+ * - Set CIRCUIT_ASSETS_URL at build time, OR
+ * - Host circuits on a CDN and configure localStorage override
  */
 function getCircuitAssetsUrl(): string | null {
   // Check for environment variable (set during build)
@@ -167,14 +166,18 @@ function getCircuitAssetsUrl(): string | null {
     return CIRCUIT_ASSETS_URL;
   }
 
-  // Check localStorage for development override
+  // Check localStorage for development/production override
   const override = localStorage.getItem('MIDNIGHT_CLOAK_CIRCUIT_URL');
   if (override) {
     return override;
   }
 
-  // No URL configured - will need to use mock proofs
-  return null;
+  // Development default: demo app serves circuits
+  // The demo app (apps/demo) copies circuit files to its public directory
+  // and serves them via Vite dev server with CORS enabled
+  const devUrl = 'http://localhost:5173/circuits/age-verifier/';
+  console.log('[Offscreen] Using development circuit URL:', devUrl);
+  return devUrl;
 }
 
 async function initializeProofProvider(serviceUris: ServiceUris): Promise<void> {
