@@ -82,10 +82,12 @@ window.addEventListener('message', async (event) => {
 
   try {
     // Forward to background script
+    // SECURITY: Spread payload FIRST, then override type with validated value
+    // This prevents malicious payloads from overwriting the whitelisted type
     const payload = (message.payload || {}) as Record<string, unknown>;
     const response = await chrome.runtime.sendMessage({
-      type: message.type,
       ...payload,
+      type: message.type, // Validated type always wins
     });
 
     // Send response back to page with correlation ID
