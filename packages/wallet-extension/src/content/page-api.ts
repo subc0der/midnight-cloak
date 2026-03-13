@@ -10,8 +10,52 @@ export {};
 
 const PAGE_API_EXTENSION_ID = 'midnight-cloak';
 
+/**
+ * Lace Midnight wallet announcement in window.midnight registry.
+ * Wallets register with UUID keys and provide metadata + connect method.
+ */
+interface MidnightWalletAnnouncement {
+  name: string;
+  apiVersion: string;
+  icon: string;
+  rdns: string;
+  connect: (networkId: string) => Promise<LaceConnectedApi>;
+}
+
+/**
+ * Connected Lace wallet API returned by connect()
+ */
+interface LaceConnectedApi {
+  getConfiguration: () => Promise<LaceConfiguration>;
+  getUnshieldedBalances: () => Promise<unknown>;
+  getShieldedBalances: () => Promise<unknown>;
+  getDustBalance: () => Promise<unknown>;
+  balanceUnsealedTransaction: (tx: unknown) => Promise<unknown>;
+  submitTransaction: (tx: unknown) => Promise<unknown>;
+  signData: (address: string, payload: string) => Promise<unknown>;
+}
+
+/**
+ * Lace wallet configuration including service URIs
+ */
+interface LaceConfiguration {
+  networkId: string;
+  proverServerUri: string;
+  indexerUri: string;
+  indexerWsUri: string;
+  substrateNodeUri: string;
+}
+
+/**
+ * The window.midnight registry contains wallet announcements keyed by UUID
+ */
+interface MidnightWindow {
+  [uuid: string]: MidnightWalletAnnouncement;
+}
+
 declare global {
   interface Window {
+    midnight?: MidnightWindow;
     midnightCloak: {
       isInstalled: boolean;
       version: string;
@@ -23,6 +67,8 @@ declare global {
         issuer: string;
         expiresAt?: number | null;
       }) => Promise<unknown>;
+      isLaceAvailable: () => boolean;
+      getLaceServiceUris: () => Promise<LaceConfiguration | null>;
     };
   }
 }
@@ -150,6 +196,45 @@ window.midnightCloak = {
         reject(new Error('Credential offer timed out'));
       }, 5 * 60 * 1000);
     });
+  },
+
+  isLaceAvailable(): boolean {
+    // Lace Midnight registers in window.midnight with UUID keys
+    // Find wallet by name property
+    if (!window.midnight) return false;
+    const wallets = Object.values(window.midnight) as MidnightWalletAnnouncement[];
+    return wallets.some(w => w.name === 'lace');
+  },
+
+  async getLaceServiceUris(): Promise<LaceConfiguration | null> {
+    if (!window.midnight) {
+      console.log('[MidnightCloak] window.midnight not available');
+      return null;
+    }
+
+    // Find Lace wallet by name (registered with UUID key)
+    const wallets = Object.values(window.midnight) as MidnightWalletAnnouncement[];
+    const lace = wallets.find(w => w.name === 'lace');
+
+    if (!lace) {
+      console.log('[MidnightCloak] Lace wallet not found in window.midnight');
+      return null;
+    }
+
+    try {
+      // Connect to wallet with network ID (triggers authorization popup if needed)
+      console.log('[MidnightCloak] Connecting to Lace Midnight wallet...');
+      const api = await lace.connect('preprod');
+
+      // Get configuration including service URIs
+      const config = await api.getConfiguration();
+      console.log('[MidnightCloak] Got Lace configuration:', config);
+
+      return config;
+    } catch (error) {
+      console.error('[MidnightCloak] Failed to get Lace service URIs:', error);
+      return null;
+    }
   },
 };
 

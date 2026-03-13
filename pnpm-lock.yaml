@@ -291,6 +291,24 @@ importers:
       '@midnight-cloak/wallet':
         specifier: workspace:*
         version: link:../wallet
+      '@midnight-ntwrk/midnight-js-contracts':
+        specifier: 3.1.0
+        version: 3.1.0
+      '@midnight-ntwrk/midnight-js-fetch-zk-config-provider':
+        specifier: 3.1.0
+        version: 3.1.0
+      '@midnight-ntwrk/midnight-js-http-client-proof-provider':
+        specifier: 3.1.0
+        version: 3.1.0
+      '@midnight-ntwrk/midnight-js-indexer-public-data-provider':
+        specifier: 3.1.0
+        version: 3.1.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@midnight-ntwrk/midnight-js-level-private-state-provider':
+        specifier: 3.1.0
+        version: 3.1.0
+      '@midnight-ntwrk/midnight-js-types':
+        specifier: 3.1.0
+        version: 3.1.0
       hash-wasm:
         specifier: ^4.11.0
         version: 4.12.0
@@ -325,6 +343,15 @@ importers:
       vite:
         specifier: ^6.0.5
         version: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite-plugin-static-copy:
+        specifier: ^3.2.0
+        version: 3.2.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))
+      vite-plugin-top-level-await:
+        specifier: ^1.6.0
+        version: 1.6.0(rollup@2.80.0)(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))
+      vite-plugin-wasm:
+        specifier: ^3.5.0
+        version: 3.5.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@25.4.0)(jsdom@25.0.1)
@@ -1082,6 +1109,9 @@ packages:
   '@midnight-ntwrk/midnight-js-contracts@3.1.0':
     resolution: {integrity: sha512-yofuzxbOKedjzz/jocZZLo+XkMGEChlXwkMZksWBwmn/zluTgJfei8isb3HnChpPPdycF/MJeGpUXm/hKqfdug==}
 
+  '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@3.1.0':
+    resolution: {integrity: sha512-f3M2NQQWRr895hr26VOWN23hD9NvyIN9zjafJt1Qvdtv2CYMOaCH1TrsyXAXKQZUrLGtf7ikatWm5tQnTyl6tw==}
+
   '@midnight-ntwrk/midnight-js-http-client-proof-provider@3.1.0':
     resolution: {integrity: sha512-wa/ZOoABcDzH+E71K8brMH9PHSzeNQ1b6wXTEOT8xpgQXYrs2xxrHjDiDN8ZBk7a9Oh4NOn+5HZcMKTgzrT8wQ==}
 
@@ -1407,6 +1437,15 @@ packages:
 
   '@rolldown/pluginutils@1.0.0-beta.27':
     resolution: {integrity: sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==}
+
+  '@rollup/plugin-virtual@3.0.2':
+    resolution: {integrity: sha512-10monEYsBp3scM4/ND4LNH5Rxvh3e/cVeL3jWTgZ2SrQ+BmUoQcopVQvnaMcOnykb1VkxUFuDAN+0FnpTFRy2A==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: 2.80.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
 
   '@rollup/pluginutils@4.2.1':
     resolution: {integrity: sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ==}
@@ -1934,6 +1973,10 @@ packages:
     resolution: {integrity: sha512-4Dj6M28JB+oAH8kFkTLUo+a2jwOFkuqb3yucU0CANcRRUbxS0cP0nZYCGjcc3BNXwRIsUVmDGgzawme7zvJHvg==}
     engines: {node: '>=12'}
 
+  anymatch@3.1.3:
+    resolution: {integrity: sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==}
+    engines: {node: '>= 8'}
+
   archiver-utils@5.0.2:
     resolution: {integrity: sha512-wuLJMmIBQYCsGZgYLTy5FIB2pF6Lfb6cXMSF8Qywwk3t20zWnAi7zLcQFdKQmIB8wyZpY5ER38x08GbwtR2cLA==}
     engines: {node: '>= 14'}
@@ -2070,6 +2113,10 @@ packages:
   bcrypt-pbkdf@1.0.2:
     resolution: {integrity: sha512-qeFIXtP4MSoi6NLqO12WfqARWWuCKi2Rn/9hJLEmtB5yTNr9DqFWkJRCf2qShWzPeAMRnOgCrq0sg/KLv5ES9w==}
 
+  binary-extensions@2.3.0:
+    resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
+    engines: {node: '>=8'}
+
   bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}
 
@@ -2160,6 +2207,10 @@ packages:
   cheerio@1.2.0:
     resolution: {integrity: sha512-WDrybc/gKFpTYQutKIK6UvfcuxijIZfMfXaYm8NMsPQxSYvf+13fXUJ4rztGGbJcBQ/GF55gvrZ0Bc0bj/mqvg==}
     engines: {node: '>=20.18.1'}
+
+  chokidar@3.6.0:
+    resolution: {integrity: sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==}
+    engines: {node: '>= 8.10.0'}
 
   chownr@1.1.4:
     resolution: {integrity: sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==}
@@ -2841,6 +2892,10 @@ packages:
     resolution: {integrity: sha512-n4ZT37wG78iz03xPRKJrHTdZbe3IicyucEtdRsV5yglwc3GyUfbAfpSeD0FJ41NbUNSt5wbhqfp1fS+BgnvDFQ==}
     engines: {node: '>= 0.4'}
 
+  is-binary-path@2.1.0:
+    resolution: {integrity: sha512-ZMERYes6pDydyuGidse7OsHxtbI7WVeUEozgR/g7rd0xUimYNlvZRE/K2MgZTjWy725IfelLeVcEM97mmtRGXw==}
+    engines: {node: '>=8'}
+
   is-boolean-object@1.2.2:
     resolution: {integrity: sha512-wa56o2/ElJMYqjCjGkXri7it5FbebW5usLw/nPmCMs5DeZ7eziSYZhSmPRn0txqeW4LnAmQQU7FgqLpsEFKM4A==}
     engines: {node: '>= 0.4'}
@@ -3270,6 +3325,10 @@ packages:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
 
+  p-map@7.0.4:
+    resolution: {integrity: sha512-tkAQEw8ysMzmkhgw8k+1U/iPhWNhykKnSk4Rd5zLoPJCuJaGRPo6YposrZgaxHKzDHdDWWZvE/Sk7hsL2X/CpQ==}
+    engines: {node: '>=18'}
+
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
 
@@ -3458,6 +3517,10 @@ packages:
 
   readdir-glob@1.1.3:
     resolution: {integrity: sha512-v05I2k7xN8zXvPD9N+z/uhXPaj0sUFCe2rcWZIpBsqxfP7xXFQ0tipAd/wjj1YxWyWtUS5IDJpOG82JKt2EAVA==}
+
+  readdirp@3.6.0:
+    resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
+    engines: {node: '>=8.10.0'}
 
   real-require@0.2.0:
     resolution: {integrity: sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==}
@@ -3911,6 +3974,22 @@ packages:
     resolution: {integrity: sha512-AM9aQ/IPrW/6ENLQg3AGY4K1N2TGZdR5e4gu/MmmR2xR3Ll1+dib+nook92g4TV3PXVyeyxdWwtaCAiUL0hMxA==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
+
+  vite-plugin-static-copy@3.2.0:
+    resolution: {integrity: sha512-g2k9z8B/1Bx7D4wnFjPLx9dyYGrqWMLTpwTtPHhcU+ElNZP2O4+4OsyaficiDClus0dzVhdGvoGFYMJxoXZ12Q==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    peerDependencies:
+      vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+
+  vite-plugin-top-level-await@1.6.0:
+    resolution: {integrity: sha512-bNhUreLamTIkoulCR9aDXbTbhLk6n1YE8NJUTTxl5RYskNRtzOR0ASzSjBVRtNdjIfngDXo11qOsybGLNsrdww==}
+    peerDependencies:
+      vite: '>=2.8'
+
+  vite-plugin-wasm@3.5.0:
+    resolution: {integrity: sha512-X5VWgCnqiQEGb+omhlBVsvTfxikKtoOgAzQ95+BZ8gQ+VfMHIjSHr0wyvXFQCa0eKQ0fKyaL0kWcEnYqBac4lQ==}
+    peerDependencies:
+      vite: ^2 || ^3 || ^4 || ^5 || ^6 || ^7
 
   vite@5.4.21:
     resolution: {integrity: sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==}
@@ -4748,6 +4827,13 @@ snapshots:
       '@midnight-ntwrk/midnight-js-types': 3.1.0
       '@midnight-ntwrk/midnight-js-utils': 3.1.0
 
+  '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@3.1.0':
+    dependencies:
+      '@midnight-ntwrk/midnight-js-types': 3.1.0
+      cross-fetch: 4.1.0
+    transitivePeerDependencies:
+      - encoding
+
   '@midnight-ntwrk/midnight-js-http-client-proof-provider@3.1.0':
     dependencies:
       '@midnight-ntwrk/midnight-js-contracts': 3.1.0
@@ -5406,6 +5492,10 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 
+  '@rollup/plugin-virtual@3.0.2(rollup@2.80.0)':
+    optionalDependencies:
+      rollup: 2.80.0
+
   '@rollup/pluginutils@4.2.1':
     dependencies:
       estree-walker: 2.0.2
@@ -5592,18 +5682,14 @@ snapshots:
       '@swc/core-win32-arm64-msvc': 1.15.18
       '@swc/core-win32-ia32-msvc': 1.15.18
       '@swc/core-win32-x64-msvc': 1.15.18
-    optional: true
 
-  '@swc/counter@0.1.3':
-    optional: true
+  '@swc/counter@0.1.3': {}
 
   '@swc/types@0.1.25':
     dependencies:
       '@swc/counter': 0.1.3
-    optional: true
 
-  '@swc/wasm@1.15.18':
-    optional: true
+  '@swc/wasm@1.15.18': {}
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -5943,6 +6029,11 @@ snapshots:
 
   ansi-styles@6.2.3: {}
 
+  anymatch@3.1.3:
+    dependencies:
+      normalize-path: 3.0.0
+      picomatch: 2.3.1
+
   archiver-utils@5.0.2:
     dependencies:
       glob: 10.5.0
@@ -6099,6 +6190,8 @@ snapshots:
     dependencies:
       tweetnacl: 0.14.5
 
+  binary-extensions@2.3.0: {}
+
   bl@4.1.0:
     dependencies:
       buffer: 5.7.1
@@ -6215,6 +6308,18 @@ snapshots:
       parse5-parser-stream: 7.1.2
       undici: 7.22.0
       whatwg-mimetype: 4.0.0
+
+  chokidar@3.6.0:
+    dependencies:
+      anymatch: 3.1.3
+      braces: 3.0.3
+      glob-parent: 5.1.2
+      is-binary-path: 2.1.0
+      is-glob: 4.0.3
+      normalize-path: 3.0.0
+      readdirp: 3.6.0
+    optionalDependencies:
+      fsevents: 2.3.3
 
   chownr@1.1.4: {}
 
@@ -7063,6 +7168,10 @@ snapshots:
     dependencies:
       has-bigints: 1.1.0
 
+  is-binary-path@2.1.0:
+    dependencies:
+      binary-extensions: 2.3.0
+
   is-boolean-object@1.2.2:
     dependencies:
       call-bound: 1.0.4
@@ -7492,6 +7601,8 @@ snapshots:
     dependencies:
       p-limit: 3.1.0
 
+  p-map@7.0.4: {}
+
   package-json-from-dist@1.0.1: {}
 
   parent-module@1.0.1:
@@ -7709,6 +7820,10 @@ snapshots:
   readdir-glob@1.1.3:
     dependencies:
       minimatch: 5.1.9
+
+  readdirp@3.6.0:
+    dependencies:
+      picomatch: 2.3.1
 
   real-require@0.2.0: {}
 
@@ -8293,6 +8408,29 @@ snapshots:
       - sugarss
       - supports-color
       - terser
+
+  vite-plugin-static-copy@3.2.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)):
+    dependencies:
+      chokidar: 3.6.0
+      p-map: 7.0.4
+      picocolors: 1.1.1
+      tinyglobby: 0.2.15
+      vite: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
+
+  vite-plugin-top-level-await@1.6.0(rollup@2.80.0)(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)):
+    dependencies:
+      '@rollup/plugin-virtual': 3.0.2(rollup@2.80.0)
+      '@swc/core': 1.15.18
+      '@swc/wasm': 1.15.18
+      uuid: 10.0.0
+      vite: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
+    transitivePeerDependencies:
+      - '@swc/helpers'
+      - rollup
+
+  vite-plugin-wasm@3.5.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)):
+    dependencies:
+      vite: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
 
   vite@5.4.21(@types/node@25.4.0):
     dependencies:

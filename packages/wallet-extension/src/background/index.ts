@@ -10,6 +10,7 @@
 
 import { EncryptedStorage } from '../shared/storage/encrypted-storage';
 import type { PendingVerificationRequest, PendingCredentialOffer } from '../shared/messaging/types';
+import { getProofGenerator, type ServiceUris } from './proof-generator';
 
 const AUTO_LOCK_ALARM = 'midnight-cloak-auto-lock';
 
@@ -143,6 +144,9 @@ async function handleMessage(
 
     case 'GET_AVAILABLE_CREDENTIALS':
       return getAvailableCredentials();
+
+    case 'INIT_PROOF_GENERATOR':
+      return initProofGenerator(message.serviceUris as ServiceUris);
 
     default:
       return { success: false, error: 'Unknown message type' };
@@ -410,19 +414,62 @@ async function approveVerification(): Promise<{ success: boolean; proof?: unknow
       return result;
     }
 
-    // Generate mock proof (real proof generation in Phase 3D)
-    // PRIVACY: Do NOT include credentialId - it would enable cross-dApp tracking
-    // Real ZK proofs will use nullifiers that are dApp-specific
-    const proof = {
-      type: pendingVerificationRequest.policyConfig.type,
-      verified: true,
-      timestamp: Date.now(),
-      // Mock proof data - in production, this will be actual ZK proof bytes
-      proofData: btoa(JSON.stringify({
-        credentialType: matchingCredential.type,
-        nonce: crypto.randomUUID(),
-      })),
-    };
+    // Generate proof based on credential type
+    let proof: unknown;
+
+    if (pendingVerificationRequest.policyConfig.type === 'AGE') {
+      // Age verification - generate ZK proof
+      const birthDate = matchingCredential.claims.birthDate as string;
+      const birthYear = new Date(birthDate).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const minAge = pendingVerificationRequest.policyConfig.minAge || 18;
+
+      const proofGenerator = getProofGenerator();
+
+      if (proofGenerator.isInitialized()) {
+        // Use real proof generation with Midnight SDK
+        console.log('[Background] Generating real ZK proof via Midnight SDK');
+        const proofResult = await proofGenerator.generateAgeProof({
+          birthYear,
+          minAge,
+          currentYear,
+        });
+
+        proof = {
+          type: 'AGE',
+          verified: proofResult.isVerified,
+          timestamp: Date.now(),
+          proofData: Array.from(proofResult.proof),
+          publicOutputs: proofResult.publicOutputs,
+          isMock: false,
+        };
+      } else {
+        // Fall back to mock proof (development mode)
+        console.log('[Background] ProofGenerator not initialized, using mock proof');
+        proof = {
+          type: 'AGE',
+          verified: true,
+          timestamp: Date.now(),
+          proofData: btoa(JSON.stringify({
+            credentialType: matchingCredential.type,
+            nonce: crypto.randomUUID(),
+          })),
+          isMock: true,
+        };
+      }
+    } else {
+      // Other credential types - mock proof for now
+      proof = {
+        type: pendingVerificationRequest.policyConfig.type,
+        verified: true,
+        timestamp: Date.now(),
+        proofData: btoa(JSON.stringify({
+          credentialType: matchingCredential.type,
+          nonce: crypto.randomUUID(),
+        })),
+        isMock: true,
+      };
+    }
 
     const result = { success: true, verified: true, proof };
 
@@ -600,5 +647,17 @@ function calculateAge(birthDate: Date): number {
   }
 
   return age;
+}
+
+async function initProofGenerator(serviceUris: ServiceUris): Promise<{ success: boolean; error?: string }> {
+  try {
+    const generator = getProofGenerator();
+    await generator.initialize(serviceUris);
+    console.log('[Background] ProofGenerator initialized with Lace service URIs');
+    return { success: true };
+  } catch (err) {
+    console.error('[Background] Failed to initialize ProofGenerator:', err);
+    return { success: false, error: (err as Error).message };
+  }
 }
 

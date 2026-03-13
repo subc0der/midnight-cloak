@@ -39,7 +39,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
 
   return (
     <div className="page-center">
-      <div className="logo">🌙</div>
+      <img src="/icons/icon-128.png" alt="Midnight Cloak" className="logo-img" />
       <h2>Welcome Back</h2>
       <p>Enter your password to unlock</p>
 
