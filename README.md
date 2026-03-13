@@ -10,13 +10,14 @@ Midnight Cloak enables dApp developers to verify user attributes (age, credentia
 
 ## Status
 
-**Phase 2: Core SDK MVP** - Complete
+**Phase 3: Wallet Extension** - In Progress
 
 | Component | Status | Notes |
 |-----------|--------|-------|
 | @midnight-cloak/core | 0.2.0 | 15 tests passing |
 | @midnight-cloak/react | 0.1.0 | 56 tests passing |
 | @midnight-cloak/wallet | 0.1.0 | 70 tests passing |
+| Wallet Extension | 0.1.0 | Chrome extension with credential management |
 | Contracts | Deployed | Age Verifier + Credential Registry on Preprod |
 | Lace Wallet | Working | Real wallet signing tested |
 | ZK Proofs | Working | Mock mode available for development |
@@ -35,12 +36,13 @@ Midnight Cloak enables dApp developers to verify user attributes (age, credentia
 
 ```
 packages/
-  core/           @midnight-cloak/core      Core SDK and verification logic
-  react/          @midnight-cloak/react     React components and hooks
-  contracts/      @midnight-cloak/contracts Contract types (placeholder)
-  wallet/         @midnight-cloak/wallet    Wallet utilities (planned)
+  core/             @midnight-cloak/core      Core SDK and verification logic
+  react/            @midnight-cloak/react     React components and hooks
+  wallet/           @midnight-cloak/wallet    Wallet utilities
+  wallet-extension/ Chrome extension          Credential wallet with Lace integration
+  contracts/        @midnight-cloak/contracts Contract types
 apps/
-  demo/           Demo application
+  demo/             Demo application
 ```
 
 ## Installation
@@ -301,6 +303,11 @@ midnight-cloak/
           CredentialGate.tsx  Content gating
         hooks/
           useMidnightCloak.ts        Client hook
+    wallet-extension/     Chrome extension
+      src/
+        popup/            Extension UI
+        background/       Service worker
+        content/          Content scripts and page API
     contracts/            Contract interfaces
   apps/
     demo/                 Demo application
@@ -326,20 +333,36 @@ midnight-cloak/
    - Age verification flow
    - React components
    - Mock wallet for development
+   - Contract deployment to Preprod
 
-3. **Phase 3** - Wallet Extension
-   - Chrome extension
-   - Credential storage
-   - Multi-wallet support
+3. **Phase 3** - Wallet Extension (In Progress)
+   - **3A** Extension Foundation (Complete)
+     - Chrome extension scaffold
+     - Password-protected vault with Argon2id encryption
+     - Lock/unlock flow with auto-lock timer
+   - **3B** Seamless Wallet UX (Complete)
+     - Lace wallet detection and integration
+     - Network mismatch warnings
+     - Wallet auto-reconnect
+   - **3C** Credential Management (Complete)
+     - Credential issuance and storage
+     - Verification request popup
+     - dApp API (`window.midnightCloak`)
+   - **3D** Integration & Polish (Current)
+     - Real ZK proof server integration
+     - Multi-wallet support (NuFi, Vespr)
+     - Developer documentation
 
-4. **Phase 4** - Additional Verifications
-   - Token balance verification
-   - NFT ownership verification
-   - Residency verification
+4. **Phase 4** - $Handle Shield
+   - Cardano to Midnight bridge integration
+   - $handle claim circuit
+   - Asset shielding UI
+   - ZK proofs for hidden holdings
 
-5. **Phase 5** - Production
+5. **Phase 5** - Production & Growth
    - Mainnet deployment
    - Developer dashboard
+   - Additional verification types
    - Partner integrations
 
 ## License
