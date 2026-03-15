@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { IssuerTrustStore, type TrustedIssuer } from '../../shared/storage/issuer-trust';
 
 interface SettingsProps {
   onLock: () => void;
@@ -9,9 +10,15 @@ export default function Settings({ onLock }: SettingsProps) {
   const navigate = useNavigate();
   const [autoLockMinutes, setAutoLockMinutes] = useState(5);
   const [saving, setSaving] = useState(false);
+  const [trustedIssuers, setTrustedIssuers] = useState<TrustedIssuer[]>([]);
+  const [showAddIssuer, setShowAddIssuer] = useState(false);
+  const [newIssuerAddress, setNewIssuerAddress] = useState('');
+  const [newIssuerName, setNewIssuerName] = useState('');
+  const [addError, setAddError] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
+    loadTrustedIssuers();
   }, []);
 
   async function loadSettings() {
@@ -22,6 +29,54 @@ export default function Settings({ onLock }: SettingsProps) {
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
+    }
+  }
+
+  async function loadTrustedIssuers() {
+    try {
+      const trustStore = IssuerTrustStore.getInstance();
+      const issuers = await trustStore.getAllWhitelisted();
+      setTrustedIssuers(issuers);
+    } catch (err) {
+      console.error('Failed to load trusted issuers:', err);
+    }
+  }
+
+  async function handleAddIssuer() {
+    setAddError(null);
+
+    if (!newIssuerAddress.trim()) {
+      setAddError('Please enter an issuer address');
+      return;
+    }
+
+    if (!newIssuerName.trim()) {
+      setAddError('Please enter a display name');
+      return;
+    }
+
+    try {
+      const trustStore = IssuerTrustStore.getInstance();
+      await trustStore.addToWhitelist({
+        address: newIssuerAddress.trim(),
+        name: newIssuerName.trim(),
+      });
+      setNewIssuerAddress('');
+      setNewIssuerName('');
+      setShowAddIssuer(false);
+      await loadTrustedIssuers();
+    } catch (err) {
+      setAddError((err as Error).message);
+    }
+  }
+
+  async function handleRemoveIssuer(address: string) {
+    try {
+      const trustStore = IssuerTrustStore.getInstance();
+      await trustStore.removeFromWhitelist(address);
+      await loadTrustedIssuers();
+    } catch (err) {
+      console.error('Failed to remove issuer:', err);
     }
   }
 
@@ -106,6 +161,101 @@ export default function Settings({ onLock }: SettingsProps) {
               🔒 Lock
             </button>
           </div>
+        </div>
+
+        <div className="settings-section">
+          <h3>Trusted Issuers</h3>
+
+          {trustedIssuers.length > 0 ? (
+            <ul className="trusted-issuers-list">
+              {trustedIssuers.map((issuer) => (
+                <li key={issuer.address} className="trusted-issuer-item">
+                  <div className="trusted-issuer-info">
+                    <div className="trusted-issuer-name">{issuer.name}</div>
+                    <div className="trusted-issuer-address">
+                      {issuer.address.slice(0, 12)}...{issuer.address.slice(-12)}
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-remove"
+                    onClick={() => handleRemoveIssuer(issuer.address)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="empty-state">
+              <p>No trusted issuers yet</p>
+            </div>
+          )}
+
+          {showAddIssuer ? (
+            <div style={{ marginTop: 12 }}>
+              <input
+                type="text"
+                placeholder="Issuer address (64 hex characters)"
+                value={newIssuerAddress}
+                onChange={(e) => setNewIssuerAddress(e.target.value)}
+                className="input"
+                style={{
+                  width: '100%',
+                  marginBottom: 8,
+                  padding: '8px 12px',
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--color-text)',
+                }}
+              />
+              <input
+                type="text"
+                placeholder="Display name"
+                value={newIssuerName}
+                onChange={(e) => setNewIssuerName(e.target.value)}
+                className="input"
+                style={{
+                  width: '100%',
+                  marginBottom: 8,
+                  padding: '8px 12px',
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--color-text)',
+                }}
+              />
+              {addError && (
+                <p style={{ color: 'var(--color-error)', fontSize: 12, marginBottom: 8 }}>
+                  {addError}
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowAddIssuer(false);
+                    setNewIssuerAddress('');
+                    setNewIssuerName('');
+                    setAddError(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleAddIssuer}>
+                  Add
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              className="btn btn-secondary btn-full"
+              onClick={() => setShowAddIssuer(true)}
+              style={{ marginTop: 12 }}
+            >
+              + Add Issuer
+            </button>
+          )}
         </div>
 
         <div className="settings-section">

@@ -7,6 +7,13 @@
  * Message flow:
  * dApp → window.postMessage → Content Script → chrome.runtime.sendMessage → Background
  *
+ * For verification/credential requests:
+ * 1. Background returns immediately with requestId
+ * 2. Content script polls POLL_RESPONSE until completed
+ * 3. Final response sent to dApp
+ *
+ * This pattern survives service worker dormancy (Chrome MV3 limitation).
+ *
  * Security features:
  * - Message type whitelist prevents unauthorized background access
  * - Request ID correlation prevents response spoofing
@@ -15,6 +22,10 @@
 
 const EXTENSION_ID = 'midnight-cloak';
 const DAPP_SOURCE = 'midnight-cloak-dapp';
+
+// Polling configuration
+const POLL_INTERVAL_MS = 1000; // Poll every 1 second
+const POLL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout (matches backend)
 
 /**
  * Whitelist of message types that dApps are allowed to send.
@@ -41,6 +52,53 @@ interface MidnightCloakMessage {
  */
 function isAllowedMessageType(type: string): type is AllowedMessageType {
   return ALLOWED_MESSAGE_TYPES.includes(type as AllowedMessageType);
+}
+
+/**
+ * Message types that require polling for response.
+ * These requests return immediately with a requestId, then we poll for completion.
+ */
+const POLLING_MESSAGE_TYPES = ['VERIFICATION_REQUEST', 'CREDENTIAL_OFFER'] as const;
+
+function requiresPolling(type: string): boolean {
+  return (POLLING_MESSAGE_TYPES as readonly string[]).includes(type);
+}
+
+/**
+ * Poll for response completion.
+ * The background script stores completed responses, and we poll until ready.
+ *
+ * @param requestId The request ID returned from initial request
+ * @param timeoutMs Maximum time to poll before giving up
+ * @returns The completed response result
+ */
+async function pollForResponse(
+  requestId: string,
+  timeoutMs: number = POLL_TIMEOUT_MS
+): Promise<unknown> {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'POLL_RESPONSE',
+        requestId,
+      });
+
+      if (response?.completed) {
+        return response.result;
+      }
+    } catch (err) {
+      // Service worker may have restarted, continue polling
+      console.log('[MidnightCloak] Poll error, retrying...', err);
+    }
+
+    // Wait before next poll
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+  }
+
+  // Timeout reached
+  throw new Error('Request timed out waiting for user response');
 }
 
 // Listen for messages from the page
@@ -85,10 +143,25 @@ window.addEventListener('message', async (event) => {
     // SECURITY: Spread payload FIRST, then override type with validated value
     // This prevents malicious payloads from overwriting the whitelisted type
     const payload = (message.payload || {}) as Record<string, unknown>;
-    const response = await chrome.runtime.sendMessage({
+    const initialResponse = await chrome.runtime.sendMessage({
       ...payload,
       type: message.type, // Validated type always wins
     });
+
+    let finalResponse: unknown;
+
+    // For verification/credential requests, background returns immediately with requestId
+    // We then poll until the user approves/denies
+    if (requiresPolling(message.type) && initialResponse?.success && initialResponse?.requestId) {
+      try {
+        finalResponse = await pollForResponse(initialResponse.requestId);
+      } catch (pollError) {
+        finalResponse = { success: false, error: (pollError as Error).message };
+      }
+    } else {
+      // Non-polling requests return response directly
+      finalResponse = initialResponse;
+    }
 
     // Send response back to page with correlation ID
     window.postMessage(
@@ -96,7 +169,7 @@ window.addEventListener('message', async (event) => {
         type: `${message.type}_RESPONSE`,
         source: EXTENSION_ID,
         requestId: message.requestId,
-        payload: response,
+        payload: finalResponse,
       },
       window.location.origin
     );

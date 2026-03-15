@@ -54,12 +54,23 @@ export interface GetPendingRequestMessage {
   type: 'GET_PENDING_REQUEST';
 }
 
+export interface GetAllPendingRequestsMessage {
+  type: 'GET_ALL_PENDING_REQUESTS';
+}
+
 export interface ApproveVerificationMessage {
   type: 'APPROVE_VERIFICATION';
+  requestId?: string;
 }
 
 export interface DenyVerificationMessage {
   type: 'DENY_VERIFICATION';
+  requestId?: string;
+}
+
+export interface PollResponseMessage {
+  type: 'POLL_RESPONSE';
+  requestId: string;
 }
 
 export interface CredentialOfferMessage {
@@ -77,12 +88,18 @@ export interface GetPendingOfferMessage {
   type: 'GET_PENDING_OFFER';
 }
 
+export interface GetAllPendingOffersMessage {
+  type: 'GET_ALL_PENDING_OFFERS';
+}
+
 export interface AcceptCredentialMessage {
   type: 'ACCEPT_CREDENTIAL';
+  offerId?: string;
 }
 
 export interface RejectCredentialMessage {
   type: 'REJECT_CREDENTIAL';
+  offerId?: string;
 }
 
 export type ExtensionMessage =
@@ -96,10 +113,13 @@ export type ExtensionMessage =
   | UpdateAutoLockMessage
   | VerificationRequestMessage
   | GetPendingRequestMessage
+  | GetAllPendingRequestsMessage
   | ApproveVerificationMessage
   | DenyVerificationMessage
+  | PollResponseMessage
   | CredentialOfferMessage
   | GetPendingOfferMessage
+  | GetAllPendingOffersMessage
   | AcceptCredentialMessage
   | RejectCredentialMessage;
 

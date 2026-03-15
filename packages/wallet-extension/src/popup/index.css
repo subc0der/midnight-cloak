@@ -525,3 +525,120 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+/* Pending request count badge */
+.pending-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 8px;
+  background: var(--color-primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+/* Trust badge */
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+/* Issuer row */
+.issuer-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.issuer-label {
+  color: var(--color-text-muted);
+}
+
+.issuer-address {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+/* Small link button */
+.btn-small {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.btn-link {
+  background: transparent;
+  color: var(--color-primary);
+  padding: 4px 0;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+  background: transparent;
+}
+
+/* Trusted issuers list in settings */
+.trusted-issuers-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.trusted-issuer-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.trusted-issuer-item:last-child {
+  border-bottom: none;
+}
+
+.trusted-issuer-info {
+  flex: 1;
+}
+
+.trusted-issuer-name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.trusted-issuer-address {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.btn-remove {
+  background: transparent;
+  color: var(--color-error);
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.btn-remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: var(--color-text-muted);
+}
+
+.empty-state p {
+  font-size: 13px;
+}

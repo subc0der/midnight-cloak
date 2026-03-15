@@ -9,7 +9,7 @@
  */
 
 import { EncryptedStorage } from '../shared/storage/encrypted-storage';
-import type { PendingVerificationRequest, PendingCredentialOffer } from '../shared/messaging/types';
+import { RequestQueue, type PersistedVerificationRequest, type PersistedCredentialOffer } from '../shared/storage/request-queue';
 import { getProofGenerator, type ServiceUris, type ProofGeneratorConfig } from './proof-generator';
 
 /**
@@ -36,13 +36,9 @@ const AUTO_LOCK_ALARM = 'midnight-cloak-auto-lock';
 
 let storage: EncryptedStorage | null = null;
 
-// Pending requests/offers waiting for user approval
-let pendingVerificationRequest: PendingVerificationRequest | null = null;
-let pendingCredentialOffer: PendingCredentialOffer | null = null;
-
-// Callbacks to resolve pending requests
-let pendingRequestResolve: ((result: unknown) => void) | null = null;
-let pendingOfferResolve: ((result: unknown) => void) | null = null;
+// Request queue for persistent storage of pending requests
+// Survives service worker dormancy (Chrome MV3 limitation)
+const requestQueue = RequestQueue.getInstance();
 
 // Initialize on install
 chrome.runtime.onInstalled.addListener(() => {
@@ -69,6 +65,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 // On service worker startup, check if we should have locked while dormant
 checkAutoLockOnStartup();
+
+// Clean expired requests on startup (prevents stale request accumulation)
+cleanRequestQueueOnStartup();
 
 // Handle messages from popup and content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -146,11 +145,17 @@ async function handleMessage(
     case 'GET_PENDING_REQUEST':
       return getPendingRequest();
 
+    case 'GET_ALL_PENDING_REQUESTS':
+      return getAllPendingRequests();
+
     case 'APPROVE_VERIFICATION':
-      return approveVerification();
+      return approveVerification(message.requestId as string | undefined);
 
     case 'DENY_VERIFICATION':
-      return denyVerification();
+      return denyVerification(message.requestId as string | undefined);
+
+    case 'POLL_RESPONSE':
+      return pollResponse(message.requestId as string);
 
     case 'CREDENTIAL_OFFER':
       // SECURITY: Use trustedOrigin from sender, not message.origin
@@ -159,11 +164,14 @@ async function handleMessage(
     case 'GET_PENDING_OFFER':
       return getPendingOffer();
 
+    case 'GET_ALL_PENDING_OFFERS':
+      return getAllPendingOffers();
+
     case 'ACCEPT_CREDENTIAL':
-      return acceptCredential();
+      return acceptCredential(message.offerId as string | undefined);
 
     case 'REJECT_CREDENTIAL':
-      return rejectCredential();
+      return rejectCredential(message.offerId as string | undefined);
 
     case 'GET_AVAILABLE_CREDENTIALS':
       return getAvailableCredentials();
@@ -363,11 +371,28 @@ async function checkAutoLockOnStartup(): Promise<void> {
   }
 }
 
+/**
+ * Clean expired requests from the queue on service worker startup.
+ * This prevents stale request accumulation across SW restarts.
+ */
+async function cleanRequestQueueOnStartup(): Promise<void> {
+  try {
+    const cleaned = await requestQueue.cleanExpired();
+    if (cleaned > 0) {
+      console.log(`[Background] Cleaned ${cleaned} expired request(s) from queue`);
+    }
+  } catch (err) {
+    console.error('[Background] Error cleaning request queue:', err);
+  }
+}
+
 async function handleVerificationRequest(
   message: { policyConfig?: unknown; serviceUris?: ServiceUris },
   trustedOrigin: string
-): Promise<unknown> {
+): Promise<{ success: boolean; requestId?: string; error?: string }> {
   console.log('[Background] Verification request received from:', trustedOrigin);
+
+  const requestId = crypto.randomUUID();
 
   // Initialize ProofGenerator with Lace service URIs if provided
   if (message.serviceUris) {
@@ -379,53 +404,83 @@ async function handleVerificationRequest(
     console.warn('[Background] No service URIs provided - proof generation may fail or use mock');
   }
 
-  // Create pending request
+  // Add to persistent request queue
   // SECURITY: Use trustedOrigin from sender, not message payload (prevents spoofing)
-  const request: PendingVerificationRequest = {
-    id: crypto.randomUUID(),
+  await requestQueue.addVerificationRequest({
+    id: requestId,
     origin: trustedOrigin,
-    policyConfig: (message.policyConfig as PendingVerificationRequest['policyConfig']) || { type: 'UNKNOWN' },
+    policyConfig: (message.policyConfig as PersistedVerificationRequest['policyConfig']) || { type: 'UNKNOWN' },
+    serviceUris: message.serviceUris,
     timestamp: Date.now(),
-  };
-
-  pendingVerificationRequest = request;
-
-  // Return a promise that resolves when user approves/denies
-  return new Promise((resolve) => {
-    pendingRequestResolve = resolve;
-
-    // Open popup for user to approve/deny
-    chrome.action.openPopup().catch(() => {
-      // openPopup may fail if popup is already open or not available
-      // In that case, the popup will check for pending requests on load
-      console.log('[Background] Could not open popup automatically');
-    });
-
-    // Timeout after 5 minutes
-    setTimeout(() => {
-      if (pendingVerificationRequest?.id === request.id) {
-        pendingVerificationRequest = null;
-        pendingRequestResolve = null;
-        resolve({ success: false, error: 'Request timed out' });
-      }
-    }, 5 * 60 * 1000);
   });
+
+  // Open popup for user to approve/deny
+  chrome.action.openPopup().catch(() => {
+    // openPopup may fail if popup is already open or not available
+    // In that case, the popup will check for pending requests on load
+    console.log('[Background] Could not open popup automatically');
+  });
+
+  // Return immediately with requestId - content script will poll for response
+  // This allows the service worker to go dormant without losing the request
+  return { success: true, requestId };
 }
 
-function getPendingRequest(): { success: boolean; request?: PendingVerificationRequest | null } {
-  return { success: true, request: pendingVerificationRequest };
+async function getPendingRequest(): Promise<{ success: boolean; request?: PersistedVerificationRequest | null }> {
+  const request = await requestQueue.getNextPendingVerification();
+  return { success: true, request };
 }
 
-async function approveVerification(): Promise<{ success: boolean; proof?: unknown; error?: string }> {
-  if (!pendingVerificationRequest) {
+async function getAllPendingRequests(): Promise<{ success: boolean; requests: PersistedVerificationRequest[] }> {
+  const requests = await requestQueue.getAllPendingVerifications();
+  return { success: true, requests };
+}
+
+async function pollResponse(requestId: string): Promise<{ completed: boolean; result?: unknown }> {
+  if (!requestId) {
+    return { completed: false };
+  }
+
+  const response = await requestQueue.getCompletedResponse(requestId);
+  if (response) {
+    // Remove response after pickup
+    await requestQueue.removeCompletedResponse(requestId);
+    return { completed: true, result: response.result };
+  }
+
+  return { completed: false };
+}
+
+async function approveVerification(requestId?: string): Promise<{ success: boolean; proof?: unknown; error?: string }> {
+  // Get request from queue - either by ID or next pending
+  const pendingRequest = requestId
+    ? await requestQueue.getVerificationRequest(requestId)
+    : await requestQueue.getNextPendingVerification();
+
+  if (!pendingRequest) {
     return { success: false, error: 'No pending request' };
   }
 
   if (!storage) {
+    // Store failure result for content script pickup
+    await requestQueue.completeRequest(pendingRequest.id, 'verification', {
+      success: false,
+      error: 'Vault is locked',
+    });
     return { success: false, error: 'Vault is locked' };
   }
 
+  // Mark as processing to prevent duplicate handling
+  await requestQueue.markVerificationProcessing(pendingRequest.id);
+
   try {
+    // Re-initialize ProofGenerator if service URIs were stored with request
+    if (pendingRequest.serviceUris) {
+      const generator = getProofGenerator();
+      generator.configure({ allowMockProofs: ALLOW_MOCK_PROOFS });
+      await generator.initialize(pendingRequest.serviceUris);
+    }
+
     // Load credentials and find matching one
     const data = await storage.load();
     const credentials = (data?.credentials || []) as Array<{
@@ -435,27 +490,23 @@ async function approveVerification(): Promise<{ success: boolean; proof?: unknow
       expiresAt: number | null;
     }>;
 
-    const matchingCredential = findMatchingCredential(pendingVerificationRequest.policyConfig, credentials);
+    const matchingCredential = findMatchingCredential(pendingRequest.policyConfig, credentials);
 
     if (!matchingCredential) {
       const result = { success: false, error: 'No matching credential found' };
-      if (pendingRequestResolve) {
-        pendingRequestResolve(result);
-        pendingRequestResolve = null;
-      }
-      pendingVerificationRequest = null;
+      await requestQueue.completeRequest(pendingRequest.id, 'verification', result);
       return result;
     }
 
     // Generate proof based on credential type
     let proof: unknown;
 
-    if (pendingVerificationRequest.policyConfig.type === 'AGE') {
+    if (pendingRequest.policyConfig.type === 'AGE') {
       // Age verification - generate ZK proof
       const birthDate = matchingCredential.claims.birthDate as string;
       const birthYear = new Date(birthDate).getFullYear();
       const currentYear = new Date().getFullYear();
-      const minAge = pendingVerificationRequest.policyConfig.minAge || 18;
+      const minAge = pendingRequest.policyConfig.minAge || 18;
 
       const proofGenerator = getProofGenerator();
 
@@ -485,12 +536,12 @@ async function approveVerification(): Promise<{ success: boolean; proof?: unknow
     } else {
       // Other credential types - require explicit mock opt-in
       if (!ALLOW_MOCK_PROOFS) {
-        throw new Error(`ZK proofs not yet implemented for credential type: ${pendingVerificationRequest.policyConfig.type}`);
+        throw new Error(`ZK proofs not yet implemented for credential type: ${pendingRequest.policyConfig.type}`);
       }
 
       console.warn('[Background] Using mock proof for non-AGE credential - NOT FOR PRODUCTION');
       proof = {
-        type: pendingVerificationRequest.policyConfig.type,
+        type: pendingRequest.policyConfig.type,
         verified: true,
         timestamp: Date.now(),
         proofData: btoa(JSON.stringify({
@@ -502,103 +553,109 @@ async function approveVerification(): Promise<{ success: boolean; proof?: unknow
 
     const result = { success: true, verified: true, proof };
 
-    if (pendingRequestResolve) {
-      pendingRequestResolve(result);
-      pendingRequestResolve = null;
-    }
-
-    pendingVerificationRequest = null;
+    // Store result for content script pickup
+    await requestQueue.completeRequest(pendingRequest.id, 'verification', result);
     await resetAutoLockTimer();
 
     return result;
   } catch (err) {
     const result = { success: false, error: (err as Error).message };
-    if (pendingRequestResolve) {
-      pendingRequestResolve(result);
-      pendingRequestResolve = null;
-    }
-    pendingVerificationRequest = null;
+    await requestQueue.completeRequest(pendingRequest.id, 'verification', result);
     return result;
   }
 }
 
-function denyVerification(): { success: boolean } {
-  const result = { success: false, error: 'User denied the request' };
+async function denyVerification(requestId?: string): Promise<{ success: boolean }> {
+  // Get request from queue - either by ID or next pending
+  const pendingRequest = requestId
+    ? await requestQueue.getVerificationRequest(requestId)
+    : await requestQueue.getNextPendingVerification();
 
-  if (pendingRequestResolve) {
-    pendingRequestResolve(result);
-    pendingRequestResolve = null;
+  if (!pendingRequest) {
+    return { success: false };
   }
 
-  pendingVerificationRequest = null;
+  // Store denial result for content script pickup
+  await requestQueue.completeRequest(pendingRequest.id, 'verification', {
+    success: false,
+    error: 'User denied the request',
+  });
+
   return { success: true };
 }
 
 async function handleCredentialOffer(
   message: { credential?: unknown },
   trustedOrigin: string
-): Promise<unknown> {
+): Promise<{ success: boolean; requestId?: string; error?: string }> {
   console.log('[Background] Credential offer received from:', trustedOrigin);
 
-  const credential = message.credential as PendingCredentialOffer['credential'];
+  const credential = message.credential as PersistedCredentialOffer['credential'];
   if (!credential || !credential.type) {
     return { success: false, error: 'Invalid credential data' };
   }
 
-  // Create pending offer
+  const offerId = crypto.randomUUID();
+
+  // Add to persistent request queue
   // SECURITY: Use trustedOrigin from sender, not message payload (prevents spoofing)
-  const offer: PendingCredentialOffer = {
-    id: crypto.randomUUID(),
+  await requestQueue.addCredentialOffer({
+    id: offerId,
     origin: trustedOrigin,
     credential,
     timestamp: Date.now(),
-  };
-
-  pendingCredentialOffer = offer;
-
-  // Return a promise that resolves when user accepts/rejects
-  return new Promise((resolve) => {
-    pendingOfferResolve = resolve;
-
-    // Open popup for user to accept/reject
-    chrome.action.openPopup().catch(() => {
-      console.log('[Background] Could not open popup automatically');
-    });
-
-    // Timeout after 5 minutes
-    setTimeout(() => {
-      if (pendingCredentialOffer?.id === offer.id) {
-        pendingCredentialOffer = null;
-        pendingOfferResolve = null;
-        resolve({ success: false, error: 'Offer timed out' });
-      }
-    }, 5 * 60 * 1000);
   });
+
+  // Open popup for user to accept/reject
+  chrome.action.openPopup().catch(() => {
+    console.log('[Background] Could not open popup automatically');
+  });
+
+  // Return immediately with requestId - content script will poll for response
+  return { success: true, requestId: offerId };
 }
 
-function getPendingOffer(): { success: boolean; offer?: PendingCredentialOffer | null } {
-  return { success: true, offer: pendingCredentialOffer };
+async function getPendingOffer(): Promise<{ success: boolean; offer?: PersistedCredentialOffer | null }> {
+  const offer = await requestQueue.getNextPendingOffer();
+  return { success: true, offer };
 }
 
-async function acceptCredential(): Promise<{ success: boolean; error?: string }> {
-  if (!pendingCredentialOffer) {
+async function getAllPendingOffers(): Promise<{ success: boolean; offers: PersistedCredentialOffer[] }> {
+  const offers = await requestQueue.getAllPendingOffers();
+  return { success: true, offers };
+}
+
+async function acceptCredential(offerId?: string): Promise<{ success: boolean; error?: string }> {
+  // Get offer from queue - either by ID or next pending
+  const pendingOffer = offerId
+    ? await requestQueue.getCredentialOffer(offerId)
+    : await requestQueue.getNextPendingOffer();
+
+  if (!pendingOffer) {
     return { success: false, error: 'No pending offer' };
   }
 
   if (!storage) {
+    await requestQueue.completeRequest(pendingOffer.id, 'credential', {
+      success: false,
+      error: 'Vault is locked',
+    });
     return { success: false, error: 'Vault is locked' };
   }
+
+  // Mark as processing to prevent duplicate handling
+  await requestQueue.markOfferProcessing(pendingOffer.id);
 
   try {
     // Create full credential from offer
     const newCredential = {
       id: crypto.randomUUID(),
-      type: pendingCredentialOffer.credential.type,
-      issuer: pendingCredentialOffer.credential.issuer,
+      type: pendingOffer.credential.type,
+      issuer: pendingOffer.credential.issuer,
       subject: '', // Will be set when we have wallet address
-      claims: pendingCredentialOffer.credential.claims,
+      claims: pendingOffer.credential.claims,
       issuedAt: Date.now(),
-      expiresAt: pendingCredentialOffer.credential.expiresAt,
+      expiresAt: pendingOffer.credential.expiresAt,
       signature: new Uint8Array(0), // Mock signature
     };
 
@@ -610,35 +667,34 @@ async function acceptCredential(): Promise<{ success: boolean; error?: string }>
 
     const result = { success: true, credentialId: newCredential.id };
 
-    if (pendingOfferResolve) {
-      pendingOfferResolve(result);
-      pendingOfferResolve = null;
-    }
-
-    pendingCredentialOffer = null;
+    // Store result for content script pickup
+    await requestQueue.completeRequest(pendingOffer.id, 'credential', result);
     await resetAutoLockTimer();
 
     return result;
   } catch (err) {
     const result = { success: false, error: (err as Error).message };
-    if (pendingOfferResolve) {
-      pendingOfferResolve(result);
-      pendingOfferResolve = null;
-    }
-    pendingCredentialOffer = null;
+    await requestQueue.completeRequest(pendingOffer.id, 'credential', result);
     return result;
   }
 }
 
-function rejectCredential(): { success: boolean } {
-  const result = { success: false, error: 'User rejected the credential' };
+async function rejectCredential(offerId?: string): Promise<{ success: boolean }> {
+  // Get offer from queue - either by ID or next pending
+  const pendingOffer = offerId
+    ? await requestQueue.getCredentialOffer(offerId)
+    : await requestQueue.getNextPendingOffer();
 
-  if (pendingOfferResolve) {
-    pendingOfferResolve(result);
-    pendingOfferResolve = null;
+  if (!pendingOffer) {
+    return { success: false };
   }
 
-  pendingCredentialOffer = null;
+  // Store rejection result for content script pickup
+  await requestQueue.completeRequest(pendingOffer.id, 'credential', {
+    success: false,
+    error: 'User rejected the credential',
+  });
+
   return { success: true };
 }
 
