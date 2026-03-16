@@ -59,6 +59,7 @@ function App() {
 |------|------|----------|-------------|
 | `network` | `'preprod' \| 'mainnet'` | Yes | Target network |
 | `apiKey` | `string` | No | API key for metered billing |
+| `autoReconnect` | `boolean` | No | Remember last wallet (default: false) |
 | `onError` | `(error: Error) => void` | No | Global error handler |
 | `children` | `ReactNode` | Yes | Child components |
 
@@ -180,27 +181,30 @@ For custom unverified UI, use a render prop:
 
 ### useMidnightCloak
 
-Access the SDK client from any component within the provider.
+Access the SDK client and wallet state from any component within the provider.
 
 ```tsx
 import { useMidnightCloak } from '@midnight-cloak/react';
 
 function WalletButton() {
-  const { client } = useMidnightCloak();
-  const [connected, setConnected] = useState(false);
+  const { client, isConnected, connect, disconnect } = useMidnightCloak();
 
-  const handleConnect = async () => {
-    await client.connectWallet('lace');
-    setConnected(true);
-  };
+  if (isConnected) {
+    return <button onClick={disconnect}>Disconnect</button>;
+  }
 
-  return (
-    <button onClick={handleConnect}>
-      {connected ? 'Connected' : 'Connect Wallet'}
-    </button>
-  );
+  return <button onClick={connect}>Connect Wallet</button>;
 }
 ```
+
+#### Return Values
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `client` | `MidnightCloakClient` | SDK client instance |
+| `isConnected` | `boolean` | Wallet connection state |
+| `connect` | `() => Promise<void>` | Connect to preferred wallet |
+| `disconnect` | `() => void` | Disconnect wallet |
 
 ### useVerification
 
@@ -266,6 +270,11 @@ import type {
   GateStatus,
 } from '@midnight-cloak/react';
 ```
+
+## Related
+
+- [@midnight-cloak/core](../core) - Core SDK documentation
+- [Integration Guide](../../docs/INTEGRATION.md) - Step-by-step tutorial
 
 ## License
 

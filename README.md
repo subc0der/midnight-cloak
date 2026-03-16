@@ -365,6 +365,13 @@ midnight-cloak/
    - Additional verification types
    - Partner integrations
 
+## Documentation
+
+- [Integration Guide](docs/INTEGRATION.md) - Step-by-step tutorial for dApp developers
+- [Core SDK Reference](packages/core/README.md) - Full API documentation
+- [React Components](packages/react/README.md) - Component props and hooks
+- [Security Architecture](docs/SECURITY.md) - Cryptographic choices and design
+
 ## License
 
 Apache 2.0 - See [LICENSE](LICENSE) for details.

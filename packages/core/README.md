@@ -48,7 +48,7 @@ interface ClientConfig {
   proofServerUrl?: string;  // Default: http://localhost:6300
   timeout?: number;         // Default: 30000ms
   preferredWallet?: 'lace' | 'nufi' | 'vespr';
-  zkConfigPath?: string;    // Path to compiled contract keys
+  autoReconnect?: boolean;  // Remember last wallet (default: false)
 }
 ```
 
@@ -88,9 +88,39 @@ await client.connectWallet();
 
 ```typescript
 client.disconnectWallet();
-client.isWalletConnected();    // boolean
-client.isLaceAvailable();      // boolean
-client.getAvailableWallets();  // WalletInfo[]
+client.isWalletConnected();       // boolean
+client.isLaceAvailable();         // boolean
+client.getAvailableWallets();     // WalletInfo[]
+await client.tryAutoReconnect(); // Reconnect to last wallet
+client.getWalletInstallUrl('lace'); // Get install URL
+```
+
+##### Network Validation
+
+Check if the connected wallet is on the correct network.
+
+```typescript
+const { valid, expected, actual } = await client.validateNetwork();
+
+if (!valid) {
+  console.log(`Please switch from ${actual} to ${expected}`);
+}
+```
+
+##### Wallet Installation Polling
+
+Detect when a user installs the wallet extension.
+
+```typescript
+client.pollForWalletInstallation('lace', {
+  maxDuration: 120000,  // 2 minutes
+  onDetected: () => {
+    console.log('Lace wallet installed!');
+  }
+});
+
+// Stop polling
+client.stopInstallPolling();
 ```
 
 ##### useMockWallet(options?)
@@ -160,6 +190,27 @@ const custom = createNetworkConfig('preprod');
 ```
 
 ### Error Handling
+
+#### User-Friendly Error Guidance
+
+Use `getErrorGuidance()` for actionable error messages.
+
+```typescript
+import { getErrorGuidance, isMidnightCloakError } from '@midnight-cloak/core';
+
+try {
+  await client.verify({ type: 'AGE', policy: { kind: 'age', minAge: 18 } });
+} catch (error) {
+  if (isMidnightCloakError(error)) {
+    const guidance = getErrorGuidance(error);
+    console.log(guidance.title);       // "Wallet Not Connected"
+    console.log(guidance.description); // "Please connect your wallet..."
+    console.log(guidance.actions);     // [{ type: 'connect-wallet', label: '...' }]
+  }
+}
+```
+
+#### Error Codes
 
 ```typescript
 import { ErrorCodes } from '@midnight-cloak/core';
