@@ -104,7 +104,7 @@ chrome.runtime.onMessage.addListener(
           const response: GenerateProofResponse = {
             type: 'GENERATE_AGE_PROOF_RESULT',
             success: false,
-            isMock: true,
+            isMock: false, // Failed proofs are NOT mock proofs - don't mislead consumers
             error: (err as Error).message,
           };
           sendResponse(response);

@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { PersistedCredentialOffer } from '../../shared/storage/request-queue';
-import {
-  IssuerTrustStore,
-  getTrustLevelUI,
-  type IssuerTrustAssessment,
-} from '../../shared/storage/issuer-trust';
+import { getTrustLevelUI, type IssuerTrustAssessment } from '../../shared/storage/issuer-trust';
 
 interface CredentialOfferProps {
   onComplete: () => void;
@@ -57,12 +53,18 @@ export default function CredentialOffer({ onComplete }: CredentialOfferProps) {
 
   async function assessIssuerTrust(pendingOffer: PersistedCredentialOffer) {
     try {
-      const trustStore = IssuerTrustStore.getInstance();
-      const assessment = await trustStore.assessTrust(
-        pendingOffer.credential.issuer,
-        pendingOffer.credential.type
-      );
-      setTrustAssessment(assessment);
+      // Use message to service worker to avoid cross-context race conditions
+      const response = await chrome.runtime.sendMessage({
+        type: 'ASSESS_ISSUER_TRUST',
+        issuerAddress: pendingOffer.credential.issuer,
+        credentialType: pendingOffer.credential.type,
+      });
+
+      if (response.success && response.assessment) {
+        setTrustAssessment(response.assessment);
+      } else {
+        console.error('Failed to assess issuer trust:', response.error);
+      }
     } catch (err) {
       console.error('Failed to assess issuer trust:', err);
     }
@@ -124,13 +126,21 @@ export default function CredentialOffer({ onComplete }: CredentialOfferProps) {
     if (!offer || !trustAssessment) return;
 
     try {
-      const trustStore = IssuerTrustStore.getInstance();
-      await trustStore.addToWhitelist({
-        address: offer.credential.issuer,
-        name: `Issuer from ${new URL(offer.origin).hostname}`,
+      // Use message to service worker to avoid cross-context race conditions
+      const response = await chrome.runtime.sendMessage({
+        type: 'ADD_TRUSTED_ISSUER',
+        issuer: {
+          address: offer.credential.issuer,
+          name: `Issuer from ${new URL(offer.origin).hostname}`,
+        },
       });
-      // Re-assess trust
-      await assessIssuerTrust(offer);
+
+      if (response.success) {
+        // Re-assess trust
+        await assessIssuerTrust(offer);
+      } else {
+        console.error('Failed to add to trusted:', response.error);
+      }
     } catch (err) {
       console.error('Failed to add to trusted:', err);
     }

@@ -10,6 +10,7 @@
 
 import { EncryptedStorage } from '../shared/storage/encrypted-storage';
 import { RequestQueue, type PersistedVerificationRequest, type PersistedCredentialOffer } from '../shared/storage/request-queue';
+import { IssuerTrustStore, type TrustedIssuer, type IssuerTrustAssessment } from '../shared/storage/issuer-trust';
 import { getProofGenerator, type ServiceUris, type ProofGeneratorConfig } from './proof-generator';
 
 /**
@@ -178,6 +179,22 @@ async function handleMessage(
 
     case 'INIT_PROOF_GENERATOR':
       return initProofGenerator(message.serviceUris as ServiceUris);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Issuer Trust Management (centralized to avoid cross-context race conditions)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    case 'GET_TRUSTED_ISSUERS':
+      return getTrustedIssuers();
+
+    case 'ADD_TRUSTED_ISSUER':
+      return addTrustedIssuer(message.issuer as Omit<TrustedIssuer, 'addedAt'>);
+
+    case 'REMOVE_TRUSTED_ISSUER':
+      return removeTrustedIssuer(message.address as string);
+
+    case 'ASSESS_ISSUER_TRUST':
+      return assessIssuerTrust(message.issuerAddress as string, message.credentialType as string | undefined);
 
     default:
       return { success: false, error: 'Unknown message type' };
@@ -742,6 +759,61 @@ async function initProofGenerator(serviceUris: ServiceUris): Promise<{ success: 
     return { success: true };
   } catch (err) {
     console.error('[Background] Failed to initialize ProofGenerator:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Issuer Trust Management
+//
+// All issuer trust operations are centralized in the service worker to prevent
+// cross-context race conditions. The popup and other contexts must use messages
+// to interact with the trust store, not direct imports.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const issuerTrustStore = IssuerTrustStore.getInstance();
+
+async function getTrustedIssuers(): Promise<{ success: boolean; issuers?: TrustedIssuer[]; error?: string }> {
+  try {
+    const issuers = await issuerTrustStore.getAllWhitelisted();
+    return { success: true, issuers };
+  } catch (err) {
+    console.error('[Background] Failed to get trusted issuers:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+async function addTrustedIssuer(
+  issuer: Omit<TrustedIssuer, 'addedAt'>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await issuerTrustStore.addToWhitelist(issuer);
+    return { success: true };
+  } catch (err) {
+    console.error('[Background] Failed to add trusted issuer:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+async function removeTrustedIssuer(address: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await issuerTrustStore.removeFromWhitelist(address);
+    return { success: true };
+  } catch (err) {
+    console.error('[Background] Failed to remove trusted issuer:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+async function assessIssuerTrust(
+  issuerAddress: string,
+  credentialType?: string
+): Promise<{ success: boolean; assessment?: IssuerTrustAssessment; error?: string }> {
+  try {
+    const assessment = await issuerTrustStore.assessTrust(issuerAddress, credentialType);
+    return { success: true, assessment };
+  } catch (err) {
+    console.error('[Background] Failed to assess issuer trust:', err);
     return { success: false, error: (err as Error).message };
   }
 }

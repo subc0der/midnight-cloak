@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IssuerTrustStore, type TrustedIssuer } from '../../shared/storage/issuer-trust';
+import type { TrustedIssuer } from '../../shared/storage/issuer-trust';
 
 interface SettingsProps {
   onLock: () => void;
@@ -34,9 +34,13 @@ export default function Settings({ onLock }: SettingsProps) {
 
   async function loadTrustedIssuers() {
     try {
-      const trustStore = IssuerTrustStore.getInstance();
-      const issuers = await trustStore.getAllWhitelisted();
-      setTrustedIssuers(issuers);
+      // Use message to service worker to avoid cross-context race conditions
+      const response = await chrome.runtime.sendMessage({ type: 'GET_TRUSTED_ISSUERS' });
+      if (response.success) {
+        setTrustedIssuers(response.issuers || []);
+      } else {
+        console.error('Failed to load trusted issuers:', response.error);
+      }
     } catch (err) {
       console.error('Failed to load trusted issuers:', err);
     }
@@ -56,15 +60,23 @@ export default function Settings({ onLock }: SettingsProps) {
     }
 
     try {
-      const trustStore = IssuerTrustStore.getInstance();
-      await trustStore.addToWhitelist({
-        address: newIssuerAddress.trim(),
-        name: newIssuerName.trim(),
+      // Use message to service worker to avoid cross-context race conditions
+      const response = await chrome.runtime.sendMessage({
+        type: 'ADD_TRUSTED_ISSUER',
+        issuer: {
+          address: newIssuerAddress.trim(),
+          name: newIssuerName.trim(),
+        },
       });
-      setNewIssuerAddress('');
-      setNewIssuerName('');
-      setShowAddIssuer(false);
-      await loadTrustedIssuers();
+
+      if (response.success) {
+        setNewIssuerAddress('');
+        setNewIssuerName('');
+        setShowAddIssuer(false);
+        await loadTrustedIssuers();
+      } else {
+        setAddError(response.error || 'Failed to add issuer');
+      }
     } catch (err) {
       setAddError((err as Error).message);
     }
@@ -72,9 +84,17 @@ export default function Settings({ onLock }: SettingsProps) {
 
   async function handleRemoveIssuer(address: string) {
     try {
-      const trustStore = IssuerTrustStore.getInstance();
-      await trustStore.removeFromWhitelist(address);
-      await loadTrustedIssuers();
+      // Use message to service worker to avoid cross-context race conditions
+      const response = await chrome.runtime.sendMessage({
+        type: 'REMOVE_TRUSTED_ISSUER',
+        address,
+      });
+
+      if (response.success) {
+        await loadTrustedIssuers();
+      } else {
+        console.error('Failed to remove issuer:', response.error);
+      }
     } catch (err) {
       console.error('Failed to remove issuer:', err);
     }

@@ -23,6 +23,35 @@
 const EXTENSION_ID = 'midnight-cloak';
 const DAPP_SOURCE = 'midnight-cloak-dapp';
 
+/**
+ * Sanitize error messages before sending to dApps.
+ * Prevents leaking implementation details, SDK versions, or internal state.
+ */
+function sanitizeErrorForDapp(error: string): string {
+  // Map internal errors to safe, generic messages
+  const errorMappings: Array<[RegExp, string]> = [
+    [/vault is locked/i, 'Extension is locked'],
+    [/no matching credential/i, 'No matching credential found'],
+    [/user denied/i, 'Request denied by user'],
+    [/user rejected/i, 'Request rejected by user'],
+    [/request timed out/i, 'Request timed out'],
+    [/unauthorized message type/i, 'Invalid request'],
+    [/invalid credential/i, 'Invalid credential data'],
+    [/no pending/i, 'No pending request'],
+  ];
+
+  for (const [pattern, safeMessage] of errorMappings) {
+    if (pattern.test(error)) {
+      return safeMessage;
+    }
+  }
+
+  // For unknown errors, return generic message
+  // This prevents SDK errors, stack traces, or internal details from leaking
+  console.warn('[MidnightCloak] Sanitized internal error:', error);
+  return 'Request failed';
+}
+
 // Polling configuration
 const POLL_INTERVAL_MS = 1000; // Poll every 1 second
 const POLL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout (matches backend)
@@ -154,13 +183,32 @@ window.addEventListener('message', async (event) => {
     // We then poll until the user approves/denies
     if (requiresPolling(message.type) && initialResponse?.success && initialResponse?.requestId) {
       try {
-        finalResponse = await pollForResponse(initialResponse.requestId);
+        const polledResult = await pollForResponse(initialResponse.requestId);
+        // Sanitize any error in the polled result
+        if (polledResult && typeof polledResult === 'object' && 'error' in polledResult) {
+          const result = polledResult as { success: boolean; error?: string };
+          if (!result.success && result.error) {
+            finalResponse = { ...result, error: sanitizeErrorForDapp(result.error) };
+          } else {
+            finalResponse = polledResult;
+          }
+        } else {
+          finalResponse = polledResult;
+        }
       } catch (pollError) {
-        finalResponse = { success: false, error: (pollError as Error).message };
+        finalResponse = { success: false, error: sanitizeErrorForDapp((pollError as Error).message) };
       }
     } else {
       // Non-polling requests return response directly
-      finalResponse = initialResponse;
+      // Sanitize any error messages before sending to dApp
+      if (initialResponse && !initialResponse.success && initialResponse.error) {
+        finalResponse = {
+          ...initialResponse,
+          error: sanitizeErrorForDapp(initialResponse.error),
+        };
+      } else {
+        finalResponse = initialResponse;
+      }
     }
 
     // Send response back to page with correlation ID
@@ -179,7 +227,7 @@ window.addEventListener('message', async (event) => {
         type: `${message.type}_RESPONSE`,
         source: EXTENSION_ID,
         requestId: message.requestId,
-        payload: { success: false, error: (err as Error).message },
+        payload: { success: false, error: sanitizeErrorForDapp((err as Error).message) },
       },
       window.location.origin
     );
