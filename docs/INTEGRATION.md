@@ -5,7 +5,7 @@ Add zero-knowledge age verification to your React dApp. Users prove they meet ag
 **Prerequisites:**
 - React 18+ application
 - Node.js 18+
-- [Lace Midnight wallet](https://www.lace.io/) (Chrome extension)
+- [Eternl](https://eternl.io/) or [Lace Midnight](https://www.lace.io/) wallet (Chrome extension)
 
 ---
 
@@ -188,28 +188,37 @@ function CustomVerificationUI() {
 
 ## Step 6: Handle Wallet Connection
 
-Users need the Lace Midnight wallet to verify. Handle installation and connection gracefully.
+Users need a supported wallet (Eternl or Lace) to verify. Handle installation and connection gracefully.
 
 ```tsx
 import { useMidnightCloak } from '@midnight-cloak/react';
 
 function WalletConnection() {
   const { client, isConnected, connect, disconnect } = useMidnightCloak();
-  const [laceAvailable, setLaceAvailable] = useState(client.isLaceAvailable());
+  const eternlAvailable = client.isEternlAvailable();
+  const laceAvailable = client.isLaceAvailable();
+  const anyWalletAvailable = eternlAvailable || laceAvailable;
 
-  // Prompt user to install Lace
-  if (!laceAvailable) {
+  // Prompt user to install a wallet
+  if (!anyWalletAvailable) {
     return (
       <div>
-        <p>Lace Midnight wallet required</p>
+        <p>A supported wallet is required</p>
         <button onClick={() => {
-          window.open(client.getWalletInstallUrl('lace'), '_blank');
-          // Poll for installation
-          client.pollForWalletInstallation('lace', {
-            onDetected: () => setLaceAvailable(true)
+          window.open(client.getWalletInstallUrl('eternl'), '_blank');
+          client.pollForWalletInstallation('eternl', {
+            onDetected: () => window.location.reload()
           });
         }}>
-          Install Lace Wallet
+          Install Eternl
+        </button>
+        <button onClick={() => {
+          window.open(client.getWalletInstallUrl('lace'), '_blank');
+          client.pollForWalletInstallation('lace', {
+            onDetected: () => window.location.reload()
+          });
+        }}>
+          Install Lace
         </button>
       </div>
     );
@@ -226,7 +235,18 @@ function WalletConnection() {
   }
 
   return (
-    <button onClick={connect}>Connect Lace Wallet</button>
+    <div>
+      {eternlAvailable && (
+        <button onClick={() => client.connectWallet('eternl')}>
+          Connect Eternl
+        </button>
+      )}
+      {laceAvailable && (
+        <button onClick={() => client.connectWallet('lace')}>
+          Connect Lace
+        </button>
+      )}
+    </div>
   );
 }
 ```
@@ -302,7 +322,7 @@ function handleAction(action) {
 
 ### Development Setup
 
-1. Install the [Lace Midnight wallet](https://www.lace.io/) Chrome extension
+1. Install [Eternl](https://eternl.io/) or [Lace Midnight](https://www.lace.io/) wallet Chrome extension
 2. Create a wallet and switch to **Preprod** network
 3. Get test tokens from the [Midnight faucet](https://faucet.preprod.midnight.network)
 

@@ -18,8 +18,8 @@ import { MidnightCloakClient } from '@midnight-cloak/core';
 // Create client
 const client = new MidnightCloakClient({ network: 'preprod' });
 
-// Connect Lace Midnight wallet
-await client.connectWallet('lace');
+// Connect wallet (Lace or Eternl)
+await client.connectWallet('eternl'); // or 'lace'
 
 // Verify user is 18+
 const result = await client.verify({
@@ -47,7 +47,7 @@ interface ClientConfig {
   apiKey?: string;
   proofServerUrl?: string;  // Default: http://localhost:6300
   timeout?: number;         // Default: 30000ms
-  preferredWallet?: 'lace' | 'nufi' | 'vespr';
+  preferredWallet?: 'lace' | 'eternl';
   autoReconnect?: boolean;  // Remember last wallet (default: false)
 }
 ```
@@ -79,9 +79,9 @@ interface VerificationResult {
 Connect to a Midnight wallet.
 
 ```typescript
-await client.connectWallet('lace');
-// or auto-detect
-await client.connectWallet();
+await client.connectWallet('eternl');  // Eternl wallet
+await client.connectWallet('lace');    // Lace Midnight wallet
+await client.connectWallet();          // Use preferred wallet from config
 ```
 
 ##### Wallet Methods
@@ -89,10 +89,12 @@ await client.connectWallet();
 ```typescript
 client.disconnectWallet();
 client.isWalletConnected();       // boolean
-client.isLaceAvailable();         // boolean
+client.isLaceAvailable();         // boolean - Lace installed?
+client.isEternlAvailable();       // boolean - Eternl installed?
+client.isWalletAvailable('eternl'); // Check specific wallet
 client.getAvailableWallets();     // WalletInfo[]
 await client.tryAutoReconnect(); // Reconnect to last wallet
-client.getWalletInstallUrl('lace'); // Get install URL
+client.getWalletInstallUrl('eternl'); // Get install URL
 ```
 
 ##### Network Validation
@@ -112,10 +114,10 @@ if (!valid) {
 Detect when a user installs the wallet extension.
 
 ```typescript
-client.pollForWalletInstallation('lace', {
+client.pollForWalletInstallation('eternl', {
   maxDuration: 120000,  // 2 minutes
   onDetected: () => {
-    console.log('Lace wallet installed!');
+    console.log('Eternl wallet installed!');
   }
 });
 
@@ -263,7 +265,7 @@ import type {
 } from '@midnight-cloak/core';
 
 type Network = 'preprod' | 'mainnet' | 'standalone';
-type WalletType = 'lace' | 'nufi' | 'vespr';
+type WalletType = 'lace' | 'eternl';
 type VerificationType = 'AGE' | 'TOKEN_BALANCE' | 'NFT_OWNERSHIP' | 'CREDENTIAL';
 
 type PolicyConfig =
@@ -296,7 +298,7 @@ if (hasDeployedContracts('preprod')) {
 ## Requirements
 
 - **Proof Server**: Local Docker container for ZK proof generation
-- **Wallet**: Lace Midnight wallet (Chrome extension)
+- **Wallet**: Lace or Eternl wallet (Chrome extension)
 - **Network**: Preprod testnet (mainnet coming soon)
 
 ### Start Proof Server

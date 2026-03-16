@@ -239,7 +239,7 @@ export class MidnightCloakClient {
       return null;
     }
     const stored = localStorage.getItem(STORAGE_KEY_LAST_WALLET);
-    if (stored && (stored === 'lace' || stored === 'nufi' || stored === 'vespr')) {
+    if (stored && (stored === 'lace' || stored === 'eternl')) {
       return stored as WalletType;
     }
     return null;
@@ -340,6 +340,13 @@ export class MidnightCloakClient {
 
   isLaceAvailable(): boolean {
     return this.walletConnector.isLaceAvailable();
+  }
+
+  /**
+   * Check if Eternl wallet is installed
+   */
+  isEternlAvailable(): boolean {
+    return this.walletConnector.isEternlAvailable();
   }
 
   /**

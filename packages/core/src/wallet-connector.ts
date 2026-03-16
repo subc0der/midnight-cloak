@@ -1,10 +1,11 @@
 /**
- * WalletConnector - Interface for connecting to Midnight wallets (Lace, NuFi, etc.)
+ * WalletConnector - Interface for connecting to Midnight wallets (Lace, Eternl, etc.)
  *
  * Midnight uses a DApp Connector API similar to CIP-30 but with extensions
  * for privacy-preserving operations and ZK proof signing.
  *
  * Primary wallet: Lace Midnight (Chrome extension)
+ * Secondary wallet: Eternl (popular Cardano wallet with CIP-30 support)
  */
 
 import type { WalletType, Network } from './types';
@@ -39,8 +40,7 @@ export interface WalletConnectorConfig {
  */
 export const WALLET_INSTALL_URLS: Record<WalletType, string> = {
   lace: 'https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk',
-  nufi: 'https://chromewebstore.google.com/detail/nufi/gpnihlnnodeiiaakbikldcihojploeca',
-  vespr: 'https://chromewebstore.google.com/detail/vespr/ohjohjecegcdjfpokfgekhfafahcgbkd',
+  eternl: 'https://chromewebstore.google.com/detail/eternl/kmhcihpebfmpgmihbkipmjlmmioameka',
 } as const;
 
 /**
@@ -56,8 +56,7 @@ export const NETWORK_IDS = {
 // Wallet identifiers in window.cardano (Midnight uses same extension point)
 const WALLET_KEYS: Record<WalletType, string> = {
   lace: 'lace',
-  nufi: 'nufi',
-  vespr: 'vespr',
+  eternl: 'eternl',
 } as const;
 
 /**
@@ -191,6 +190,13 @@ export class WalletConnector {
    */
   isLaceAvailable(): boolean {
     return this.isWalletAvailable('lace');
+  }
+
+  /**
+   * Check if Eternl wallet is installed
+   */
+  isEternlAvailable(): boolean {
+    return this.isWalletAvailable('eternl');
   }
 
   /**

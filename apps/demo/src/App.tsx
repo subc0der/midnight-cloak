@@ -94,26 +94,26 @@ function NetworkWarningBanner({
         <strong>{expected}</strong>.
       </p>
       <p style={{ marginBottom: 0, color: '#721c24' }}>
-        Please switch networks in your Lace wallet settings.
+        Please switch networks in your wallet settings.
       </p>
     </div>
   );
 }
 
 /**
- * InstallWalletBanner - Shows when Lace wallet is not installed
+ * InstallWalletBanner - Shows when no supported wallet is installed
  */
 function InstallWalletBanner({ onInstalled }: { onInstalled: () => void }) {
   const { client } = useMidnightCloak();
   const [isPolling, setIsPolling] = useState(false);
 
-  const handleInstallClick = useCallback(() => {
-    const url = client.getWalletInstallUrl('lace');
+  const handleInstallClick = useCallback((wallet: 'lace' | 'eternl') => {
+    const url = client.getWalletInstallUrl(wallet);
     window.open(url, '_blank');
 
     // Start polling for installation
     setIsPolling(true);
-    client.pollForWalletInstallation('lace', {
+    client.pollForWalletInstallation(wallet, {
       maxDuration: 120000, // 2 minutes
       onDetected: () => {
         setIsPolling(false);
@@ -135,26 +135,35 @@ function InstallWalletBanner({ onInstalled }: { onInstalled: () => void }) {
       border: '1px solid #ffc107',
       marginBottom: '1.5rem'
     }}>
-      <h3 style={{ marginTop: 0, color: '#856404' }}>Lace Wallet Required</h3>
+      <h3 style={{ marginTop: 0, color: '#856404' }}>Wallet Required</h3>
       <p style={{ color: '#856404' }}>
-        To use Midnight Cloak with real credentials, you need the Lace wallet extension.
+        To use Midnight Cloak with real credentials, you need a supported wallet extension.
       </p>
-      <button
-        onClick={handleInstallClick}
-        className="verify-btn"
-        disabled={isPolling}
-      >
-        {isPolling ? 'Checking for Lace...' : 'Install Lace Wallet'}
-      </button>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => handleInstallClick('lace')}
+          className="verify-btn"
+          disabled={isPolling}
+        >
+          {isPolling ? 'Checking...' : 'Install Lace'}
+        </button>
+        <button
+          onClick={() => handleInstallClick('eternl')}
+          className="verify-btn secondary"
+          disabled={isPolling}
+        >
+          {isPolling ? 'Checking...' : 'Install Eternl'}
+        </button>
+      </div>
       {isPolling && (
         <div style={{ marginTop: '0.75rem', color: '#856404' }}>
           <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>
-            After installing Lace, click below to continue.
+            After installing, click below to continue.
           </p>
           <button
             onClick={() => {
               // Force re-check - if detected, proceed; otherwise refresh
-              if (client.isLaceAvailable()) {
+              if (client.isLaceAvailable() || client.isEternlAvailable()) {
                 setIsPolling(false);
                 onInstalled();
               } else {
@@ -165,7 +174,7 @@ function InstallWalletBanner({ onInstalled }: { onInstalled: () => void }) {
             className="verify-btn secondary"
             style={{ fontSize: '0.875rem', padding: '0.375rem 0.75rem' }}
           >
-            I've installed Lace
+            I've installed a wallet
           </button>
         </div>
       )}
@@ -193,12 +202,16 @@ function WalletConnection({
   const [error, setError] = useState<string | null>(null);
   const [useMock, setUseMock] = useState(false);
   const [laceAvailable, setLaceAvailable] = useState(() => client.isLaceAvailable());
+  const [eternlAvailable, setEternlAvailable] = useState(() => client.isEternlAvailable());
   const [networkMismatch, setNetworkMismatch] = useState<NetworkMismatch | null>(null);
+
+  const anyWalletAvailable = laceAvailable || eternlAvailable;
 
   // Listen for wallet becoming available (after installation)
   useEffect(() => {
-    const handleWalletAvailable = () => {
-      setLaceAvailable(true);
+    const handleWalletAvailable = (wallet: 'lace' | 'eternl') => {
+      if (wallet === 'lace') setLaceAvailable(true);
+      if (wallet === 'eternl') setEternlAvailable(true);
     };
     client.on('wallet:available', handleWalletAvailable);
     return () => {
@@ -244,12 +257,12 @@ function WalletConnection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleConnectWallet = async () => {
+  const handleConnectWallet = async (walletType: 'lace' | 'eternl') => {
     setStatus('connecting');
     setError(null);
 
     try {
-      await client.connectWallet('lace');
+      await client.connectWallet(walletType);
       setStatus('connected');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to connect wallet');
@@ -275,13 +288,19 @@ function WalletConnection({
     setNetworkMismatch(null);
   };
 
+  const handleWalletInstalled = () => {
+    // Re-check both wallets
+    setLaceAvailable(client.isLaceAvailable());
+    setEternlAvailable(client.isEternlAvailable());
+  };
+
   const isConnecting = status === 'connecting';
 
   return (
     <>
-      {/* Show install banner when Lace is not available */}
-      {!laceAvailable && status === 'disconnected' && (
-        <InstallWalletBanner onInstalled={() => setLaceAvailable(true)} />
+      {/* Show install banner when no wallet is available */}
+      {!anyWalletAvailable && status === 'disconnected' && (
+        <InstallWalletBanner onInstalled={handleWalletInstalled} />
       )}
 
       {/* Show network warning when connected to wrong network */}
@@ -311,20 +330,33 @@ function WalletConnection({
 
         {status === 'disconnected' && (
           <div className="wallet-actions">
-            {laceAvailable && (
-              <button
-                onClick={handleConnectWallet}
-                className="verify-btn"
-                disabled={isConnecting}
-                aria-busy={isConnecting}
-              >
-                {isConnecting ? 'Connecting...' : 'Connect Lace Wallet'}
-              </button>
+            {anyWalletAvailable && (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                {eternlAvailable && (
+                  <button
+                    onClick={() => handleConnectWallet('eternl')}
+                    className="verify-btn"
+                    disabled={isConnecting}
+                    aria-busy={isConnecting}
+                  >
+                    {isConnecting ? 'Connecting...' : 'Connect Eternl'}
+                  </button>
+                )}
+                {laceAvailable && (
+                  <button
+                    onClick={() => handleConnectWallet('lace')}
+                    className={eternlAvailable ? 'verify-btn secondary' : 'verify-btn'}
+                    disabled={isConnecting}
+                    aria-busy={isConnecting}
+                  >
+                    {isConnecting ? 'Connecting...' : 'Connect Lace'}
+                  </button>
+                )}
+              </div>
             )}
             <button
               onClick={handleUseMockWallet}
               className="verify-btn secondary"
-              style={{ marginTop: laceAvailable ? '0.5rem' : '0' }}
               disabled={isConnecting}
             >
               Use Demo Mode (No Wallet)

@@ -95,7 +95,7 @@ async function main() {
   // ============================================
   header('3. Mock Wallet (Development Mode)');
 
-  info('In production, users connect Lace/NuFi/Vespr wallets');
+  info('In production, users connect Lace/Eternl wallets');
   info('For development, we use mock wallet mode\n');
 
   client.useMockWallet({

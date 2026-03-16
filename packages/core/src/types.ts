@@ -14,9 +14,9 @@ export type Network = 'preprod' | 'standalone' | 'mainnet';
 
 /**
  * Supported wallet types for Midnight
- * Currently only Lace Midnight wallet is fully supported
+ * Lace is the primary Midnight wallet, Eternl provides Cardano integration
  */
-export type WalletType = 'lace' | 'nufi' | 'vespr';
+export type WalletType = 'lace' | 'eternl';
 
 /**
  * Types of verification that can be performed.
