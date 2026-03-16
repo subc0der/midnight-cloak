@@ -14,7 +14,7 @@ overrides:
   undici@<7.24.0: 7.24.4
   flatted@<3.4.0: 3.4.1
   smoldot: npm:empty-npm-package@1.0.0
-  '@midnight-ntwrk/ledger-v7': 7.0.2
+  '@midnight-ntwrk/ledger-v7': 7.0.3
 
 importers:
 
@@ -30,35 +30,35 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       '@midnight-ntwrk/ledger-v7':
-        specifier: 7.0.2
-        version: 7.0.2
+        specifier: 7.0.3
+        version: 7.0.3
       '@midnight-ntwrk/midnight-js-contracts':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-http-client-proof-provider':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-indexer-public-data-provider':
-        specifier: 3.1.0
-        version: 3.1.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 3.2.0
+        version: 3.2.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@midnight-ntwrk/midnight-js-level-private-state-provider':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-network-id':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-node-zk-config-provider':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-types':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-utils':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/wallet-sdk-address-format':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.0.1
+        version: 3.0.1
       '@midnight-ntwrk/wallet-sdk-dust-wallet':
         specifier: 1.0.0
         version: 1.0.0(ws@8.19.0)
@@ -66,8 +66,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0(ws@8.19.0)
       '@midnight-ntwrk/wallet-sdk-hd':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.0.1
+        version: 3.0.1
       '@midnight-ntwrk/wallet-sdk-shielded':
         specifier: 1.0.0
         version: 1.0.0
@@ -88,8 +88,8 @@ importers:
         version: 8.19.0
     devDependencies:
       '@types/node':
-        specifier: ^25.4.0
-        version: 25.4.0
+        specifier: ^25.5.0
+        version: 25.5.0
       '@types/ws':
         specifier: ^8.5.13
         version: 8.18.1
@@ -116,7 +116,7 @@ importers:
         version: 3.8.1
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.15.18)(@swc/wasm@1.15.18)(@types/node@25.4.0)(typescript@5.9.3)
+        version: 10.9.2(@swc/core@1.15.18)(@swc/wasm@1.15.18)(@types/node@25.5.0)(typescript@5.9.3)
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -125,7 +125,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.8
-        version: 2.1.9(@types/node@25.4.0)(jsdom@25.0.1)
+        version: 2.1.9(@types/node@25.5.0)(jsdom@25.0.1)
 
   apps/demo:
     dependencies:
@@ -150,32 +150,32 @@ importers:
         version: 18.3.7(@types/react@18.3.27)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.7.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))
+        version: 4.7.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2))
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
       vite:
         specifier: ^6.0.5
-        version: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
+        version: 6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)
       vite-plugin-static-copy:
-        specifier: ^3.2.0
-        version: 3.2.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))
+        specifier: ^3.3.0
+        version: 3.3.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2))
       vitest:
         specifier: ^2.1.8
-        version: 2.1.9(@types/node@25.4.0)(jsdom@25.0.1)
+        version: 2.1.9(@types/node@25.5.0)(jsdom@25.0.1)
 
   packages/contracts:
     dependencies:
       '@midnight-ntwrk/midnight-js-types':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
     devDependencies:
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
       vitest:
         specifier: ^2.1.8
-        version: 2.1.9(@types/node@25.4.0)(jsdom@25.0.1)
+        version: 2.1.9(@types/node@25.5.0)(jsdom@25.0.1)
 
   packages/core:
     dependencies:
@@ -186,29 +186,29 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       '@midnight-ntwrk/midnight-js-contracts':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-http-client-proof-provider':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-indexer-public-data-provider':
-        specifier: 3.1.0
-        version: 3.1.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 3.2.0
+        version: 3.2.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@midnight-ntwrk/midnight-js-level-private-state-provider':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-network-id':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-node-zk-config-provider':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-types':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/wallet-sdk-address-format':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.0.1
+        version: 3.0.1
       '@midnight-ntwrk/wallet-sdk-dust-wallet':
         specifier: 1.0.0
         version: 1.0.0(ws@8.19.0)
@@ -216,8 +216,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0(ws@8.19.0)
       '@midnight-ntwrk/wallet-sdk-hd':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.0.1
+        version: 3.0.1
       '@midnight-ntwrk/wallet-sdk-shielded':
         specifier: 1.0.0
         version: 1.0.0
@@ -226,14 +226,14 @@ importers:
         version: 1.0.0(ws@8.19.0)
     devDependencies:
       '@types/node':
-        specifier: ^25.4.0
-        version: 25.4.0
+        specifier: ^25.5.0
+        version: 25.5.0
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
       vitest:
         specifier: ^2.1.8
-        version: 2.1.9(@types/node@25.4.0)(jsdom@25.0.1)
+        version: 2.1.9(@types/node@25.5.0)(jsdom@25.0.1)
 
   packages/deploy-cli:
     dependencies:
@@ -273,7 +273,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.8
-        version: 2.1.9(@types/node@25.4.0)(jsdom@25.0.1)
+        version: 2.1.9(@types/node@25.5.0)(jsdom@25.0.1)
 
   packages/wallet:
     dependencies:
@@ -286,7 +286,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.8
-        version: 2.1.9(@types/node@25.4.0)(jsdom@25.0.1)
+        version: 2.1.9(@types/node@25.5.0)(jsdom@25.0.1)
 
   packages/wallet-extension:
     dependencies:
@@ -297,23 +297,23 @@ importers:
         specifier: workspace:*
         version: link:../wallet
       '@midnight-ntwrk/midnight-js-contracts':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-fetch-zk-config-provider':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-http-client-proof-provider':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-indexer-public-data-provider':
-        specifier: 3.1.0
-        version: 3.1.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 3.2.0
+        version: 3.2.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@midnight-ntwrk/midnight-js-level-private-state-provider':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       '@midnight-ntwrk/midnight-js-types':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 3.2.0
+        version: 3.2.0
       hash-wasm:
         specifier: ^4.11.0
         version: 4.12.0
@@ -328,8 +328,8 @@ importers:
         version: 7.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@crxjs/vite-plugin':
-        specifier: ^2.0.0-beta.28
-        version: 2.3.0
+        specifier: ^2.4.0
+        version: 2.4.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2))
       '@types/chrome':
         specifier: ^0.1.37
         version: 0.1.37
@@ -341,33 +341,33 @@ importers:
         version: 18.3.7(@types/react@18.3.27)
       '@vitejs/plugin-react':
         specifier: ^4.3.4
-        version: 4.7.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))
+        version: 4.7.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2))
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
       vite:
         specifier: ^6.0.5
-        version: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
+        version: 6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)
       vite-plugin-static-copy:
-        specifier: ^3.2.0
-        version: 3.2.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))
+        specifier: ^3.3.0
+        version: 3.3.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2))
       vite-plugin-top-level-await:
         specifier: ^1.6.0
-        version: 1.6.0(rollup@2.80.0)(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))
+        version: 1.6.0(rollup@2.80.0)(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2))
       vite-plugin-wasm:
-        specifier: ^3.5.0
-        version: 3.5.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))
+        specifier: ^3.6.0
+        version: 3.6.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2))
       vitest:
         specifier: ^2.1.8
-        version: 2.1.9(@types/node@25.4.0)(jsdom@25.0.1)
+        version: 2.1.9(@types/node@25.5.0)(jsdom@25.0.1)
 
 packages:
 
   '@adobe/css-tools@4.4.4':
     resolution: {integrity: sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg==}
 
-  '@apollo/client@3.14.0':
-    resolution: {integrity: sha512-0YQKKRIxiMlIou+SekQqdCo0ZTHxOcES+K8vKB53cIDpwABNR0P0yRzPgsbgcj3zRJniD93S/ontsnZsCLZrxQ==}
+  '@apollo/client@3.14.1':
+    resolution: {integrity: sha512-SgGX6E23JsZhUdG2anxiyHvEvvN6CUaI4ZfMsndZFeuHPXL3H0IsaiNAhLITSISbeyeYd+CBd9oERXQDdjXWZw==}
     peerDependencies:
       graphql: ^15.0.0 || ^16.0.0
       graphql-ws: ^5.5.5 || ^6.0.3
@@ -481,8 +481,10 @@ packages:
   '@balena/dockerignore@1.0.2':
     resolution: {integrity: sha512-wMue2Sy4GAVTk6Ic4tJVcnfdau+gx2EnG7S+uAEe+TWJFqE4YoWN4/H8MSLj4eYJKxGg26lZwboEniNiNwZQ6Q==}
 
-  '@crxjs/vite-plugin@2.3.0':
-    resolution: {integrity: sha512-+0CNVGS4bB30OoaF1vUsHVwWU1Lm7MxI0XWY9Fd/Ob+ZVTZgEFNqJ1ZC69IVwQsoYhY0sMQLvpLWiFIuDz8htg==}
+  '@crxjs/vite-plugin@2.4.0':
+    resolution: {integrity: sha512-bDLdq0W2V1SkMQDJjrcYyjK9/uKtdl4joT7GRImcootCjZdKRiRYt+cv9z8tJoU/tK3o1lX48LTqN7JMsk5AQg==}
+    peerDependencies:
+      vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1096,47 +1098,44 @@ packages:
   '@kwsites/file-exists@1.1.1':
     resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
 
-  '@midnight-ntwrk/compact-js@2.4.0':
-    resolution: {integrity: sha512-bdf8yUeVyjndHTLzUIhuvHuFTIhHhL3Y9NJ7uTIdVfhN0wsgHECB+Bedh+5fv4KRjEfPiIINPgddhpVZ8Y0kaA==}
-
   '@midnight-ntwrk/compact-js@2.4.3':
     resolution: {integrity: sha512-1DkzkT9q6sBNMElmYpzjMoVlAtmB3dw9dAQkMBUsz56mlRvnAMgMSaqtWdPBsZlsdUkw+yOvBGs8pY+cnIwQfQ==}
 
   '@midnight-ntwrk/compact-runtime@0.14.0':
     resolution: {integrity: sha512-VfZmfPDedRUPAYIhKAgS5y+KtxOkSSOCS24PAsGMjhMpzJaaWVSd5SajF6HtNZsciL54sqru4EpWvmCAqsbmYQ==}
 
-  '@midnight-ntwrk/ledger-v7@7.0.2':
-    resolution: {integrity: sha512-8ICrpYxLXj9vCskCrP6Rxh8z7H4WkemYLj7BBtVyNxLZM5EDIxdVMo7+wZXtEUwPUcxPEFFBw3/5YddSE1zoOQ==}
+  '@midnight-ntwrk/ledger-v7@7.0.3':
+    resolution: {integrity: sha512-53mmWIWxW90EgIzMosNijmYqsAC3MjNCwckGdYcrfvonCY+ggysj9DxwH/7t78k6+m8A/BaPd+WJ+1q64i7JEg==}
 
   '@midnight-ntwrk/ledger@4.0.0':
     resolution: {integrity: sha512-cnJisY8uQ4NO54miDnjs/ov6n102ZPfKEPxtiDKVEdlKijcc70jz/CI2yBCc0itlwwaqma7FM2Ou5N4pWpbwbg==}
 
-  '@midnight-ntwrk/midnight-js-contracts@3.1.0':
-    resolution: {integrity: sha512-yofuzxbOKedjzz/jocZZLo+XkMGEChlXwkMZksWBwmn/zluTgJfei8isb3HnChpPPdycF/MJeGpUXm/hKqfdug==}
+  '@midnight-ntwrk/midnight-js-contracts@3.2.0':
+    resolution: {integrity: sha512-2reF5EyzY7rk/gZYH5zBtRNk948HoHFv3tJSyR09gKpXy1ZZ9/ZY3vNFYB6jsvDChC1r9ylK8PalbdBrJtpBog==}
 
-  '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@3.1.0':
-    resolution: {integrity: sha512-f3M2NQQWRr895hr26VOWN23hD9NvyIN9zjafJt1Qvdtv2CYMOaCH1TrsyXAXKQZUrLGtf7ikatWm5tQnTyl6tw==}
+  '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@3.2.0':
+    resolution: {integrity: sha512-D4SyfaizyfIRhyhyc1IFssKitdV3RmPeh2SwM5DX/H+AaCSj8BxjjYWGrp8ha4PhEuvBDeczA55Y6Nyy3vL8Nw==}
 
-  '@midnight-ntwrk/midnight-js-http-client-proof-provider@3.1.0':
-    resolution: {integrity: sha512-wa/ZOoABcDzH+E71K8brMH9PHSzeNQ1b6wXTEOT8xpgQXYrs2xxrHjDiDN8ZBk7a9Oh4NOn+5HZcMKTgzrT8wQ==}
+  '@midnight-ntwrk/midnight-js-http-client-proof-provider@3.2.0':
+    resolution: {integrity: sha512-FblInm0gDWQ8M2nSmxzdo2yKDATC9OtBNlD1JgPGYsmyvbO9/IoeoPYXoc9rqqdoWFWJ4K2N7X4gArfZCNdFpg==}
 
-  '@midnight-ntwrk/midnight-js-indexer-public-data-provider@3.1.0':
-    resolution: {integrity: sha512-TJ/QyuiHp22L3x5rfoQHe9t6aa/lGWe4mDMXfX5Ih1AEiZqNN/dd5Hjb25owadG+TTOLE9e7NJRkf1zXUQG5DQ==}
+  '@midnight-ntwrk/midnight-js-indexer-public-data-provider@3.2.0':
+    resolution: {integrity: sha512-V9kjCTGFY7MR/ll8LJZonY4sCK4UehtSStG7LwJ+FPrheZCHACvibGpF3LmObCaXQASP2abJPomdlZWnRk3P8g==}
 
-  '@midnight-ntwrk/midnight-js-level-private-state-provider@3.1.0':
-    resolution: {integrity: sha512-cXicv28clIHLS86P8lghYoXobV0pTDDNLG6+Ssv5xaZlnzvnKvEzv25fPYETb13OCFJRU9iGjPubvtxlU0jpBQ==}
+  '@midnight-ntwrk/midnight-js-level-private-state-provider@3.2.0':
+    resolution: {integrity: sha512-e14Cb624yx0eMyJaCM2UxqJ39AWd5tnKMfCQgDMwx2niyVUyFlGlWNw2AldQEoFeuAAXN6TpvdaXstmqILHa5g==}
 
-  '@midnight-ntwrk/midnight-js-network-id@3.1.0':
-    resolution: {integrity: sha512-ImDa6igGofV5116K1UiKhfiu0/5+YFGajRCRt9Gpfcokn5QMFT/jfaPInKt3MZ0hHYdw2plYeo/nITQp1mrkCQ==}
+  '@midnight-ntwrk/midnight-js-network-id@3.2.0':
+    resolution: {integrity: sha512-f++0bje2P2oYc9Wrzn8OO4tzzyRwWf55x2nNFj6sViTmPoc+ilDsUaDs72+7jGxSUVDYAlJjHkagm9uD4JeCfg==}
 
-  '@midnight-ntwrk/midnight-js-node-zk-config-provider@3.1.0':
-    resolution: {integrity: sha512-eLd1kOG12nYdmSsLhKVcy9PVZF5P/6eWTtRxL17Vjqjg2qyLA5jw6xKvsi9dbPmRDE5TYAF+UoM75w/wKq0eUA==}
+  '@midnight-ntwrk/midnight-js-node-zk-config-provider@3.2.0':
+    resolution: {integrity: sha512-x4otsnirUomR8Xdu2ubCnGEkye++RNYovDKIgJ3St1qzm3YQSTQ07oAq5hkiqE8sjf2mKksMWuzk8weoUe4A+A==}
 
-  '@midnight-ntwrk/midnight-js-types@3.1.0':
-    resolution: {integrity: sha512-kLLl++DUL7buEqtkN20XJjgqMuwIni37BFwlb2Be/oYYf35bd6UmvTHE1bNK1LTXJp4wjTMMoXOjSRMxwwhmBA==}
+  '@midnight-ntwrk/midnight-js-types@3.2.0':
+    resolution: {integrity: sha512-saMRY1dTa8ueHeHpS6yxILjFsdZfCUTidcAbDn7rQXI1yn4QGxa9r/h4ZQ8alIyruUllAwRlP0j2dYlcQ2M1cA==}
 
-  '@midnight-ntwrk/midnight-js-utils@3.1.0':
-    resolution: {integrity: sha512-MVCiAd6KoJzbSSWhVKGAoV/05kUFU0vkoiSqYubDSy9Y7QO88heygedRkAKeXbNUHPDAeSG6o3j/sAluWJefmg==}
+  '@midnight-ntwrk/midnight-js-utils@3.2.0':
+    resolution: {integrity: sha512-UPzIfYA0PWzirM0XqgDwOapFI8rGC2ML1EOucvXe66FHcVHAh2orgMi/7JMFs6TFCBT8hs4ENNcEjv6q6dKELg==}
 
   '@midnight-ntwrk/onchain-runtime-v2@2.0.1':
     resolution: {integrity: sha512-nVtDyPaWD14thZuSz/MVUNNkv4HO2nYf3E3QbaRCE4UR+jKnUrd0s/BN0fLpnrYFlcMNHS7/sZqAeosV80tsOQ==}
@@ -1153,6 +1152,9 @@ packages:
   '@midnight-ntwrk/wallet-sdk-address-format@3.0.0':
     resolution: {integrity: sha512-h46Dq+vY6Ymbll58tZyHJGd0dJmNE/Ae2PJKslP3Mb8rpDG0HhiGcqYkGvRxH6Tc/MqM0yABgAcQetjcvIe8qA==}
 
+  '@midnight-ntwrk/wallet-sdk-address-format@3.0.1':
+    resolution: {integrity: sha512-/ptjkArU6jqUzUMlXl7UQSvSBpIoVKUa8NtAftwueji1bEb9EceErKSASh7l4ir3RAlGsRtyDIhDETvYDpXZ3Q==}
+
   '@midnight-ntwrk/wallet-sdk-capabilities@3.0.0':
     resolution: {integrity: sha512-iVNIb7TTzEFdipHu37ppSSl1CZ4vXcJz5kwWxI3szwMJhPrRJp0ZTiD//mA4PdXNNO0CrarPo3hn5QOxCZir5Q==}
 
@@ -1164,6 +1166,9 @@ packages:
 
   '@midnight-ntwrk/wallet-sdk-hd@3.0.0':
     resolution: {integrity: sha512-HP2ljS4+611rN5S1sO8JqpggVdtl8hviKBowOowcZ8nbnll6smXXn/8FBD2W5MhNIp3aqd0fiBuVLe1si7yLYQ==}
+
+  '@midnight-ntwrk/wallet-sdk-hd@3.0.1':
+    resolution: {integrity: sha512-N2s4fPQofIHL9r+Wt4qvWGHQoBFjIO7pZhOALfKuAZEaDUZdwbwrw8NnfA4vKklfhEZ5wWrIBUeFgKFI9qD6hw==}
 
   '@midnight-ntwrk/wallet-sdk-indexer-client@1.0.0':
     resolution: {integrity: sha512-3ODr+Cmn/MC4t32d0/kRDA6S21RLf0ZFjDFtWMkof9tpfBANhp+HKT132Z8AlajxykJ7ZQZJLhPfWAh7pfDiag==}
@@ -1220,9 +1225,17 @@ packages:
     resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
     engines: {node: ^14.21.3 || >=16}
 
+  '@noble/curves@2.0.1':
+    resolution: {integrity: sha512-vs1Az2OOTBiP4q0pwjW5aF0xp9n4MxVrmkFBxc6EKZc6ddYx5gaZiAsZoq0uRRXWbi3AT/sBqn05eRPtn1JCPw==}
+    engines: {node: '>= 20.19.0'}
+
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
+
+  '@noble/hashes@2.0.1':
+    resolution: {integrity: sha512-XlOlEbQcE9fmuXxrVTXCTlG2nlRXa9Rj3rr5Ue/+tX+nmkgbX720YHh0VR3hBF9xDvwnb8D2shVGOwNx+ulArw==}
+    engines: {node: '>= 20.19.0'}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -1590,8 +1603,14 @@ packages:
   '@scure/bip32@1.7.0':
     resolution: {integrity: sha512-E4FFX/N3f4B80AKWp5dP6ow+flD1LQZo/w8UnLGYZO674jS6YnYeepycOOksv+vLPSpgN35wgKgy+ybfTb2SMw==}
 
+  '@scure/bip32@2.0.1':
+    resolution: {integrity: sha512-4Md1NI5BzoVP+bhyJaY3K6yMesEFzNS1sE/cP+9nuvE7p/b0kx9XbpDHHFl8dHtufcbdHRUUQdRqLIPHN/s7yA==}
+
   '@scure/bip39@1.6.0':
     resolution: {integrity: sha512-+lF0BbLiJNwVlev4eKelw1WWLaiKXw7sSl8T6FvBlWkdX+94aGJ4o8XjUdlyhTCjd8c+B3KT3JfS8P0bLRNU6A==}
+
+  '@scure/bip39@2.0.1':
+    resolution: {integrity: sha512-PsxdFj/d2AcJcZDX1FXN3dDgitDDTmwf78rKZq1a6c1P1Nan1X/Sxc7667zU3U+AN60g7SxxP0YCVw2H/hBycg==}
 
   '@scure/sr25519@0.2.0':
     resolution: {integrity: sha512-uUuLP7Z126XdSizKtrCGqYyR3b3hYtJ6Fg/XFUXmc2//k2aXHDLqZwFeXxL97gg4XydPROPVnuaHGF2+xriSKg==}
@@ -1784,8 +1803,8 @@ packages:
   '@types/node@18.19.130':
     resolution: {integrity: sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg==}
 
-  '@types/node@25.4.0':
-    resolution: {integrity: sha512-9wLpoeWuBlcbBpOY3XmzSTG3oscB6xjBEEtn+pYXTfhyXhIxC5FsBer2KTopBlvKEiW9l13po9fq+SJY/5lkhw==}
+  '@types/node@25.5.0':
+    resolution: {integrity: sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw==}
 
   '@types/object-inspect@1.13.0':
     resolution: {integrity: sha512-lwGTVESDDV+XsQ1pH4UifpJ1f7OtXzQ6QBOX2Afq2bM/T3oOt8hF6exJMjjIjtEWeAN2YAo25J7HxWh97CCz9w==}
@@ -1948,6 +1967,11 @@ packages:
 
   acorn@8.15.0:
     resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+
+  acorn@8.16.0:
+    resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -2206,13 +2230,6 @@ packages:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
     engines: {node: '>= 16'}
 
-  cheerio-select@2.1.0:
-    resolution: {integrity: sha512-9v9kG0LvzrlcungtnJtpGNxY+fzECQKhK4EGJX2vByejiMX84MFNQw4UxPJl3bFbTMw+Dfs37XaIkCwTZfLh4g==}
-
-  cheerio@1.2.0:
-    resolution: {integrity: sha512-WDrybc/gKFpTYQutKIK6UvfcuxijIZfMfXaYm8NMsPQxSYvf+13fXUJ4rztGGbJcBQ/GF55gvrZ0Bc0bj/mqvg==}
-    engines: {node: '>=20.18.1'}
-
   chokidar@3.6.0:
     resolution: {integrity: sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==}
     engines: {node: '>= 8.10.0'}
@@ -2429,9 +2446,6 @@ packages:
   empty-npm-package@1.0.0:
     resolution: {integrity: sha512-q4Mq/+XO7UNDdMiPpR/LIBIW1Zl4V0Z6UT9aKGqIAnBCtCb3lvZJM1KbDbdzdC8fKflwflModfjR29Nt0EpcwA==}
 
-  encoding-sniffer@0.2.1:
-    resolution: {integrity: sha512-5gvq20T6vfpekVtqrYQsSCFZ1wEg5+wW0/QaZMWkFr6BqD3NfKs0rLCx4rrVlSWJeZb5NBJgVLswK/w2MWU+Gw==}
-
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
 
@@ -2441,10 +2455,6 @@ packages:
 
   entities@6.0.1:
     resolution: {integrity: sha512-aN97NXWF6AWBTahfVOIrB/NShkzi5H7F9r1s9mD3cDj4Ko5f2qhhVoYMibXF7GlLveb/D2ioWay8lxI97Ven3g==}
-    engines: {node: '>=0.12'}
-
-  entities@7.0.1:
-    resolution: {integrity: sha512-TWrgLOFUQTH994YUyl1yT4uyavY5nNB5muff+RtWaqNVCAK408b5ZnnbNAUEWLTCpum9w6arT70i1XdQ4UeOPA==}
     engines: {node: '>=0.12'}
 
   es-abstract@1.24.1:
@@ -2825,6 +2835,10 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
+  he@1.2.0:
+    resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
+    hasBin: true
+
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
 
@@ -2834,9 +2848,6 @@ packages:
   html-encoding-sniffer@4.0.0:
     resolution: {integrity: sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==}
     engines: {node: '>=18'}
-
-  htmlparser2@10.1.0:
-    resolution: {integrity: sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ==}
 
   http-proxy-agent@7.0.2:
     resolution: {integrity: sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==}
@@ -3263,6 +3274,9 @@ packages:
     resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
     hasBin: true
 
+  node-html-parser@7.1.0:
+    resolution: {integrity: sha512-iJo8b2uYGT40Y8BTyy5ufL6IVbN8rbm/1QK2xffXU/1a/v3AAa0d1YAoqBNYqaS4R/HajkWIpIfdE6KcyFh1AQ==}
+
   node-releases@2.0.27:
     resolution: {integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==}
 
@@ -3340,12 +3354,6 @@ packages:
   parent-module@1.0.1:
     resolution: {integrity: sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==}
     engines: {node: '>=6'}
-
-  parse5-htmlparser2-tree-adapter@7.1.0:
-    resolution: {integrity: sha512-ruw5xyKs6lrpo9x9rCZqZZnIUntICjQAd0Wsmp396Ul9lN/h+ifgVV1x1gZHi8euej6wTfpqX8j+BFQxF0NS/g==}
-
-  parse5-parser-stream@7.1.2:
-    resolution: {integrity: sha512-JyeQc9iwFLn5TbvvqACIF/VXG6abODeB3Fwmv/TGdLk2LfbWkaySGY72at4+Ty7EkPZj854u4CrICqNk2qIbow==}
 
   parse5@7.3.0:
     resolution: {integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==}
@@ -3980,21 +3988,21 @@ packages:
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
 
-  vite-plugin-static-copy@3.2.0:
-    resolution: {integrity: sha512-g2k9z8B/1Bx7D4wnFjPLx9dyYGrqWMLTpwTtPHhcU+ElNZP2O4+4OsyaficiDClus0dzVhdGvoGFYMJxoXZ12Q==}
+  vite-plugin-static-copy@3.3.0:
+    resolution: {integrity: sha512-XiAtZcev7nppxNFgKoD55rfL+ukVp/RtrnTJONRwRuzv/B2FK2h2ZRCYjvxhwBV/Oarse83SiyXBSxMTfeEM0Q==}
     engines: {node: ^18.0.0 || >=20.0.0}
     peerDependencies:
-      vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+      vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
 
   vite-plugin-top-level-await@1.6.0:
     resolution: {integrity: sha512-bNhUreLamTIkoulCR9aDXbTbhLk6n1YE8NJUTTxl5RYskNRtzOR0ASzSjBVRtNdjIfngDXo11qOsybGLNsrdww==}
     peerDependencies:
       vite: '>=2.8'
 
-  vite-plugin-wasm@3.5.0:
-    resolution: {integrity: sha512-X5VWgCnqiQEGb+omhlBVsvTfxikKtoOgAzQ95+BZ8gQ+VfMHIjSHr0wyvXFQCa0eKQ0fKyaL0kWcEnYqBac4lQ==}
+  vite-plugin-wasm@3.6.0:
+    resolution: {integrity: sha512-mL/QPziiIA4RAA6DkaZZzOstdwbW5jO4Vz7Zenj0wieKWBlNvIvX5L5ljum9lcUX0ShNfBgCNLKTjNkRVVqcsw==}
     peerDependencies:
-      vite: ^2 || ^3 || ^4 || ^5 || ^6 || ^7
+      vite: ^2 || ^3 || ^4 || ^5 || ^6 || ^7 || ^8
 
   vite@5.4.21:
     resolution: {integrity: sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==}
@@ -4228,7 +4236,7 @@ snapshots:
 
   '@adobe/css-tools@4.4.4': {}
 
-  '@apollo/client@3.14.0(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.19.0))(graphql@16.13.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@apollo/client@3.14.1(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.19.0))(graphql@16.13.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.13.1)
       '@wry/caches': 1.0.1
@@ -4381,12 +4389,11 @@ snapshots:
 
   '@balena/dockerignore@1.0.2': {}
 
-  '@crxjs/vite-plugin@2.3.0':
+  '@crxjs/vite-plugin@2.4.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@rollup/pluginutils': 4.2.1
       '@webcomponents/custom-elements': 1.6.0
       acorn-walk: 8.3.5
-      cheerio: 1.2.0
       convert-source-map: 1.9.0
       debug: 4.4.3
       es-module-lexer: 0.10.5
@@ -4394,11 +4401,13 @@ snapshots:
       fs-extra: 10.1.0
       jsesc: 3.1.0
       magic-string: 0.30.21
+      node-html-parser: 7.1.0
       pathe: 2.0.3
       picocolors: 1.1.1
       react-refresh: 0.13.0
       rollup: 2.80.0
       rxjs: 7.5.7
+      vite: 6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -4797,20 +4806,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@midnight-ntwrk/compact-js@2.4.0':
-    dependencies:
-      '@effect/platform': 0.94.5(effect@3.19.19)
-      '@midnight-ntwrk/compact-runtime': 0.14.0
-      '@midnight-ntwrk/ledger-v7': 7.0.2
-      '@midnight-ntwrk/platform-js': 2.2.2
-      effect: 3.19.19
-      tslib: 2.8.1
-
   '@midnight-ntwrk/compact-js@2.4.3':
     dependencies:
       '@effect/platform': 0.94.5(effect@3.19.19)
       '@midnight-ntwrk/compact-runtime': 0.14.0
-      '@midnight-ntwrk/ledger-v7': 7.0.2
+      '@midnight-ntwrk/ledger-v7': 7.0.3
       '@midnight-ntwrk/platform-js': 2.2.2
       effect: 3.19.19
       tslib: 2.8.1
@@ -4821,42 +4821,42 @@ snapshots:
       '@types/object-inspect': 1.13.0
       object-inspect: 1.13.4
 
-  '@midnight-ntwrk/ledger-v7@7.0.2': {}
+  '@midnight-ntwrk/ledger-v7@7.0.3': {}
 
   '@midnight-ntwrk/ledger@4.0.0': {}
 
-  '@midnight-ntwrk/midnight-js-contracts@3.1.0':
+  '@midnight-ntwrk/midnight-js-contracts@3.2.0':
     dependencies:
-      '@midnight-ntwrk/compact-js': 2.4.0
-      '@midnight-ntwrk/midnight-js-network-id': 3.1.0
-      '@midnight-ntwrk/midnight-js-types': 3.1.0
-      '@midnight-ntwrk/midnight-js-utils': 3.1.0
+      '@midnight-ntwrk/compact-js': 2.4.3
+      '@midnight-ntwrk/midnight-js-network-id': 3.2.0
+      '@midnight-ntwrk/midnight-js-types': 3.2.0
+      '@midnight-ntwrk/midnight-js-utils': 3.2.0
 
-  '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@3.1.0':
+  '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@3.2.0':
     dependencies:
-      '@midnight-ntwrk/midnight-js-types': 3.1.0
+      '@midnight-ntwrk/midnight-js-types': 3.2.0
       cross-fetch: 4.1.0
     transitivePeerDependencies:
       - encoding
 
-  '@midnight-ntwrk/midnight-js-http-client-proof-provider@3.1.0':
+  '@midnight-ntwrk/midnight-js-http-client-proof-provider@3.2.0':
     dependencies:
-      '@midnight-ntwrk/midnight-js-contracts': 3.1.0
-      '@midnight-ntwrk/midnight-js-network-id': 3.1.0
-      '@midnight-ntwrk/midnight-js-types': 3.1.0
-      '@midnight-ntwrk/midnight-js-utils': 3.1.0
+      '@midnight-ntwrk/midnight-js-contracts': 3.2.0
+      '@midnight-ntwrk/midnight-js-network-id': 3.2.0
+      '@midnight-ntwrk/midnight-js-types': 3.2.0
+      '@midnight-ntwrk/midnight-js-utils': 3.2.0
       cross-fetch: 4.1.0
       fetch-retry: 6.0.0
       lodash: 4.17.23
     transitivePeerDependencies:
       - encoding
 
-  '@midnight-ntwrk/midnight-js-indexer-public-data-provider@3.1.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@midnight-ntwrk/midnight-js-indexer-public-data-provider@3.2.0(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@apollo/client': 3.14.0(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.19.0))(graphql@16.13.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@midnight-ntwrk/midnight-js-network-id': 3.1.0
-      '@midnight-ntwrk/midnight-js-types': 3.1.0
-      '@midnight-ntwrk/midnight-js-utils': 3.1.0
+      '@apollo/client': 3.14.1(@types/react@18.3.27)(graphql-ws@6.0.7(graphql@16.13.1)(ws@8.19.0))(graphql@16.13.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@midnight-ntwrk/midnight-js-network-id': 3.2.0
+      '@midnight-ntwrk/midnight-js-types': 3.2.0
+      '@midnight-ntwrk/midnight-js-utils': 3.2.0
       buffer: 6.0.3
       cross-fetch: 4.1.0
       graphql: 16.13.1
@@ -4876,32 +4876,31 @@ snapshots:
       - subscriptions-transport-ws
       - utf-8-validate
 
-  '@midnight-ntwrk/midnight-js-level-private-state-provider@3.1.0':
+  '@midnight-ntwrk/midnight-js-level-private-state-provider@3.2.0':
     dependencies:
-      '@midnight-ntwrk/midnight-js-types': 3.1.0
+      '@midnight-ntwrk/midnight-js-types': 3.2.0
       abstract-level: 3.1.1
       buffer: 6.0.3
       fp-ts: 2.16.11
       io-ts: 2.2.22(fp-ts@2.16.11)
       level: 10.0.0
-      lodash: 4.17.23
       superjson: 2.2.6
 
-  '@midnight-ntwrk/midnight-js-network-id@3.1.0': {}
+  '@midnight-ntwrk/midnight-js-network-id@3.2.0': {}
 
-  '@midnight-ntwrk/midnight-js-node-zk-config-provider@3.1.0':
+  '@midnight-ntwrk/midnight-js-node-zk-config-provider@3.2.0':
     dependencies:
-      '@midnight-ntwrk/midnight-js-types': 3.1.0
+      '@midnight-ntwrk/midnight-js-types': 3.2.0
 
-  '@midnight-ntwrk/midnight-js-types@3.1.0':
+  '@midnight-ntwrk/midnight-js-types@3.2.0':
     dependencies:
-      '@midnight-ntwrk/compact-js': 2.4.0
+      '@midnight-ntwrk/compact-js': 2.4.3
       '@midnight-ntwrk/platform-js': 2.2.0
       rxjs: 7.8.2
 
-  '@midnight-ntwrk/midnight-js-utils@3.1.0':
+  '@midnight-ntwrk/midnight-js-utils@3.2.0':
     dependencies:
-      '@midnight-ntwrk/midnight-js-network-id': 3.1.0
+      '@midnight-ntwrk/midnight-js-network-id': 3.2.0
       '@scure/base': 2.0.0
 
   '@midnight-ntwrk/onchain-runtime-v2@2.0.1': {}
@@ -4924,8 +4923,14 @@ snapshots:
 
   '@midnight-ntwrk/wallet-sdk-address-format@3.0.0':
     dependencies:
-      '@midnight-ntwrk/ledger-v7': 7.0.2
+      '@midnight-ntwrk/ledger-v7': 7.0.3
       '@scure/base': 1.2.6
+      '@subsquid/scale-codec': 4.0.1
+
+  '@midnight-ntwrk/wallet-sdk-address-format@3.0.1':
+    dependencies:
+      '@midnight-ntwrk/ledger-v7': 7.0.3
+      '@scure/base': 2.0.0
       '@subsquid/scale-codec': 4.0.1
 
   '@midnight-ntwrk/wallet-sdk-capabilities@3.0.0':
@@ -4936,7 +4941,7 @@ snapshots:
 
   '@midnight-ntwrk/wallet-sdk-dust-wallet@1.0.0(ws@8.19.0)':
     dependencies:
-      '@midnight-ntwrk/ledger-v7': 7.0.2
+      '@midnight-ntwrk/ledger-v7': 7.0.3
       '@midnight-ntwrk/wallet-sdk-abstractions': 1.0.0
       '@midnight-ntwrk/wallet-sdk-address-format': 3.0.0
       '@midnight-ntwrk/wallet-sdk-capabilities': 3.0.0
@@ -4961,7 +4966,7 @@ snapshots:
 
   '@midnight-ntwrk/wallet-sdk-facade@1.0.0(ws@8.19.0)':
     dependencies:
-      '@midnight-ntwrk/ledger-v7': 7.0.2
+      '@midnight-ntwrk/ledger-v7': 7.0.3
       '@midnight-ntwrk/wallet-sdk-abstractions': 1.0.0
       '@midnight-ntwrk/wallet-sdk-address-format': 3.0.0
       '@midnight-ntwrk/wallet-sdk-dust-wallet': 1.0.0(ws@8.19.0)
@@ -4985,6 +4990,11 @@ snapshots:
       '@scure/base': 1.2.6
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
+
+  '@midnight-ntwrk/wallet-sdk-hd@3.0.1':
+    dependencies:
+      '@scure/bip32': 2.0.1
+      '@scure/bip39': 2.0.1
 
   '@midnight-ntwrk/wallet-sdk-indexer-client@1.0.0(ws@8.19.0)':
     dependencies:
@@ -5033,7 +5043,7 @@ snapshots:
   '@midnight-ntwrk/wallet-sdk-prover-client@1.0.0':
     dependencies:
       '@effect/platform': 0.90.10(effect@3.19.19)
-      '@midnight-ntwrk/ledger-v7': 7.0.2
+      '@midnight-ntwrk/ledger-v7': 7.0.3
       '@midnight-ntwrk/wallet-sdk-abstractions': 1.0.0
       '@midnight-ntwrk/wallet-sdk-utilities': 1.0.0
       effect: 3.19.19
@@ -5057,7 +5067,7 @@ snapshots:
 
   '@midnight-ntwrk/wallet-sdk-shielded@1.0.0':
     dependencies:
-      '@midnight-ntwrk/ledger-v7': 7.0.2
+      '@midnight-ntwrk/ledger-v7': 7.0.3
       '@midnight-ntwrk/wallet-sdk-abstractions': 1.0.0
       '@midnight-ntwrk/wallet-sdk-address-format': 3.0.0
       '@midnight-ntwrk/wallet-sdk-capabilities': 3.0.0
@@ -5085,7 +5095,7 @@ snapshots:
 
   '@midnight-ntwrk/wallet-sdk-unshielded-wallet@1.0.0(ws@8.19.0)':
     dependencies:
-      '@midnight-ntwrk/ledger-v7': 7.0.2
+      '@midnight-ntwrk/ledger-v7': 7.0.3
       '@midnight-ntwrk/wallet-sdk-abstractions': 1.0.0
       '@midnight-ntwrk/wallet-sdk-address-format': 3.0.0
       '@midnight-ntwrk/wallet-sdk-capabilities': 3.0.0
@@ -5137,7 +5147,13 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
+  '@noble/curves@2.0.1':
+    dependencies:
+      '@noble/hashes': 2.0.1
+
   '@noble/hashes@1.8.0': {}
+
+  '@noble/hashes@2.0.1': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -5591,10 +5607,21 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
 
+  '@scure/bip32@2.0.1':
+    dependencies:
+      '@noble/curves': 2.0.1
+      '@noble/hashes': 2.0.1
+      '@scure/base': 2.0.0
+
   '@scure/bip39@1.6.0':
     dependencies:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
+
+  '@scure/bip39@2.0.1':
+    dependencies:
+      '@noble/hashes': 2.0.1
+      '@scure/base': 2.0.0
 
   '@scure/sr25519@0.2.0':
     dependencies:
@@ -5759,7 +5786,7 @@ snapshots:
 
   '@types/bn.js@5.2.0':
     dependencies:
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
 
   '@types/chrome@0.1.37':
     dependencies:
@@ -5768,13 +5795,13 @@ snapshots:
 
   '@types/docker-modem@3.0.6':
     dependencies:
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
       '@types/ssh2': 1.15.5
 
   '@types/dockerode@4.0.1':
     dependencies:
       '@types/docker-modem': 3.0.6
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
       '@types/ssh2': 1.15.5
 
   '@types/estree@1.0.8': {}
@@ -5793,7 +5820,7 @@ snapshots:
     dependencies:
       undici-types: 5.26.5
 
-  '@types/node@25.4.0':
+  '@types/node@25.5.0':
     dependencies:
       undici-types: 7.18.2
 
@@ -5812,11 +5839,11 @@ snapshots:
 
   '@types/ssh2-streams@0.1.13':
     dependencies:
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
 
   '@types/ssh2@0.5.52':
     dependencies:
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
       '@types/ssh2-streams': 0.1.13
 
   '@types/ssh2@1.15.5':
@@ -5825,7 +5852,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
 
   '@types/zen-observable@0.8.3': {}
 
@@ -5920,7 +5947,7 @@ snapshots:
       '@typescript-eslint/types': 8.57.0
       eslint-visitor-keys: 5.0.1
 
-  '@vitejs/plugin-react@4.7.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2))':
+  '@vitejs/plugin-react@4.7.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@babel/core': 7.28.5
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5)
@@ -5928,7 +5955,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -5939,13 +5966,13 @@ snapshots:
       chai: 5.3.3
       tinyrainbow: 1.2.0
 
-  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@25.4.0))':
+  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@25.5.0))':
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 5.4.21(@types/node@25.4.0)
+      vite: 5.4.21(@types/node@25.5.0)
 
   '@vitest/pretty-format@2.1.9':
     dependencies:
@@ -6009,9 +6036,11 @@ snapshots:
 
   acorn-walk@8.3.5:
     dependencies:
-      acorn: 8.15.0
+      acorn: 8.16.0
 
   acorn@8.15.0: {}
+
+  acorn@8.16.0: {}
 
   agent-base@7.1.4: {}
 
@@ -6291,29 +6320,6 @@ snapshots:
 
   check-error@2.1.1: {}
 
-  cheerio-select@2.1.0:
-    dependencies:
-      boolbase: 1.0.0
-      css-select: 5.2.2
-      css-what: 6.2.2
-      domelementtype: 2.3.0
-      domhandler: 5.0.3
-      domutils: 3.2.2
-
-  cheerio@1.2.0:
-    dependencies:
-      cheerio-select: 2.1.0
-      dom-serializer: 2.0.0
-      domhandler: 5.0.3
-      domutils: 3.2.2
-      encoding-sniffer: 0.2.1
-      htmlparser2: 10.1.0
-      parse5: 7.3.0
-      parse5-htmlparser2-tree-adapter: 7.1.0
-      parse5-parser-stream: 7.1.2
-      undici: 7.24.4
-      whatwg-mimetype: 4.0.0
-
   chokidar@3.6.0:
     dependencies:
       anymatch: 3.1.3
@@ -6552,11 +6558,6 @@ snapshots:
   empty-npm-package@1.0.0:
     optional: true
 
-  encoding-sniffer@0.2.1:
-    dependencies:
-      iconv-lite: 0.6.3
-      whatwg-encoding: 3.1.1
-
   end-of-stream@1.4.5:
     dependencies:
       once: 1.4.0
@@ -6564,8 +6565,6 @@ snapshots:
   entities@4.5.0: {}
 
   entities@6.0.1: {}
-
-  entities@7.0.1: {}
 
   es-abstract@1.24.1:
     dependencies:
@@ -7093,6 +7092,8 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  he@1.2.0: {}
+
   help-me@5.0.0: {}
 
   hoist-non-react-statics@3.3.2:
@@ -7102,13 +7103,6 @@ snapshots:
   html-encoding-sniffer@4.0.0:
     dependencies:
       whatwg-encoding: 3.1.1
-
-  htmlparser2@10.1.0:
-    dependencies:
-      domelementtype: 2.3.0
-      domhandler: 5.0.3
-      domutils: 3.2.2
-      entities: 7.0.1
 
   http-proxy-agent@7.0.2:
     dependencies:
@@ -7524,6 +7518,11 @@ snapshots:
 
   node-gyp-build@4.8.4: {}
 
+  node-html-parser@7.1.0:
+    dependencies:
+      css-select: 5.2.2
+      he: 1.2.0
+
   node-releases@2.0.27: {}
 
   normalize-path@3.0.0: {}
@@ -7613,15 +7612,6 @@ snapshots:
   parent-module@1.0.1:
     dependencies:
       callsites: 3.1.0
-
-  parse5-htmlparser2-tree-adapter@7.1.0:
-    dependencies:
-      domhandler: 5.0.3
-      parse5: 7.3.0
-
-  parse5-parser-stream@7.1.2:
-    dependencies:
-      parse5: 7.3.0
 
   parse5@7.3.0:
     dependencies:
@@ -7750,7 +7740,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
       long: 5.3.2
 
   pump@3.0.4:
@@ -8294,14 +8284,14 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  ts-node@10.9.2(@swc/core@1.15.18)(@swc/wasm@1.15.18)(@types/node@25.4.0)(typescript@5.9.3):
+  ts-node@10.9.2(@swc/core@1.15.18)(@swc/wasm@1.15.18)(@types/node@25.5.0)(typescript@5.9.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.12
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
       acorn: 8.15.0
       acorn-walk: 8.3.5
       arg: 4.1.3
@@ -8396,13 +8386,13 @@ snapshots:
 
   v8-compile-cache-lib@3.0.1: {}
 
-  vite-node@2.1.9(@types/node@25.4.0):
+  vite-node@2.1.9(@types/node@25.5.0):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3
       es-module-lexer: 1.7.0
       pathe: 1.1.2
-      vite: 5.4.21(@types/node@25.4.0)
+      vite: 5.4.21(@types/node@25.5.0)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -8414,39 +8404,39 @@ snapshots:
       - supports-color
       - terser
 
-  vite-plugin-static-copy@3.2.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-plugin-static-copy@3.3.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
       chokidar: 3.6.0
       p-map: 7.0.4
       picocolors: 1.1.1
       tinyglobby: 0.2.15
-      vite: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)
 
-  vite-plugin-top-level-await@1.6.0(rollup@2.80.0)(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-plugin-top-level-await@1.6.0(rollup@2.80.0)(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
       '@rollup/plugin-virtual': 3.0.2(rollup@2.80.0)
       '@swc/core': 1.15.18
       '@swc/wasm': 1.15.18
       uuid: 10.0.0
-      vite: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)
     transitivePeerDependencies:
       - '@swc/helpers'
       - rollup
 
-  vite-plugin-wasm@3.5.0(vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-plugin-wasm@3.6.0(vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
-      vite: 6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2)
+      vite: 6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2)
 
-  vite@5.4.21(@types/node@25.4.0):
+  vite@5.4.21(@types/node@25.5.0):
     dependencies:
       esbuild: 0.25.0
       postcss: 8.5.6
       rollup: 4.59.0
     optionalDependencies:
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
       fsevents: 2.3.3
 
-  vite@6.4.1(@types/node@25.4.0)(tsx@4.21.0)(yaml@2.8.2):
+  vite@6.4.1(@types/node@25.5.0)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -8455,15 +8445,15 @@ snapshots:
       rollup: 4.59.0
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
       fsevents: 2.3.3
       tsx: 4.21.0
       yaml: 2.8.2
 
-  vitest@2.1.9(@types/node@25.4.0)(jsdom@25.0.1):
+  vitest@2.1.9(@types/node@25.5.0)(jsdom@25.0.1):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@25.4.0))
+      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@25.5.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -8479,11 +8469,11 @@ snapshots:
       tinyexec: 0.3.2
       tinypool: 1.1.1
       tinyrainbow: 1.2.0
-      vite: 5.4.21(@types/node@25.4.0)
-      vite-node: 2.1.9(@types/node@25.4.0)
+      vite: 5.4.21(@types/node@25.5.0)
+      vite-node: 2.1.9(@types/node@25.5.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 25.4.0
+      '@types/node': 25.5.0
       jsdom: 25.0.1
     transitivePeerDependencies:
       - less
