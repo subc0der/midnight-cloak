@@ -3,14 +3,18 @@
  *
  * This module provides the infrastructure for connecting to Midnight networks
  * and interacting with smart contracts. Based on official Midnight patterns
- * from example-counter.
+ * from example-counter and example-bboard.
  *
  * Providers handle:
  * - Proof generation (via proof server)
  * - Public data queries (via indexer)
- * - Private state storage (via LevelDB)
- * - ZK circuit configuration
+ * - Private state storage (via LevelDB or in-memory)
+ * - ZK circuit configuration (Node via file, Browser via fetch)
  * - Wallet operations
+ *
+ * Browser vs Node.js:
+ * - Node.js uses NodeZkConfigProvider (file system access)
+ * - Browser uses FetchZkConfigProvider (HTTP fetch for circuit assets)
  */
 
 import type { NetworkConfig } from './config';
@@ -248,4 +252,259 @@ export function fromHex(hex: string): Uint8Array {
     bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
   }
   return bytes;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Browser Provider Support (FetchZkConfigProvider pattern)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Service configuration returned by Lace wallet's serviceUriConfig()
+ * These URIs point to the user's connected network infrastructure
+ */
+export interface LaceServiceConfig {
+  /** Proof server URI for ZK proof generation */
+  proverServerUri: string;
+  /** Indexer HTTP endpoint for GraphQL queries */
+  indexerUri: string;
+  /** Indexer WebSocket endpoint for subscriptions */
+  indexerWsUri: string;
+  /** RPC node endpoint for transaction submission */
+  nodeUri: string;
+  /** Network identifier (e.g., 'preprod', 'mainnet') */
+  networkId: string;
+}
+
+/**
+ * Configuration for browser-based Midnight providers
+ */
+export interface BrowserProvidersConfig {
+  /** Base URL for circuit assets (e.g., window.location.origin + '/circuits/') */
+  circuitBaseUrl: string;
+  /** Service configuration from Lace wallet or manual config */
+  serviceConfig: LaceServiceConfig;
+  /** Contract name for ZK config lookup (e.g., 'age-verifier') */
+  contractName: string;
+}
+
+/**
+ * Browser-compatible provider set for Midnight contract interaction
+ * Uses FetchZkConfigProvider instead of NodeZkConfigProvider
+ */
+export interface BrowserProviders {
+  /** ZK config provider using fetch for circuit assets */
+  zkConfigProvider: unknown;
+  /** Proof provider communicating with proof server */
+  proofProvider: unknown;
+  /** Public data provider for indexer queries */
+  publicDataProvider: unknown;
+  /** Whether providers are fully initialized */
+  initialized: boolean;
+}
+
+/**
+ * Get Lace wallet service configuration
+ *
+ * Finds Lace wallet in window.midnight and retrieves service URIs
+ * for the connected network.
+ *
+ * @returns Service configuration or null if Lace not available
+ *
+ * @example
+ * ```typescript
+ * const serviceConfig = await getLaceServiceConfig();
+ * if (serviceConfig) {
+ *   console.log('Proof server:', serviceConfig.proverServerUri);
+ * }
+ * ```
+ */
+export async function getLaceServiceConfig(): Promise<LaceServiceConfig | null> {
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  // Find Lace wallet in window.midnight
+  // Note: Lace is registered with a UUID key, so we search by name
+  const midnight = (window as unknown as { midnight?: Record<string, unknown> }).midnight;
+  if (!midnight) {
+    return null;
+  }
+
+  const lace = Object.values(midnight).find(
+    (wallet): wallet is { name: string; serviceUriConfig: () => Promise<LaceServiceConfig> } =>
+      typeof wallet === 'object' &&
+      wallet !== null &&
+      'name' in wallet &&
+      (wallet as { name: unknown }).name === 'lace' &&
+      'serviceUriConfig' in wallet
+  );
+
+  if (!lace) {
+    return null;
+  }
+
+  try {
+    return await lace.serviceUriConfig();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Create browser-compatible providers for contract interaction
+ *
+ * This function creates providers using FetchZkConfigProvider which
+ * loads circuit assets via HTTP fetch rather than file system.
+ *
+ * @param config - Browser provider configuration
+ * @returns Provider set for contract interaction
+ *
+ * @example
+ * ```typescript
+ * const serviceConfig = await getLaceServiceConfig();
+ * if (!serviceConfig) throw new Error('Lace not connected');
+ *
+ * const providers = await createBrowserProviders({
+ *   circuitBaseUrl: window.location.origin + '/circuits/',
+ *   serviceConfig,
+ *   contractName: 'age-verifier',
+ * });
+ * ```
+ */
+export async function createBrowserProviders(
+  config: BrowserProvidersConfig
+): Promise<BrowserProviders> {
+  // Dynamic import to avoid bundling issues in non-browser environments
+  // and to prevent service worker crashes from static WASM imports
+  const [
+    { FetchZkConfigProvider },
+    { httpClientProofProvider },
+    { indexerPublicDataProvider },
+  ] = await Promise.all([
+    import('@midnight-ntwrk/midnight-js-fetch-zk-config-provider'),
+    import('@midnight-ntwrk/midnight-js-http-client-proof-provider'),
+    import('@midnight-ntwrk/midnight-js-indexer-public-data-provider'),
+  ]);
+
+  // Create ZK config provider that fetches circuit assets via HTTP
+  // The URL should point to where circuit files (keys/, zkir/) are hosted
+  const zkConfigUrl = config.circuitBaseUrl.endsWith('/')
+    ? config.circuitBaseUrl + config.contractName
+    : config.circuitBaseUrl + '/' + config.contractName;
+
+  const zkConfigProvider = new FetchZkConfigProvider(zkConfigUrl, fetch.bind(globalThis));
+
+  // Create proof provider that communicates with the proof server
+  const proofProvider = httpClientProofProvider(
+    config.serviceConfig.proverServerUri,
+    zkConfigProvider
+  );
+
+  // Create public data provider for indexer queries
+  const publicDataProvider = indexerPublicDataProvider(
+    config.serviceConfig.indexerUri,
+    config.serviceConfig.indexerWsUri
+  );
+
+  return {
+    zkConfigProvider,
+    proofProvider,
+    publicDataProvider,
+    initialized: true,
+  };
+}
+
+/**
+ * Create a network config from Lace service configuration
+ *
+ * Useful when you want to use SDK methods that expect NetworkConfig
+ * but you have Lace service URIs.
+ *
+ * @param serviceConfig - Service configuration from Lace
+ * @returns NetworkConfig compatible object
+ */
+export function networkConfigFromLace(serviceConfig: LaceServiceConfig): NetworkConfig {
+  return {
+    network: serviceConfig.networkId as 'preprod' | 'mainnet' | 'standalone',
+    networkId: serviceConfig.networkId,
+    indexer: serviceConfig.indexerUri,
+    indexerWS: serviceConfig.indexerWsUri,
+    node: serviceConfig.nodeUri,
+    proofServer: serviceConfig.proverServerUri,
+  };
+}
+
+/**
+ * Check if FetchZkConfigProvider is available (browser environment)
+ */
+export function isBrowserEnvironment(): boolean {
+  return typeof window !== 'undefined' && typeof fetch === 'function';
+}
+
+/**
+ * Extended ProviderFactory with browser support
+ */
+export class BrowserProviderFactory extends ProviderFactory {
+  private serviceConfig: LaceServiceConfig | null = null;
+
+  /**
+   * Initialize with Lace service configuration
+   * @returns true if Lace config was loaded, false otherwise
+   */
+  async initializeFromLace(): Promise<boolean> {
+    this.serviceConfig = await getLaceServiceConfig();
+    return this.serviceConfig !== null;
+  }
+
+  /**
+   * Set service configuration manually (for testing or non-Lace wallets)
+   */
+  setServiceConfig(config: LaceServiceConfig): void {
+    this.serviceConfig = config;
+  }
+
+  /**
+   * Get the current service configuration
+   */
+  getServiceConfig(): LaceServiceConfig | null {
+    return this.serviceConfig;
+  }
+
+  /**
+   * Create browser providers for a specific contract
+   *
+   * @param contractName - Name of the contract (e.g., 'age-verifier')
+   * @param circuitBaseUrl - Base URL where circuit assets are hosted
+   * @throws Error if service config not initialized
+   */
+  async createBrowserProvidersForContract(
+    contractName: string,
+    circuitBaseUrl: string
+  ): Promise<BrowserProviders> {
+    if (!this.serviceConfig) {
+      throw new Error(
+        'Service config not initialized. Call initializeFromLace() or setServiceConfig() first.'
+      );
+    }
+
+    return createBrowserProviders({
+      circuitBaseUrl,
+      serviceConfig: this.serviceConfig,
+      contractName,
+    });
+  }
+
+  /**
+   * Override proof server availability check to use Lace config
+   */
+  override async isProofServerAvailable(): Promise<boolean> {
+    const proofServerUrl = this.serviceConfig?.proverServerUri ?? this.getConfig().proofServer;
+    try {
+      const response = await fetch(`${proofServerUrl}/version`);
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
 }

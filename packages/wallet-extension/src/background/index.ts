@@ -24,14 +24,20 @@ import { getProofGenerator, type ServiceUris, type ProofGeneratorConfig } from '
  * with this set to true.
  *
  * Checklist before production:
- * 1. Set ALLOW_MOCK_PROOFS = false
+ * 1. Build with VITE_ALLOW_MOCK_PROOFS=false or leave unset
  * 2. Verify SDK loads without errors (check service worker console)
  * 3. Test verification flow - should fail gracefully if SDK unavailable
  * 4. Confirm proof results have isMock: false
  *
+ * Environment variable override:
+ * - VITE_ALLOW_MOCK_PROOFS=true  → Enable mock proofs (dev builds)
+ * - VITE_ALLOW_MOCK_PROOFS=false → Disable mock proofs (prod builds)
+ * - Unset                        → Defaults to false (safe default)
+ *
  * See: .claude/context/package-status.md → PRODUCTION CHECKLIST
  */
-const ALLOW_MOCK_PROOFS = true; // ← CHANGE TO false FOR PRODUCTION
+const ALLOW_MOCK_PROOFS =
+  typeof import.meta.env !== 'undefined' && import.meta.env.VITE_ALLOW_MOCK_PROOFS === 'true';
 
 const AUTO_LOCK_ALARM = 'midnight-cloak-auto-lock';
 

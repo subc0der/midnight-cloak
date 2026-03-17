@@ -38,7 +38,16 @@ export const CONTRACT_ADDRESSES: Record<Network, NetworkContracts | null> = {
 
   /**
    * Mainnet contracts
-   * Will be populated after mainnet launch (late March 2026)
+   *
+   * Will be populated after mainnet launch (late March 2026).
+   *
+   * Mainnet deployment checklist:
+   * 1. Deploy contracts via deploy-cli with mainnet seed
+   * 2. Record deployed contract addresses
+   * 3. Update this file with mainnet addresses
+   * 4. Rebuild and publish SDK
+   *
+   * Contract addresses are 64-character hex strings (32 bytes).
    */
   mainnet: null,
 };

@@ -54,14 +54,29 @@ export class StandaloneConfig implements NetworkConfig {
 }
 
 /**
- * Mainnet configuration (placeholder for late March 2026 launch)
+ * Mainnet configuration
+ *
+ * Midnight mainnet launches late March 2026 (Kūkolu federated mainnet phase).
+ *
+ * NOTE: These URLs are placeholders based on expected patterns.
+ * Update with actual URLs once mainnet launches and endpoints are published.
+ *
+ * For production use:
+ * 1. Verify endpoints against official Midnight documentation
+ * 2. Use production-grade proof server (not localhost)
+ * 3. Ensure DUST tokens are available for transactions
+ *
+ * See: https://docs.midnight.network for latest mainnet configuration
  */
 export class MainnetConfig implements NetworkConfig {
   readonly network: Network = 'mainnet';
   readonly networkId = 'mainnet';
+  // Expected mainnet endpoints (verify after launch)
   readonly indexer = 'https://indexer.midnight.network/api/v3/graphql';
   readonly indexerWS = 'wss://indexer.midnight.network/api/v3/graphql/ws';
   readonly node = 'https://rpc.midnight.network';
+  // Proof server: Production deployments should use hosted proof server
+  // For now, defaults to localhost - update when production URLs available
   readonly proofServer = 'http://127.0.0.1:6300';
 }
 

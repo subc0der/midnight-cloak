@@ -499,8 +499,9 @@ function GatedContentCard() {
 const config = {
   apiKey: import.meta.env.VITE_MIDNIGHT_CLOAK_API_KEY || 'demo-key',
   network: (import.meta.env.VITE_MIDNIGHT_NETWORK || 'preprod') as 'preprod' | 'mainnet',
-  // Enable mock proofs for development when proof server is unavailable
-  allowMockProofs: import.meta.env.VITE_ALLOW_MOCK_PROOFS !== 'false',
+  // Mock proofs: OFF by default (production safe), must explicitly enable for dev
+  // Set VITE_ALLOW_MOCK_PROOFS=true in .env.local for local development
+  allowMockProofs: import.meta.env.VITE_ALLOW_MOCK_PROOFS === 'true',
   // Enable auto-reconnect to remember wallet preference
   autoReconnect: true,
 };

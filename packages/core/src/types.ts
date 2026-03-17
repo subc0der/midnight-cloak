@@ -70,7 +70,17 @@ export interface ClientConfig {
 
   /**
    * Allow mock proofs when proof server is unavailable (default: false)
-   * WARNING: Only enable for development/testing. Never use in production.
+   *
+   * ⚠️ SECURITY WARNING ⚠️
+   * Mock proofs bypass all ZK security guarantees. Users will think
+   * they're protected when they're not.
+   *
+   * - NEVER enable in production builds
+   * - Only use for local development without proof server
+   * - Real proof generation requires Lace wallet + proof server
+   *
+   * @deprecated For production, ensure this is false or not set.
+   * Will emit a console warning when enabled.
    */
   allowMockProofs?: boolean;
 

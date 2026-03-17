@@ -5,7 +5,9 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "copy:circuits": "bash ../../scripts/copy-circuits.sh",
     "dev": "vite",
+    "prebuild": "npm run copy:circuits",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests",

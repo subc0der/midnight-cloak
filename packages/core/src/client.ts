@@ -84,6 +84,15 @@ export class MidnightCloakClient {
       autoReconnect: config.autoReconnect ?? false,
     };
 
+    // Warn if mock proofs are enabled
+    if (this.config.allowMockProofs) {
+      console.warn(
+        '[Midnight Cloak] ⚠️ WARNING: Mock proofs enabled (allowMockProofs=true). ' +
+          'This bypasses all ZK security guarantees and should NEVER be used in production. ' +
+          'Real proof generation requires Lace wallet + proof server.'
+      );
+    }
+
     this.walletConnector = new WalletConnector({
       preferredWallet: this.config.preferredWallet,
       onConnect: (wallet) => this.emit('wallet:connected', wallet),

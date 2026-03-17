@@ -245,9 +245,12 @@ window.midnightCloak = {
 
     try {
       // Connect to wallet with network ID (triggers authorization popup if needed)
-      // TODO: Make network configurable (Phase 5 - mainnet support)
-      console.log('[MidnightCloak] Connecting to Lace Midnight wallet...');
-      const api = await lace.connect('preprod');
+      // Network is configurable via environment variable (defaults to preprod)
+      const networkId =
+        (typeof import.meta.env !== 'undefined' && import.meta.env.VITE_MIDNIGHT_NETWORK) ||
+        'preprod';
+      console.log('[MidnightCloak] Connecting to Lace Midnight wallet on network:', networkId);
+      const api = await lace.connect(networkId);
 
       // Get configuration including service URIs
       const config = await api.getConfiguration();
