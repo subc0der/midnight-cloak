@@ -52,6 +52,17 @@ export type ClientEventName = keyof ClientEvents;
 
 const STORAGE_KEY_LAST_WALLET = 'midnight-cloak:lastConnectedWallet';
 
+/** Valid wallet types for type narrowing from storage */
+const VALID_WALLET_TYPES: readonly WalletType[] = ['lace', 'eternl'] as const;
+
+/**
+ * Type guard for WalletType
+ * Use instead of `as WalletType` casting for runtime safety
+ */
+function isWalletType(value: string | null): value is WalletType {
+  return value !== null && VALID_WALLET_TYPES.includes(value as WalletType);
+}
+
 export class MidnightCloakClient {
   private config: Required<ClientConfig> & { autoReconnect: boolean };
   private networkConfig: NetworkConfig;
@@ -239,8 +250,8 @@ export class MidnightCloakClient {
       return null;
     }
     const stored = localStorage.getItem(STORAGE_KEY_LAST_WALLET);
-    if (stored && (stored === 'lace' || stored === 'eternl')) {
-      return stored as WalletType;
+    if (isWalletType(stored)) {
+      return stored;
     }
     return null;
   }

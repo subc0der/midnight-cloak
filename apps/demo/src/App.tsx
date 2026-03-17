@@ -156,9 +156,13 @@ function InstallWalletBanner({ onInstalled }: { onInstalled: () => void }) {
         </button>
       </div>
       {isPolling && (
-        <div style={{ marginTop: '0.75rem', color: '#856404' }}>
+        <div
+          style={{ marginTop: '0.75rem', color: '#856404' }}
+          role="status"
+          aria-live="polite"
+        >
           <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>
-            After installing, click below to continue.
+            Checking for wallet installation... After installing, click below to continue.
           </p>
           <button
             onClick={() => {
