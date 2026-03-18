@@ -1,5 +1,7 @@
 # Integrating Midnight Cloak into Your dApp
 
+> **Beta Preview (March 2026):** This SDK currently uses mock proofs for verification. Real zero-knowledge proofs will be enabled in a future release once Midnight SDK browser patterns stabilize post-mainnet. The verification UX is fully functional - only the cryptographic proof generation is mocked.
+
 Add zero-knowledge age verification to your React dApp. Users prove they meet age requirements without revealing their birthdate.
 
 **Prerequisites:**

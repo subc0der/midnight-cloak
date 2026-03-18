@@ -10,7 +10,9 @@ Midnight Cloak enables dApp developers to verify user attributes (age, credentia
 
 ## Status
 
-**Phase 3: Wallet Extension** - In Progress
+**Phase 4: Mainnet Preparation** - Beta Preview
+
+> **Beta Notice:** This SDK currently uses mock proofs. Real ZK proofs will be enabled once Midnight SDK browser patterns stabilize post-mainnet (est. mid-April 2026). The verification UX is fully functional.
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -19,8 +21,8 @@ Midnight Cloak enables dApp developers to verify user attributes (age, credentia
 | @midnight-cloak/wallet | 0.1.0 | 70 tests passing |
 | Wallet Extension | 0.1.0 | Chrome extension with credential management |
 | Contracts | Deployed | Age Verifier + Credential Registry on Preprod |
-| Lace Wallet | Working | Real wallet signing tested |
-| ZK Proofs | Working | Mock mode available for development |
+| Lace/Eternl Wallets | Working | Multi-wallet support |
+| ZK Proofs | Beta | Mock proofs (real proofs post-mainnet) |
 
 ## Features
 

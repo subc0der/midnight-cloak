@@ -2,6 +2,8 @@
 
 React components for zero-knowledge identity verification on [Midnight](https://midnight.network).
 
+> **Beta Preview:** Currently uses mock proofs. Real ZK proofs coming post-mainnet (est. mid-April 2026).
+
 ## Installation
 
 ```bash
