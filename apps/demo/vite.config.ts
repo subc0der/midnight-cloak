@@ -1,11 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [
     react(),
+    wasm(),
+    topLevelAwait(),
     // Copy circuit files so extension can fetch them via HTTP
     // The extension's FetchZkConfigProvider requires circuits served over HTTP/HTTPS
     viteStaticCopy({
@@ -38,5 +42,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    target: 'esnext',
+  },
+  optimizeDeps: {
+    // Exclude WASM modules from optimization
+    exclude: ['@midnight-ntwrk/ledger-v7'],
   },
 });
