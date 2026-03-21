@@ -4,6 +4,10 @@ import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { resolve } from 'path';
+import { existsSync } from 'fs';
+
+// Check if circuit files exist (they're gitignored, won't exist in CI)
+const circuitsExist = existsSync('../../packages/contracts/src/managed/age-verifier/zkir');
 
 export default defineConfig({
   plugins: [
@@ -12,18 +16,23 @@ export default defineConfig({
     topLevelAwait(),
     // Copy circuit files so extension can fetch them via HTTP
     // The extension's FetchZkConfigProvider requires circuits served over HTTP/HTTPS
-    viteStaticCopy({
-      targets: [
-        {
-          src: '../../packages/contracts/src/managed/age-verifier/zkir/*',
-          dest: 'circuits/age-verifier/zkir',
-        },
-        {
-          src: '../../packages/contracts/src/managed/age-verifier/keys/*',
-          dest: 'circuits/age-verifier/keys',
-        },
-      ],
-    }),
+    // Only copy if circuits exist locally (not in CI where they're gitignored)
+    ...(circuitsExist
+      ? [
+          viteStaticCopy({
+            targets: [
+              {
+                src: '../../packages/contracts/src/managed/age-verifier/zkir/*',
+                dest: 'circuits/age-verifier/zkir',
+              },
+              {
+                src: '../../packages/contracts/src/managed/age-verifier/keys/*',
+                dest: 'circuits/age-verifier/keys',
+              },
+            ],
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
