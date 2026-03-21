@@ -95,6 +95,9 @@ describe('Onboarding', () => {
   });
 
   describe('password validation', () => {
+    // Valid password meeting all requirements: 12+ chars, upper, lower, number, special
+    const VALID_PASSWORD = 'SecurePass123!';
+
     beforeEach(async () => {
       render(<Onboarding onComplete={mockOnComplete} />);
       fireEvent.click(screen.getByRole('button', { name: /get started/i }));
@@ -107,33 +110,99 @@ describe('Onboarding', () => {
     it('disables create button when confirm password is empty', async () => {
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText('Password'), 'password123');
+      await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
 
       expect(screen.getByRole('button', { name: /create wallet/i })).toBeDisabled();
     });
 
-    it('shows error for password less than 8 characters', async () => {
+    it('shows error for password less than 12 characters', async () => {
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText('Password'), 'short');
-      await user.type(screen.getByLabelText('Confirm Password'), 'short');
+      await user.type(screen.getByLabelText('Password'), 'Short1!');
+      await user.type(screen.getByLabelText('Confirm Password'), 'Short1!');
       await user.click(screen.getByRole('button', { name: /create wallet/i }));
 
-      expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument();
+      expect(screen.getByText(/at least 12 characters/i)).toBeInTheDocument();
+    });
+
+    it('shows error when password lacks uppercase letter', async () => {
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText('Password'), 'nouppercase123!');
+      await user.type(screen.getByLabelText('Confirm Password'), 'nouppercase123!');
+      await user.click(screen.getByRole('button', { name: /create wallet/i }));
+
+      expect(screen.getByText(/uppercase letter/i)).toBeInTheDocument();
+    });
+
+    it('shows error when password lacks lowercase letter', async () => {
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText('Password'), 'NOLOWERCASE123!');
+      await user.type(screen.getByLabelText('Confirm Password'), 'NOLOWERCASE123!');
+      await user.click(screen.getByRole('button', { name: /create wallet/i }));
+
+      expect(screen.getByText(/lowercase letter/i)).toBeInTheDocument();
+    });
+
+    it('shows error when password lacks number', async () => {
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText('Password'), 'NoNumberHere!!');
+      await user.type(screen.getByLabelText('Confirm Password'), 'NoNumberHere!!');
+      await user.click(screen.getByRole('button', { name: /create wallet/i }));
+
+      expect(screen.getByText(/at least one number/i)).toBeInTheDocument();
+    });
+
+    it('shows error when password lacks special character', async () => {
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText('Password'), 'NoSpecialChar123');
+      await user.type(screen.getByLabelText('Confirm Password'), 'NoSpecialChar123');
+      await user.click(screen.getByRole('button', { name: /create wallet/i }));
+
+      expect(screen.getByText(/special character/i)).toBeInTheDocument();
     });
 
     it('shows error when passwords do not match', async () => {
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText('Password'), 'password123');
-      await user.type(screen.getByLabelText('Confirm Password'), 'password456');
+      await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
+      await user.type(screen.getByLabelText('Confirm Password'), 'DifferentPass1!');
       await user.click(screen.getByRole('button', { name: /create wallet/i }));
 
       expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
     });
+
+    it('accepts password meeting all requirements', async () => {
+      addMessageHandler((message, _sender, sendResponse) => {
+        const msg = message as { type: string };
+        if (msg.type === 'INIT_VAULT') {
+          sendResponse({ success: true });
+          return true;
+        }
+      });
+
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
+      await user.type(screen.getByLabelText('Confirm Password'), VALID_PASSWORD);
+      await user.click(screen.getByRole('button', { name: /create wallet/i }));
+
+      // Should not show any password validation errors
+      expect(screen.queryByText(/at least 12 characters/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/uppercase letter/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/lowercase letter/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/at least one number/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/special character/i)).not.toBeInTheDocument();
+    });
   });
 
   describe('wallet creation', () => {
+    // Valid password meeting all requirements: 12+ chars, upper, lower, number, special
+    const VALID_PASSWORD = 'SecurePass123!';
+
     beforeEach(async () => {
       render(<Onboarding onComplete={mockOnComplete} />);
       fireEvent.click(screen.getByRole('button', { name: /get started/i }));
@@ -143,7 +212,7 @@ describe('Onboarding', () => {
       addMessageHandler((message, _sender, sendResponse) => {
         const msg = message as { type: string; password?: string };
         if (msg.type === 'INIT_VAULT') {
-          expect(msg.password).toBe('password123');
+          expect(msg.password).toBe(VALID_PASSWORD);
           sendResponse({ success: true });
           return true;
         }
@@ -151,8 +220,8 @@ describe('Onboarding', () => {
 
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText('Password'), 'password123');
-      await user.type(screen.getByLabelText('Confirm Password'), 'password123');
+      await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
+      await user.type(screen.getByLabelText('Confirm Password'), VALID_PASSWORD);
       await user.click(screen.getByRole('button', { name: /create wallet/i }));
 
       await waitFor(() => {
@@ -176,8 +245,8 @@ describe('Onboarding', () => {
 
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText('Password'), 'password123');
-      await user.type(screen.getByLabelText('Confirm Password'), 'password123');
+      await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
+      await user.type(screen.getByLabelText('Confirm Password'), VALID_PASSWORD);
       await user.click(screen.getByRole('button', { name: /create wallet/i }));
 
       await waitFor(() => {
@@ -203,8 +272,8 @@ describe('Onboarding', () => {
 
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText('Password'), 'password123');
-      await user.type(screen.getByLabelText('Confirm Password'), 'password123');
+      await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
+      await user.type(screen.getByLabelText('Confirm Password'), VALID_PASSWORD);
       await user.click(screen.getByRole('button', { name: /create wallet/i }));
 
       await waitFor(() => {
@@ -227,8 +296,8 @@ describe('Onboarding', () => {
 
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText('Password'), 'password123');
-      await user.type(screen.getByLabelText('Confirm Password'), 'password123');
+      await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
+      await user.type(screen.getByLabelText('Confirm Password'), VALID_PASSWORD);
       await user.click(screen.getByRole('button', { name: /create wallet/i }));
 
       await waitFor(() => {
@@ -247,8 +316,8 @@ describe('Onboarding', () => {
 
       const user = userEvent.setup();
 
-      await user.type(screen.getByLabelText('Password'), 'password123');
-      await user.type(screen.getByLabelText('Confirm Password'), 'password123');
+      await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
+      await user.type(screen.getByLabelText('Confirm Password'), VALID_PASSWORD);
       await user.click(screen.getByRole('button', { name: /create wallet/i }));
 
       await waitFor(() => {
@@ -269,8 +338,8 @@ describe('Onboarding', () => {
       const user = userEvent.setup();
 
       // First attempt - fails
-      await user.type(screen.getByLabelText('Password'), 'password123');
-      await user.type(screen.getByLabelText('Confirm Password'), 'password123');
+      await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
+      await user.type(screen.getByLabelText('Confirm Password'), VALID_PASSWORD);
       await user.click(screen.getByRole('button', { name: /create wallet/i }));
 
       await waitFor(() => {
@@ -311,7 +380,7 @@ describe('Onboarding', () => {
     });
 
     it('shows placeholder text', () => {
-      expect(screen.getByPlaceholderText(/at least 8 characters/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/min 12 chars/i)).toBeInTheDocument();
       expect(screen.getByPlaceholderText(/confirm your password/i)).toBeInTheDocument();
     });
   });

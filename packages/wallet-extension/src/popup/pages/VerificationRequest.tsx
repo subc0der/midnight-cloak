@@ -75,17 +75,90 @@ export default function VerificationRequest({ onComplete }: VerificationRequestP
     }
   }
 
+  /**
+   * Checks if a credential satisfies the policy requirements.
+   * Goes beyond type matching to verify the credential actually meets the criteria.
+   */
+  function credentialSatisfiesPolicy(
+    cred: Credential,
+    policyConfig: PersistedVerificationRequest['policyConfig']
+  ): boolean {
+    // Type must match
+    if (cred.type !== policyConfig.type) return false;
+
+    // Must not be expired
+    if (cred.expiresAt && cred.expiresAt < Date.now()) return false;
+
+    // Policy-specific validation
+    const policy = policyConfig.policy as Record<string, unknown> | undefined;
+
+    switch (policyConfig.type) {
+      case 'AGE': {
+        const requiredMinAge = policy?.minAge ?? policyConfig.minAge;
+        if (typeof requiredMinAge !== 'number') return true; // No specific age requirement
+
+        // Check if credential proves sufficient age
+        const birthDate = cred.claims?.birthDate as string | undefined;
+        if (!birthDate) return false;
+
+        // Calculate age from birthDate
+        const birth = new Date(birthDate);
+        const now = new Date();
+        let age = now.getFullYear() - birth.getFullYear();
+        const monthDiff = now.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+          age--;
+        }
+
+        return age >= requiredMinAge;
+      }
+
+      case 'TOKEN_BALANCE': {
+        const requiredToken = policy?.token ?? policyConfig.token;
+        const requiredBalance = policy?.minBalance ?? policyConfig.minBalance;
+
+        if (!requiredToken || typeof requiredBalance !== 'number') return true;
+
+        const credBalance = cred.claims?.balance as number | undefined;
+        const credToken = cred.claims?.token as string | undefined;
+
+        if (credToken !== requiredToken) return false;
+        if (typeof credBalance !== 'number') return false;
+
+        return credBalance >= requiredBalance;
+      }
+
+      case 'NFT_OWNERSHIP': {
+        const requiredCollection = policy?.collection ?? policyConfig.collection;
+        if (!requiredCollection) return true;
+
+        const credCollection = cred.claims?.collection as string | undefined;
+        return credCollection === requiredCollection;
+      }
+
+      case 'RESIDENCY': {
+        const requiredRegion = policy?.region ?? policy?.country ?? policyConfig.region;
+        if (!requiredRegion) return true;
+
+        const credRegion = cred.claims?.country as string | undefined;
+        return credRegion === requiredRegion;
+      }
+
+      default:
+        // For unknown types, type match is sufficient
+        return true;
+    }
+  }
+
   async function findMatchingCredential(req: PersistedVerificationRequest) {
     try {
       const response = await chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' });
 
       if (response.success && response.credentials) {
         const credentials = response.credentials as Credential[];
-        const matching = credentials.find((cred) => {
-          if (cred.type !== req.policyConfig.type) return false;
-          if (cred.expiresAt && cred.expiresAt < Date.now()) return false;
-          return true;
-        });
+        const matching = credentials.find((cred) =>
+          credentialSatisfiesPolicy(cred, req.policyConfig)
+        );
         setMatchingCredential(matching || null);
       }
     } catch (err) {

@@ -11,11 +11,35 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Validates password strength.
+   * Returns an error message if invalid, or empty string if valid.
+   */
+  function validatePasswordStrength(pwd: string): string {
+    if (pwd.length < 12) {
+      return 'Password must be at least 12 characters';
+    }
+    if (!/[A-Z]/.test(pwd)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[a-z]/.test(pwd)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!/[0-9]/.test(pwd)) {
+      return 'Password must contain at least one number';
+    }
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pwd)) {
+      return 'Password must contain at least one special character';
+    }
+    return '';
+  }
+
   async function handleCreateWallet() {
     setError('');
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+    const strengthError = validatePasswordStrength(password);
+    if (strengthError) {
+      setError(strengthError);
       return;
     }
 
@@ -73,7 +97,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             id="password"
             type="password"
             className={`input ${error && !confirmPassword ? 'error' : ''}`}
-            placeholder="At least 8 characters"
+            placeholder="Min 12 chars, upper, lower, number, special"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}

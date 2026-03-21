@@ -28,13 +28,17 @@ function createMockRequest(
 }
 
 // Helper to create a mock credential
-function createMockCredential(type: string, expired = false) {
+function createMockCredential(
+  type: string,
+  options: { expired?: boolean; claims?: Record<string, unknown> } = {}
+) {
+  const { expired = false, claims = {} } = options;
   return {
     id: `cred-${type.toLowerCase()}`,
     type,
     issuer: 'a'.repeat(64),
     subject: 'b'.repeat(64),
-    claims: {},
+    claims,
     issuedAt: Date.now() - 86400000, // 1 day ago
     expiresAt: expired ? Date.now() - 1000 : Date.now() + 86400000, // expired or 1 day from now
     signature: new Uint8Array([1, 2, 3]),
@@ -274,14 +278,15 @@ describe('VerificationRequest', () => {
         if (msg.type === 'GET_ALL_PENDING_REQUESTS') {
           sendResponse({
             success: true,
-            requests: [createMockRequest()],
+            requests: [createMockRequest()], // Requires minAge 18
           });
           return true;
         }
         if (msg.type === 'GET_CREDENTIALS') {
           sendResponse({
             success: true,
-            credentials: [createMockCredential('AGE')],
+            // User born in 1990 is 36+ years old (in 2026), exceeds minAge 18
+            credentials: [createMockCredential('AGE', { claims: { birthDate: '1990-01-01' } })],
           });
           return true;
         }
@@ -330,7 +335,7 @@ describe('VerificationRequest', () => {
         if (msg.type === 'GET_CREDENTIALS') {
           sendResponse({
             success: true,
-            credentials: [createMockCredential('AGE', true)], // expired
+            credentials: [createMockCredential('AGE', { expired: true, claims: { birthDate: '1990-01-01' } })],
           });
           return true;
         }
@@ -368,6 +373,150 @@ describe('VerificationRequest', () => {
         expect(screen.getByText(/No matching credential found/)).toBeInTheDocument();
       });
     });
+
+    it('validates age credential meets minAge policy requirement', async () => {
+      // Request requires age 21+, credential proves user is 20 (born 2006)
+      addMessageHandler((message, _sender, sendResponse) => {
+        const msg = message as { type: string };
+        if (msg.type === 'GET_ALL_PENDING_REQUESTS') {
+          sendResponse({
+            success: true,
+            requests: [
+              createMockRequest({
+                policyConfig: { type: 'AGE', policy: { minAge: 21 } },
+              }),
+            ],
+          });
+          return true;
+        }
+        if (msg.type === 'GET_CREDENTIALS') {
+          sendResponse({
+            success: true,
+            // User born in 2006 is only ~20 years old (in 2026)
+            credentials: [createMockCredential('AGE', { claims: { birthDate: '2006-01-01' } })],
+          });
+          return true;
+        }
+      });
+
+      render(<VerificationRequest onComplete={mockOnComplete} />);
+
+      await waitFor(() => {
+        // Should NOT match - credential proves age but doesn't meet minAge requirement
+        expect(screen.getByText(/No matching credential found/)).toBeInTheDocument();
+      });
+    });
+
+    it('matches age credential that meets minAge policy requirement', async () => {
+      // Request requires age 18+, credential proves user is 30+ (born 1990)
+      addMessageHandler((message, _sender, sendResponse) => {
+        const msg = message as { type: string };
+        if (msg.type === 'GET_ALL_PENDING_REQUESTS') {
+          sendResponse({
+            success: true,
+            requests: [
+              createMockRequest({
+                policyConfig: { type: 'AGE', policy: { minAge: 18 } },
+              }),
+            ],
+          });
+          return true;
+        }
+        if (msg.type === 'GET_CREDENTIALS') {
+          sendResponse({
+            success: true,
+            // User born in 1990 is ~36 years old (in 2026)
+            credentials: [createMockCredential('AGE', { claims: { birthDate: '1990-01-01' } })],
+          });
+          return true;
+        }
+      });
+
+      render(<VerificationRequest onComplete={mockOnComplete} />);
+
+      await waitFor(() => {
+        // Should match - credential proves sufficient age
+        expect(screen.getByText('Using credential:')).toBeInTheDocument();
+      });
+    });
+
+    it('validates token balance credential meets minimum balance', async () => {
+      // Request requires 1000 ADA, credential only has 500 ADA
+      addMessageHandler((message, _sender, sendResponse) => {
+        const msg = message as { type: string };
+        if (msg.type === 'GET_ALL_PENDING_REQUESTS') {
+          sendResponse({
+            success: true,
+            requests: [
+              createMockRequest({
+                policyConfig: {
+                  type: 'TOKEN_BALANCE',
+                  policy: { token: 'ADA', minBalance: 1000 },
+                },
+              }),
+            ],
+          });
+          return true;
+        }
+        if (msg.type === 'GET_CREDENTIALS') {
+          sendResponse({
+            success: true,
+            credentials: [
+              createMockCredential('TOKEN_BALANCE', {
+                claims: { token: 'ADA', balance: 500 },
+              }),
+            ],
+          });
+          return true;
+        }
+      });
+
+      render(<VerificationRequest onComplete={mockOnComplete} />);
+
+      await waitFor(() => {
+        // Should NOT match - insufficient balance
+        expect(screen.getByText(/No matching credential found/)).toBeInTheDocument();
+      });
+    });
+
+    it('matches token balance credential with sufficient balance', async () => {
+      // Request requires 1000 ADA, credential has 2000 ADA
+      addMessageHandler((message, _sender, sendResponse) => {
+        const msg = message as { type: string };
+        if (msg.type === 'GET_ALL_PENDING_REQUESTS') {
+          sendResponse({
+            success: true,
+            requests: [
+              createMockRequest({
+                policyConfig: {
+                  type: 'TOKEN_BALANCE',
+                  policy: { token: 'ADA', minBalance: 1000 },
+                },
+              }),
+            ],
+          });
+          return true;
+        }
+        if (msg.type === 'GET_CREDENTIALS') {
+          sendResponse({
+            success: true,
+            credentials: [
+              createMockCredential('TOKEN_BALANCE', {
+                claims: { token: 'ADA', balance: 2000 },
+              }),
+            ],
+          });
+          return true;
+        }
+      });
+
+      render(<VerificationRequest onComplete={mockOnComplete} />);
+
+      await waitFor(() => {
+        // Should match - sufficient balance
+        expect(screen.getByText('Using credential:')).toBeInTheDocument();
+      });
+    });
   });
 
   describe('approve button state', () => {
@@ -401,14 +550,14 @@ describe('VerificationRequest', () => {
         if (msg.type === 'GET_ALL_PENDING_REQUESTS') {
           sendResponse({
             success: true,
-            requests: [createMockRequest()],
+            requests: [createMockRequest()], // Requires minAge 18
           });
           return true;
         }
         if (msg.type === 'GET_CREDENTIALS') {
           sendResponse({
             success: true,
-            credentials: [createMockCredential('AGE')],
+            credentials: [createMockCredential('AGE', { claims: { birthDate: '1990-01-01' } })],
           });
           return true;
         }
@@ -448,7 +597,7 @@ describe('VerificationRequest', () => {
         if (msg.type === 'GET_CREDENTIALS') {
           sendResponse({
             success: true,
-            credentials: [createMockCredential('AGE')],
+            credentials: [createMockCredential('AGE', { claims: { birthDate: '1990-01-01' } })],
           });
           return true;
         }
@@ -487,7 +636,7 @@ describe('VerificationRequest', () => {
         if (msg.type === 'GET_CREDENTIALS') {
           sendResponse({
             success: true,
-            credentials: [createMockCredential('AGE')],
+            credentials: [createMockCredential('AGE', { claims: { birthDate: '1990-01-01' } })],
           });
           return true;
         }
@@ -528,7 +677,7 @@ describe('VerificationRequest', () => {
         if (msg.type === 'GET_CREDENTIALS') {
           sendResponse({
             success: true,
-            credentials: [createMockCredential('AGE')],
+            credentials: [createMockCredential('AGE', { claims: { birthDate: '1990-01-01' } })],
           });
           return true;
         }
@@ -721,7 +870,7 @@ describe('VerificationRequest', () => {
         if (msg.type === 'GET_CREDENTIALS') {
           sendResponse({
             success: true,
-            credentials: [createMockCredential('AGE')],
+            credentials: [createMockCredential('AGE', { claims: { birthDate: '1990-01-01' } })],
           });
           return true;
         }
