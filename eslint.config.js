@@ -80,13 +80,18 @@ export default [
   },
   {
     ignores: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      '*.config.js',
-      '*.config.ts',
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/coverage/**',
+      '**/*.config.js',
+      '**/*.config.ts',
       '.claude/**',
+      // Contract managed output (compiled from Compact)
+      'packages/contracts/src/managed/**',
+      'packages/contracts/dist/**',
+      // Public circuit files (copied at build time)
+      '**/public/circuits/**',
     ],
   },
   prettier,
