@@ -115,6 +115,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+// Storage failure simulation
+let storageFailure: 'get' | 'set' | 'all' | null = null;
+
 // Export helpers for tests
 export function getMockStorage(): Record<string, unknown> {
   return mockStorage;
@@ -134,4 +137,54 @@ export function clearMessageHandlers(): void {
   messageHandlers = [];
 }
 
-export { chromeMock };
+/**
+ * Simulate storage failures for testing fail-closed behavior
+ * @param type - 'get' | 'set' | 'all' | null (null to disable)
+ */
+export function simulateStorageFailure(type: 'get' | 'set' | 'all' | null): void {
+  storageFailure = type;
+
+  // Update mock implementations to throw when failure is simulated
+  if (type === 'get' || type === 'all') {
+    chromeMock.storage.local.get.mockImplementation(() => {
+      return Promise.reject(new Error('Storage unavailable'));
+    });
+  } else {
+    // Restore normal get behavior
+    chromeMock.storage.local.get.mockImplementation((keys: string | string[] | null) => {
+      return new Promise((resolve) => {
+        if (keys === null) {
+          resolve({ ...mockStorage });
+        } else if (typeof keys === 'string') {
+          resolve({ [keys]: mockStorage[keys] });
+        } else if (Array.isArray(keys)) {
+          const result: Record<string, unknown> = {};
+          keys.forEach((key) => {
+            if (key in mockStorage) {
+              result[key] = mockStorage[key];
+            }
+          });
+          resolve(result);
+        } else {
+          resolve({});
+        }
+      });
+    });
+  }
+
+  if (type === 'set' || type === 'all') {
+    chromeMock.storage.local.set.mockImplementation(() => {
+      return Promise.reject(new Error('Storage unavailable'));
+    });
+  } else {
+    // Restore normal set behavior
+    chromeMock.storage.local.set.mockImplementation((items: Record<string, unknown>) => {
+      return new Promise<void>((resolve) => {
+        Object.assign(mockStorage, items);
+        resolve();
+      });
+    });
+  }
+}
+
+export { chromeMock, storageFailure };

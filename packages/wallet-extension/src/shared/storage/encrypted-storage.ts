@@ -82,6 +82,9 @@ export class EncryptedStorage {
   /**
    * Initialize a new vault with a password
    * Creates a new salt and derives the encryption key
+   *
+   * SECURITY: Fails-closed if salt cannot be persisted - vault is not usable
+   * without the salt for future unlocks.
    */
   async initialize(password: string): Promise<void> {
     // Generate random salt
@@ -93,10 +96,18 @@ export class EncryptedStorage {
     console.log('[EncryptedStorage] initialize - key derived successfully');
 
     // Store salt (but not the key!)
-    await chrome.storage.local.set({
-      salt: Array.from(salt),
-    });
-    console.log('[EncryptedStorage] initialize - salt stored');
+    try {
+      await chrome.storage.local.set({
+        salt: Array.from(salt),
+      });
+      console.log('[EncryptedStorage] initialize - salt stored');
+    } catch (storageError) {
+      // SECURITY: Fail-closed - if we can't store salt, vault is unusable
+      // Clear the key since we can't recover without the salt
+      console.error('[EncryptedStorage] Storage failure during initialize - failing closed');
+      this.encryptionKey = null;
+      throw new Error('Storage unavailable - vault initialization failed');
+    }
   }
 
   /**
@@ -105,7 +116,15 @@ export class EncryptedStorage {
    */
   async unlock(password: string): Promise<void> {
     // Get stored salt
-    const result = await chrome.storage.local.get(['salt', 'encryptedVault']);
+    let result: { salt?: number[]; encryptedVault?: string };
+    try {
+      result = await chrome.storage.local.get(['salt', 'encryptedVault']);
+    } catch (storageError) {
+      // SECURITY: Fail-closed on storage failure
+      console.error('[EncryptedStorage] Storage failure during unlock - failing closed');
+      this.encryptionKey = null;
+      throw new Error('Storage unavailable');
+    }
 
     console.log('[EncryptedStorage] unlock - stored data:', {
       hasSalt: !!result.salt,
@@ -153,6 +172,9 @@ export class EncryptedStorage {
 
   /**
    * Save data to encrypted storage
+   *
+   * SECURITY: Fails-closed on storage errors - locks vault to prevent
+   * operating with stale data or inconsistent state.
    */
   async save(data: VaultData): Promise<void> {
     if (!this.encryptionKey) {
@@ -161,24 +183,51 @@ export class EncryptedStorage {
 
     const encryptedVault = await this.encrypt(data);
 
-    await chrome.storage.local.set({ encryptedVault });
+    try {
+      await chrome.storage.local.set({ encryptedVault });
+    } catch (storageError) {
+      // SECURITY: Fail-closed on storage failure
+      // If we can't persist data, lock the vault to prevent operating
+      // with stale state or giving false confidence that data was saved
+      console.error('[EncryptedStorage] Storage failure during save - locking vault');
+      this.encryptionKey = null;
+      throw new Error('Storage unavailable - vault locked for security');
+    }
   }
 
   /**
    * Load data from encrypted storage
+   *
+   * SECURITY: Fails-closed on storage errors - locks vault to prevent
+   * operating with potentially corrupted or unavailable data.
    */
   async load(): Promise<VaultData | null> {
     if (!this.encryptionKey) {
       throw new Error('Vault is locked');
     }
 
-    const result = await chrome.storage.local.get(['encryptedVault']);
+    let result: { encryptedVault?: string };
+    try {
+      result = await chrome.storage.local.get(['encryptedVault']);
+    } catch (storageError) {
+      // SECURITY: Fail-closed on storage failure
+      console.error('[EncryptedStorage] Storage failure during load - locking vault');
+      this.encryptionKey = null;
+      throw new Error('Storage unavailable - vault locked for security');
+    }
 
     if (!result.encryptedVault) {
       return null;
     }
 
-    return this.decrypt(result.encryptedVault);
+    try {
+      return this.decrypt(result.encryptedVault);
+    } catch (decryptError) {
+      // SECURITY: Fail-closed on decryption failure (data corruption)
+      console.error('[EncryptedStorage] Decryption failure during load - locking vault');
+      this.encryptionKey = null;
+      throw new Error('Data corruption detected - vault locked for security');
+    }
   }
 
   /**

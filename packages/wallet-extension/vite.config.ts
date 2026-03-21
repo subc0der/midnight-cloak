@@ -4,7 +4,11 @@ import { crx } from '@crxjs/vite-plugin';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
+import { existsSync } from 'fs';
 import manifest from './public/manifest.json';
+
+// Check if circuit files exist (they're gitignored, won't exist in CI)
+const circuitsExist = existsSync('../contracts/src/managed/age-verifier/zkir');
 
 export default defineConfig({
   plugins: [
@@ -12,22 +16,27 @@ export default defineConfig({
     topLevelAwait(),
     react(),
     crx({ manifest }),
-    viteStaticCopy({
-      targets: [
-        {
-          src: '../contracts/src/managed/age-verifier/zkir/*',
-          dest: 'circuits/age-verifier/zkir',
-        },
-        {
-          src: '../contracts/src/managed/age-verifier/keys/*',
-          dest: 'circuits/age-verifier/keys',
-        },
-        {
-          src: '../contracts/src/managed/age-verifier/contract/*',
-          dest: 'circuits/age-verifier/contract',
-        },
-      ],
-    }),
+    // Only copy circuits if they exist locally (not in CI where they're gitignored)
+    ...(circuitsExist
+      ? [
+          viteStaticCopy({
+            targets: [
+              {
+                src: '../contracts/src/managed/age-verifier/zkir/*',
+                dest: 'circuits/age-verifier/zkir',
+              },
+              {
+                src: '../contracts/src/managed/age-verifier/keys/*',
+                dest: 'circuits/age-verifier/keys',
+              },
+              {
+                src: '../contracts/src/managed/age-verifier/contract/*',
+                dest: 'circuits/age-verifier/contract',
+              },
+            ],
+          }),
+        ]
+      : []),
   ],
   build: {
     outDir: 'dist',
