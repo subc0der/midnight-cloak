@@ -11,7 +11,7 @@
 import { EncryptedStorage } from '../shared/storage/encrypted-storage';
 import { RequestQueue, type PersistedVerificationRequest, type PersistedCredentialOffer } from '../shared/storage/request-queue';
 import { IssuerTrustStore, type TrustedIssuer, type IssuerTrustAssessment } from '../shared/storage/issuer-trust';
-import { getProofGenerator, type ServiceUris, type ProofGeneratorConfig } from './proof-generator';
+import { getProofGenerator, type ServiceUris } from './proof-generator';
 
 /**
  * ⚠️ PRODUCTION SECURITY FLAG ⚠️

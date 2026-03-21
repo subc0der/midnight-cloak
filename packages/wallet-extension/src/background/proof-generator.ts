@@ -209,10 +209,7 @@ export class ProofGenerator {
    * Clean up resources
    */
   disconnect(): void {
-    this.proofProvider = null;
-    this.zkConfigProvider = null;
     this.serviceUris = null;
-    this.sdkLoaded = false;
   }
 }
 

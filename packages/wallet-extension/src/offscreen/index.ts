@@ -219,7 +219,8 @@ async function initializeProofProvider(serviceUris: ServiceUris): Promise<void> 
     zkConfigProvider = new FetchZkConfigProvider<'verifyAge'>(circuitUrl, fetch.bind(window));
 
     // Create HTTP client proof provider
-    proofProvider = httpClientProofProvider(serviceUris.proverServerUri, zkConfigProvider);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    proofProvider = httpClientProofProvider(serviceUris.proverServerUri, zkConfigProvider as any);
 
     proofProviderInitialized = true;
     console.log('[Offscreen] Midnight SDK initialized successfully');

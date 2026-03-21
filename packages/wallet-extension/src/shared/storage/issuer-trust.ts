@@ -263,7 +263,8 @@ export class IssuerTrustStore {
    */
   private async loadWhitelist(): Promise<TrustedIssuer[]> {
     const result = await chrome.storage.local.get([STORAGE_KEY]);
-    return result[STORAGE_KEY] || [];
+    const stored = result[STORAGE_KEY];
+    return Array.isArray(stored) ? stored : [];
   }
 
   /**

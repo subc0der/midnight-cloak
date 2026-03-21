@@ -24,7 +24,7 @@ export default function Settings({ onLock }: SettingsProps) {
   async function loadSettings() {
     try {
       const result = await chrome.storage.local.get(['autoLockMinutes']);
-      if (result.autoLockMinutes) {
+      if (typeof result.autoLockMinutes === 'number') {
         setAutoLockMinutes(result.autoLockMinutes);
       }
     } catch (err) {
