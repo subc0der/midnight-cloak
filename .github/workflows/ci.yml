@@ -18,7 +18,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        # Node 18 dropped due to undici 7.x requiring Node 20+
+        node-version: [20.x, 22.x]
 
     steps:
       - name: Checkout repository
