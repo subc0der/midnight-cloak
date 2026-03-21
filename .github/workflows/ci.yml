@@ -99,4 +99,3 @@ jobs:
 
       - name: Run linter
         run: pnpm lint
-        continue-on-error: true
