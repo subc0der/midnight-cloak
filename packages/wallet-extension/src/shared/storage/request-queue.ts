@@ -476,7 +476,12 @@ export class RequestQueue {
    */
   private async load(): Promise<RequestQueueData> {
     const result = await chrome.storage.local.get([STORAGE_KEY]);
-    return result[STORAGE_KEY] || emptyQueue();
+    const stored = result[STORAGE_KEY];
+    // Validate stored data has expected shape, otherwise return empty queue
+    if (stored && typeof stored === 'object' && 'pendingVerifications' in stored) {
+      return stored as RequestQueueData;
+    }
+    return emptyQueue();
   }
 
   /**

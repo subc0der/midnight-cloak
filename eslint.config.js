@@ -46,6 +46,10 @@ export default [
         Uint8Array: 'readonly',
         ArrayBuffer: 'readonly',
         crypto: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        btoa: 'readonly',
+        atob: 'readonly',
       },
     },
     plugins: {

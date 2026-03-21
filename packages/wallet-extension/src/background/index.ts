@@ -350,9 +350,8 @@ async function resetAutoLockTimer(): Promise<void> {
 
   // Clear existing alarm and create new one
   await chrome.alarms.clear(AUTO_LOCK_ALARM);
-  await chrome.alarms.create(AUTO_LOCK_ALARM, {
-    delayInMinutes: minutes,
-  });
+  // @ts-expect-error - Chrome types have multiple overloads, this is the correct usage
+  await chrome.alarms.create(AUTO_LOCK_ALARM, { delayInMinutes: minutes });
 
   console.log(`[Background] Auto-lock alarm set for ${minutes} minutes`);
 }
