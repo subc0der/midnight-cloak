@@ -348,9 +348,9 @@ Open http://localhost:5173 to see verification in action.
 | Network | Use Case | Status |
 |---------|----------|--------|
 | `preprod` | Development and testing | Available |
-| `mainnet` | Production | Coming late March 2026 |
+| `mainnet` | Production | Awaiting real ZK proof support |
 
-Always use `preprod` during development. Switch to `mainnet` for production deployments.
+Always use `preprod` during development. Mainnet deployment will be available once Midnight SDK browser support stabilizes.
 
 ---
 

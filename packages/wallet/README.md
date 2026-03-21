@@ -178,9 +178,7 @@ type CredentialType =
 
 ### Current Limitations
 
-- **No encryption at rest** - Credentials stored in plain text (Phase 3 will add encryption)
-- **Browser storage** - Uses localStorage/sessionStorage (extension storage in Phase 3)
-- **Mock proofs** - Real ZK proofs pending contract deployment
+- **Mock proofs** - Real ZK proofs awaiting SDK browser support
 
 ### Best Practices
 
@@ -232,13 +230,12 @@ try {
 }
 ```
 
-## Future Plans (Phase 3)
+## Future Plans
 
-- Encryption at rest using Web Crypto API
-- Chrome extension storage integration
 - Credential import/export
 - Multi-device sync
 - Hardware wallet support
+- Additional credential types (TOKEN_BALANCE, NFT_OWNERSHIP)
 
 ## License
 

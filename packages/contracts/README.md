@@ -55,7 +55,7 @@ Contracts must be compiled using the Compact toolchain before use.
 
 ### Prerequisites
 
-- Compact toolchain 0.28.0+ (via WSL on Windows)
+- Compact toolchain 0.29.0+ (via WSL on Windows)
 - Docker (for proof server)
 
 ### Compile Commands
@@ -133,10 +133,10 @@ console.log('Proof Server:', config.proofServer);
 
 | Network | Contract | Address |
 |---------|----------|---------|
-| Preprod | Age Verifier | *pending deployment* |
-| Preprod | Credential Registry | *pending deployment* |
-| Mainnet | Age Verifier | *pending* |
-| Mainnet | Credential Registry | *pending* |
+| Preprod | Age Verifier | `11ad42b6f40f17a24bfd0d9a2410c11cfe83041459592800ff77773dee22c639` |
+| Preprod | Credential Registry | `9c11690461447fc0ad72ad90ac2fda7574aebe294a7a0d2c3e7c8369f947609d` |
+| Mainnet | Age Verifier | *pending mainnet launch* |
+| Mainnet | Credential Registry | *pending mainnet launch* |
 
 ## Types
 

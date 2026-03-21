@@ -117,6 +117,15 @@ We use `chrome.storage.local` instead of `localStorage`:
 - Derived keys exist only in memory during an active session.
 - Keys are never persisted to storage.
 
+### Password Requirements
+
+The wallet extension enforces strong password requirements:
+- Minimum 12 characters
+- At least one uppercase letter (A-Z)
+- At least one lowercase letter (a-z)
+- At least one number (0-9)
+- At least one special character (!@#$%^&* etc.)
+
 ### Auto-Lock
 
 - Sessions automatically lock after a configurable inactivity period.

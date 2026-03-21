@@ -295,7 +295,7 @@ if (hasDeployedContracts('preprod')) {
 |---------|--------|-----------|
 | preprod | Deployed | Age Verifier, Credential Registry |
 | standalone | Manual | Deploy via deploy-cli |
-| mainnet | Pending | Coming late March 2026 |
+| mainnet | Pending | Awaiting real ZK proof support |
 
 ## Requirements
 
@@ -312,9 +312,9 @@ docker run -d -p 6300:6300 midnightntwrk/proof-server:7.0.0 midnight-proof-serve
 ## Current Status
 
 - **Age verification** - Fully implemented with real contracts on preprod
-- **Credential registry** - Deployed on preprod, SDK integration in progress
-- **ZK proofs** - Generated via proof server (localhost:6300)
-- **Networks** - Preprod testnet supported, mainnet coming late March 2026
+- **Credential registry** - Deployed on preprod
+- **ZK proofs** - Mock proofs (real proofs awaiting SDK browser support)
+- **Networks** - Preprod testnet supported, mainnet after real proof support
 
 ### Verification Types
 

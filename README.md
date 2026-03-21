@@ -19,20 +19,21 @@ Midnight Cloak enables dApp developers to verify user attributes (age, credentia
 | @midnight-cloak/core | 0.2.0 | 15 tests passing |
 | @midnight-cloak/react | 0.1.0 | 56 tests passing |
 | @midnight-cloak/wallet | 0.1.0 | 70 tests passing |
-| Wallet Extension | 0.1.0 | Chrome extension with credential management |
+| Wallet Extension | 0.1.0 | 217 tests passing |
 | Contracts | Deployed | Age Verifier + Credential Registry on Preprod |
 | Lace/Eternl Wallets | Working | Multi-wallet support |
-| ZK Proofs | Beta | Mock proofs (real proofs post-mainnet) |
+| ZK Proofs | Beta | Mock proofs (real proofs awaiting SDK support) |
 
 ## Features
 
 - Age verification without revealing birthdate
 - Credential ownership proofs
-- Token balance verification (planned)
-- NFT ownership verification (planned)
-- CIP-30 wallet integration (Lace, NuFi, Vespr)
+- Token balance verification (planned - awaiting bridge)
+- NFT ownership verification (planned - awaiting bridge)
+- Midnight wallet integration (Lace, Eternl)
 - React components for common verification flows
 - Mock mode for development without wallet
+- Chrome extension for credential management
 
 ## Packages
 
@@ -337,31 +338,26 @@ midnight-cloak/
    - Mock wallet for development
    - Contract deployment to Preprod
 
-3. **Phase 3** - Wallet Extension (In Progress)
-   - **3A** Extension Foundation (Complete)
-     - Chrome extension scaffold
-     - Password-protected vault with Argon2id encryption
-     - Lock/unlock flow with auto-lock timer
-   - **3B** Seamless Wallet UX (Complete)
-     - Lace wallet detection and integration
-     - Network mismatch warnings
-     - Wallet auto-reconnect
-   - **3C** Credential Management (Complete)
-     - Credential issuance and storage
-     - Verification request popup
-     - dApp API (`window.midnightCloak`)
-   - **3D** Integration & Polish (Current)
-     - Real ZK proof server integration
-     - Multi-wallet support (NuFi, Vespr)
-     - Developer documentation
+3. **Phase 3** - Wallet Extension (Complete)
+   - Chrome extension with password-protected vault
+   - Argon2id encryption with 12+ character password requirements
+   - Lace and Eternl wallet integration
+   - Credential management and verification request flows
+   - dApp API (`window.midnightCloak`)
 
-4. **Phase 4** - $Handle Shield
-   - Cardano to Midnight bridge integration
+4. **Phase 4** - Mainnet Preparation (Current - Beta Preview)
+   - 358 tests across all packages
+   - Security hardening (password strength, policy validation)
+   - Real ZK proofs: Awaiting SDK browser support (est. mid-April 2026)
+   - Additional credential types: Awaiting Cardano↔Midnight bridge
+
+5. **Phase 5** - $Handle Shield (Planned)
+   - Cardano to Midnight bridge integration (~May-June 2026)
    - $handle claim circuit
    - Asset shielding UI
    - ZK proofs for hidden holdings
 
-5. **Phase 5** - Production & Growth
+6. **Phase 6** - Production & Growth
    - Mainnet deployment
    - Developer dashboard
    - Additional verification types
