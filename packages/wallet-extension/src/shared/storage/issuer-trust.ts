@@ -59,9 +59,16 @@ function isValidMidnightAddress(address: string): boolean {
  * Issuer Trust Store
  *
  * Singleton class for managing trusted issuers.
+ * Uses mutex locking to prevent race conditions during concurrent operations.
  */
 export class IssuerTrustStore {
   private static instance: IssuerTrustStore | null = null;
+
+  /**
+   * Mutex lock to serialize storage operations.
+   * Prevents race conditions when multiple operations occur simultaneously.
+   */
+  private operationQueue: Promise<void> = Promise.resolve();
 
   /**
    * Get the singleton instance
@@ -82,6 +89,23 @@ export class IssuerTrustStore {
 
   // Private constructor for singleton
   private constructor() {}
+
+  /**
+   * Execute an operation with mutex lock to prevent race conditions.
+   * Operations are queued and executed serially.
+   */
+  private async withLock<T>(operation: () => Promise<T>): Promise<T> {
+    // Chain this operation after all pending operations
+    const result = this.operationQueue.then(operation);
+
+    // Update the queue to wait for this operation (ignore errors in chain)
+    this.operationQueue = result.then(
+      () => {},
+      () => {}
+    );
+
+    return result;
+  }
 
   /**
    * Assess the trust level of an issuer
@@ -159,42 +183,46 @@ export class IssuerTrustStore {
       throw new Error('Invalid issuer address format');
     }
 
-    const issuers = await this.loadWhitelist();
-    const existingIndex = issuers.findIndex((i) => i.address === issuer.address);
+    return this.withLock(async () => {
+      const issuers = await this.loadWhitelist();
+      const existingIndex = issuers.findIndex((i) => i.address === issuer.address);
 
-    const trustedIssuer: TrustedIssuer = {
-      ...issuer,
-      addedAt: Date.now(),
-    };
+      const trustedIssuer: TrustedIssuer = {
+        ...issuer,
+        addedAt: Date.now(),
+      };
 
-    if (existingIndex >= 0) {
-      // Update existing
-      issuers[existingIndex] = trustedIssuer;
-    } else {
-      // Add new
-      issuers.push(trustedIssuer);
-    }
+      if (existingIndex >= 0) {
+        // Update existing
+        issuers[existingIndex] = trustedIssuer;
+      } else {
+        // Add new
+        issuers.push(trustedIssuer);
+      }
 
-    await this.saveWhitelist(issuers);
-    console.log(`[IssuerTrustStore] Added issuer ${issuer.name} to whitelist`);
+      await this.saveWhitelist(issuers);
+      console.log(`[IssuerTrustStore] Added issuer ${issuer.name} to whitelist`);
+    });
   }
 
   /**
    * Remove an issuer from the whitelist
    */
   async removeFromWhitelist(address: string): Promise<boolean> {
-    const issuers = await this.loadWhitelist();
-    const originalLength = issuers.length;
+    return this.withLock(async () => {
+      const issuers = await this.loadWhitelist();
+      const originalLength = issuers.length;
 
-    const filtered = issuers.filter((i) => i.address !== address);
+      const filtered = issuers.filter((i) => i.address !== address);
 
-    if (filtered.length < originalLength) {
-      await this.saveWhitelist(filtered);
-      console.log(`[IssuerTrustStore] Removed issuer ${address} from whitelist`);
-      return true;
-    }
+      if (filtered.length < originalLength) {
+        await this.saveWhitelist(filtered);
+        console.log(`[IssuerTrustStore] Removed issuer ${address} from whitelist`);
+        return true;
+      }
 
-    return false;
+      return false;
+    });
   }
 
   /**
@@ -224,8 +252,10 @@ export class IssuerTrustStore {
    * Clear all whitelisted issuers (for testing or reset)
    */
   async clearWhitelist(): Promise<void> {
-    await this.saveWhitelist([]);
-    console.log('[IssuerTrustStore] Cleared whitelist');
+    return this.withLock(async () => {
+      await this.saveWhitelist([]);
+      console.log('[IssuerTrustStore] Cleared whitelist');
+    });
   }
 
   /**

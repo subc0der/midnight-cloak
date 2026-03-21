@@ -264,6 +264,44 @@ describe('IssuerTrustStore', () => {
       expect(tokenResult.level).toBe('whitelisted');
     });
   });
+
+  describe('concurrent operations', () => {
+    it('handles multiple concurrent adds without race conditions', async () => {
+      // Add 10 issuers concurrently
+      const promises = Array.from({ length: 10 }, (_, i) =>
+        store.addToWhitelist({
+          address: `${'a'.repeat(63)}${i.toString(16).padStart(1, '0')}`,
+          name: `Issuer ${i}`,
+        })
+      );
+
+      await Promise.all(promises);
+
+      const issuers = await store.getAllWhitelisted();
+      expect(issuers).toHaveLength(10);
+    });
+
+    it('handles concurrent add and remove without data loss', async () => {
+      // First add an issuer
+      await store.addToWhitelist({
+        address: VALID_ADDRESS_1,
+        name: 'Issuer 1',
+      });
+
+      // Concurrently add another and remove the first
+      await Promise.all([
+        store.addToWhitelist({
+          address: VALID_ADDRESS_2,
+          name: 'Issuer 2',
+        }),
+        store.removeFromWhitelist(VALID_ADDRESS_1),
+      ]);
+
+      const issuers = await store.getAllWhitelisted();
+      expect(issuers).toHaveLength(1);
+      expect(issuers[0].address).toBe(VALID_ADDRESS_2);
+    });
+  });
 });
 
 describe('getTrustLevelUI', () => {
