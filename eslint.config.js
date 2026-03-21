@@ -19,6 +19,7 @@ export default [
         },
       },
       globals: {
+        // Node.js globals
         console: 'readonly',
         process: 'readonly',
         Buffer: 'readonly',
@@ -26,6 +27,8 @@ export default [
         __filename: 'readonly',
         module: 'readonly',
         require: 'readonly',
+        global: 'readonly',
+        // Browser globals
         window: 'readonly',
         document: 'readonly',
         navigator: 'readonly',
@@ -50,6 +53,25 @@ export default [
         TextDecoder: 'readonly',
         btoa: 'readonly',
         atob: 'readonly',
+        confirm: 'readonly',
+        alert: 'readonly',
+        Storage: 'readonly',
+        AbortController: 'readonly',
+        // Web Crypto API
+        CryptoKey: 'readonly',
+        // Chrome Extension API
+        chrome: 'readonly',
+        // DOM types and events
+        HTMLButtonElement: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        MessageEvent: 'readonly',
+        CustomEvent: 'readonly',
+        Event: 'readonly',
+        // React
+        React: 'readonly',
+        // Vite build-time constants
+        CIRCUIT_ASSETS_URL: 'readonly',
       },
     },
     plugins: {
