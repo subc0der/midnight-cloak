@@ -106,6 +106,12 @@ async function sendRequest<T>(
 
   return new Promise((resolve, reject) => {
     const handler = (event: MessageEvent) => {
+      // Security: Verify message comes from same window/origin
+      // This prevents cross-frame and cross-origin message injection
+      if (event.source !== window || event.origin !== window.location.origin) {
+        return;
+      }
+
       // Verify response is from our extension and matches our request
       if (
         event.data?.source === PAGE_API_EXTENSION_ID &&
@@ -152,7 +158,11 @@ async function sendRequest<T>(
 function findLaceWallet(): MidnightWalletAnnouncement | null {
   if (!window.midnight) return null;
 
-  const wallets = Object.values(window.midnight) as MidnightWalletAnnouncement[];
+  // Filter to only valid wallet objects (defensive against malformed entries)
+  const wallets = Object.values(window.midnight).filter(
+    (w): w is MidnightWalletAnnouncement =>
+      w !== null && typeof w === 'object' && 'connect' in w
+  );
 
   // Primary: Find by rdns (more secure - harder to spoof)
   let lace = wallets.find(w => w.rdns === LACE_MIDNIGHT_RDNS);

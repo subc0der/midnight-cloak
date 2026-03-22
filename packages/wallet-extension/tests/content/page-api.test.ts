@@ -64,6 +64,7 @@ function simulateResponse(
       payload,
     },
     origin: window.location.origin,
+    source: window, // Must be same window for security check
   });
 
   // Call all registered message handlers
@@ -758,6 +759,313 @@ describe('page-api', () => {
       expect(window.removeEventListener).toHaveBeenCalled();
 
       vi.useRealTimers();
+    });
+  });
+
+  describe('security: message origin validation', () => {
+    beforeEach(async () => {
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      await import('../../src/content/page-api');
+    });
+
+    it('ignores messages from different origin', async () => {
+      const credPromise = window.midnightCloak.getAvailableCredentials();
+
+      await vi.waitFor(() => {
+        expect(postMessageMock).toHaveBeenCalled();
+      });
+
+      const requestId = getLastRequestId();
+
+      // Send response with different origin - should be ignored
+      const crossOriginEvent = new MessageEvent('message', {
+        data: {
+          source: 'midnight-cloak',
+          type: 'GET_AVAILABLE_CREDENTIALS_RESPONSE',
+          requestId,
+          payload: { success: true, credentials: [{ id: 'cross-origin' }] },
+        },
+        origin: 'https://malicious.com',
+      });
+      messageHandlers.forEach((handler) => handler(crossOriginEvent));
+
+      // Send correct response from same origin
+      simulateResponse(requestId!, 'GET_AVAILABLE_CREDENTIALS', {
+        success: true,
+        credentials: [{ id: 'same-origin' }],
+      });
+
+      const result = await credPromise;
+      expect(result).toEqual([{ id: 'same-origin' }]);
+    });
+
+    it('ignores messages from different source window (iframe)', async () => {
+      const credPromise = window.midnightCloak.getAvailableCredentials();
+
+      await vi.waitFor(() => {
+        expect(postMessageMock).toHaveBeenCalled();
+      });
+
+      const requestId = getLastRequestId();
+
+      // Create a mock iframe source
+      const mockIframeWindow = {} as Window;
+
+      // Send response from different window (iframe) - should be ignored
+      const iframeEvent = new MessageEvent('message', {
+        data: {
+          source: 'midnight-cloak',
+          type: 'GET_AVAILABLE_CREDENTIALS_RESPONSE',
+          requestId,
+          payload: { success: true, credentials: [{ id: 'iframe' }] },
+        },
+        origin: window.location.origin,
+        source: mockIframeWindow,
+      });
+      messageHandlers.forEach((handler) => handler(iframeEvent));
+
+      // Send correct response from same window
+      simulateResponse(requestId!, 'GET_AVAILABLE_CREDENTIALS', {
+        success: true,
+        credentials: [{ id: 'same-window' }],
+      });
+
+      const result = await credPromise;
+      expect(result).toEqual([{ id: 'same-window' }]);
+    });
+  });
+
+  describe('concurrent requests', () => {
+    beforeEach(async () => {
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      await import('../../src/content/page-api');
+    });
+
+    it('handles multiple concurrent requests without crosstalk', async () => {
+      // Start 3 concurrent requests
+      const promise1 = window.midnightCloak.getAvailableCredentials();
+      const promise2 = window.midnightCloak.getAvailableCredentials();
+      const promise3 = window.midnightCloak.getAvailableCredentials();
+
+      // Wait for all postMessages
+      await vi.waitFor(() => {
+        expect(postMessageMock.mock.calls.length).toBe(3);
+      });
+
+      // Extract request IDs
+      const requestId1 = postMessageMock.mock.calls[0][0].requestId;
+      const requestId2 = postMessageMock.mock.calls[1][0].requestId;
+      const requestId3 = postMessageMock.mock.calls[2][0].requestId;
+
+      // Verify all IDs are unique
+      expect(new Set([requestId1, requestId2, requestId3]).size).toBe(3);
+
+      // Respond out of order
+      simulateResponse(requestId3, 'GET_AVAILABLE_CREDENTIALS', {
+        success: true,
+        credentials: [{ id: 'cred-3' }],
+      });
+      simulateResponse(requestId1, 'GET_AVAILABLE_CREDENTIALS', {
+        success: true,
+        credentials: [{ id: 'cred-1' }],
+      });
+      simulateResponse(requestId2, 'GET_AVAILABLE_CREDENTIALS', {
+        success: true,
+        credentials: [{ id: 'cred-2' }],
+      });
+
+      // Each promise should get its correct response
+      const [result1, result2, result3] = await Promise.all([promise1, promise2, promise3]);
+
+      expect(result1).toEqual([{ id: 'cred-1' }]);
+      expect(result2).toEqual([{ id: 'cred-2' }]);
+      expect(result3).toEqual([{ id: 'cred-3' }]);
+    });
+
+    it('handles mixed success and error responses concurrently', async () => {
+      const promise1 = window.midnightCloak.getAvailableCredentials();
+      const promise2 = window.midnightCloak.getAvailableCredentials();
+
+      await vi.waitFor(() => {
+        expect(postMessageMock.mock.calls.length).toBe(2);
+      });
+
+      const requestId1 = postMessageMock.mock.calls[0][0].requestId;
+      const requestId2 = postMessageMock.mock.calls[1][0].requestId;
+
+      // First succeeds, second fails
+      simulateResponse(requestId1, 'GET_AVAILABLE_CREDENTIALS', {
+        success: true,
+        credentials: [{ id: 'success' }],
+      });
+      simulateResponse(requestId2, 'GET_AVAILABLE_CREDENTIALS', {
+        success: false,
+        error: 'Vault locked',
+      });
+
+      const result1 = await promise1;
+      expect(result1).toEqual([{ id: 'success' }]);
+
+      await expect(promise2).rejects.toThrow('Vault locked');
+    });
+  });
+
+  describe('requestId uniqueness', () => {
+    beforeEach(async () => {
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      await import('../../src/content/page-api');
+    });
+
+    it('generates unique IDs over 100 requests', async () => {
+      const requestIds: string[] = [];
+
+      for (let i = 0; i < 100; i++) {
+        const promise = window.midnightCloak.getAvailableCredentials();
+
+        await vi.waitFor(() => {
+          expect(postMessageMock.mock.calls.length).toBe(i + 1);
+        });
+
+        const requestId = postMessageMock.mock.calls[i][0].requestId;
+        requestIds.push(requestId);
+
+        // Complete the request
+        simulateResponse(requestId, 'GET_AVAILABLE_CREDENTIALS', {
+          success: true,
+          credentials: [],
+        });
+
+        await promise;
+      }
+
+      // All IDs should be unique
+      const uniqueIds = new Set(requestIds);
+      expect(uniqueIds.size).toBe(100);
+    });
+  });
+
+  describe('malformed wallet announcements', () => {
+    it('handles wallet with missing rdns gracefully', async () => {
+      (window as { midnight?: MockMidnightWindow }).midnight = {
+        'uuid-123': {
+          name: 'lace',
+          apiVersion: '1.0.0',
+          icon: 'data:image/png;base64,mock',
+          // rdns is missing
+          connect: vi.fn(),
+        } as unknown as MockLaceWallet,
+      };
+
+      await import('../../src/content/page-api');
+
+      // Should find by name fallback
+      expect(window.midnightCloak.isLaceAvailable()).toBe(true);
+    });
+
+    it('handles wallet with null values gracefully', async () => {
+      (window as { midnight?: MockMidnightWindow }).midnight = {
+        'uuid-123': {
+          name: null,
+          apiVersion: null,
+          icon: null,
+          rdns: null,
+          connect: vi.fn(),
+        } as unknown as MockLaceWallet,
+      };
+
+      await import('../../src/content/page-api');
+
+      // Should not match any wallet
+      expect(window.midnightCloak.isLaceAvailable()).toBe(false);
+    });
+
+    it('handles non-object entries in window.midnight', async () => {
+      (window as { midnight?: Record<string, unknown> }).midnight = {
+        'uuid-123': 'not-an-object',
+        'uuid-456': null,
+        'uuid-789': createMockLaceWallet(),
+      };
+
+      await import('../../src/content/page-api');
+
+      // Should still find the valid wallet
+      expect(window.midnightCloak.isLaceAvailable()).toBe(true);
+    });
+  });
+
+  describe('Lace API robustness', () => {
+    it('handles missing getConfiguration method', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      const mockWallet = createMockLaceWallet();
+      mockWallet.connect.mockResolvedValue({
+        // getConfiguration is missing
+      });
+
+      (window as { midnight?: MockMidnightWindow }).midnight = {
+        'uuid-123': mockWallet,
+      };
+
+      await import('../../src/content/page-api');
+
+      const result = await window.midnightCloak.getLaceServiceUris();
+
+      expect(result).toBeNull();
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+    });
+
+    it('handles getConfiguration returning undefined', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      const mockWallet = createMockLaceWallet();
+      mockWallet.connect.mockResolvedValue({
+        getConfiguration: vi.fn().mockResolvedValue(undefined),
+      });
+
+      (window as { midnight?: MockMidnightWindow }).midnight = {
+        'uuid-123': mockWallet,
+      };
+
+      await import('../../src/content/page-api');
+
+      const result = await window.midnightCloak.getLaceServiceUris();
+
+      // Returns null because accessing config.networkId throws, which is caught
+      expect(result).toBeNull();
+      consoleSpy.mockRestore();
+    });
+
+    it('handles getConfiguration throwing error', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      const mockWallet = createMockLaceWallet();
+      mockWallet.connect.mockResolvedValue({
+        getConfiguration: vi.fn().mockRejectedValue(new Error('Config error')),
+      });
+
+      (window as { midnight?: MockMidnightWindow }).midnight = {
+        'uuid-123': mockWallet,
+      };
+
+      await import('../../src/content/page-api');
+
+      const result = await window.midnightCloak.getLaceServiceUris();
+
+      expect(result).toBeNull();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to get Lace service URIs'),
+        expect.any(Error)
+      );
+
+      consoleSpy.mockRestore();
     });
   });
 });
