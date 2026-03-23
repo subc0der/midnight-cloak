@@ -47,7 +47,6 @@ async function delay(ms: number) {
 }
 
 async function main() {
-  console.clear();
   header('Midnight Cloak SDK Demo');
   log('Zero-knowledge identity verification for Midnight\n', colors.magenta);
 
@@ -79,11 +78,11 @@ async function main() {
     info(`Verification requested: ${JSON.stringify(request)}`);
   });
 
-  client.on('verification:approved', (result) => {
+  client.on('verification:approved', () => {
     success(`Verification APPROVED!`);
   });
 
-  client.on('verification:denied', (result) => {
+  client.on('verification:denied', () => {
     warn(`Verification denied`);
   });
 
@@ -174,7 +173,7 @@ async function main() {
       policy: { token: 'ADA', minBalance: 500 }
     });
     success(`Token verification: ${tokenResult.verified ? 'PASSED' : 'FAILED'}`);
-  } catch (e) {
+  } catch {
     warn(`TOKEN_BALANCE: Not yet implemented (coming in Phase 4)`);
     info(`Will prove: User holds >= 500 ADA (actual balance hidden)`);
   }
@@ -192,7 +191,7 @@ async function main() {
       policy: { collection: 'midnight-genesis', minCount: 1 }
     });
     success(`NFT verification: ${nftResult.verified ? 'PASSED' : 'FAILED'}`);
-  } catch (e) {
+  } catch {
     warn(`NFT_OWNERSHIP: Not yet implemented (coming in Phase 4)`);
     info(`Will prove: User owns >= 1 NFT from collection`);
   }

@@ -897,7 +897,7 @@ describe('VerificationRequest', () => {
 
   describe('error handling', () => {
     it('shows error message when load fails', async () => {
-      addMessageHandler((message, _sender, sendResponse) => {
+      addMessageHandler((message, _sender, _sendResponse) => {
         const msg = message as { type: string };
         if (msg.type === 'GET_ALL_PENDING_REQUESTS') {
           // Simulate a throw by rejecting

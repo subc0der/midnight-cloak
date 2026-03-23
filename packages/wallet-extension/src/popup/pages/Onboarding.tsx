@@ -62,7 +62,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       }
 
       onComplete();
-    } catch (err) {
+    } catch {
       setError('Failed to create wallet. Please try again.');
       setLoading(false);
     }

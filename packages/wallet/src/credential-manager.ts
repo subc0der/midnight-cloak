@@ -295,7 +295,6 @@ export class CredentialManager {
         throw new Error('Stored credentials is not an array');
       }
 
-      let loadedCount = 0;
       let skippedCount = 0;
 
       for (const item of parsed) {
@@ -314,7 +313,6 @@ export class CredentialManager {
         }
 
         this.credentials.set(credential.id, credential);
-        loadedCount++;
       }
 
       // If we skipped some credentials, save the cleaned-up version

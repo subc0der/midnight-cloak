@@ -101,7 +101,7 @@ export class EncryptedStorage {
         salt: Array.from(salt),
       });
       console.log('[EncryptedStorage] initialize - salt stored');
-    } catch (storageError) {
+    } catch {
       // SECURITY: Fail-closed - if we can't store salt, vault is unusable
       // Clear the key since we can't recover without the salt
       console.error('[EncryptedStorage] Storage failure during initialize - failing closed');
@@ -119,7 +119,7 @@ export class EncryptedStorage {
     let result: { salt?: number[]; encryptedVault?: string };
     try {
       result = await chrome.storage.local.get(['salt', 'encryptedVault']);
-    } catch (storageError) {
+    } catch {
       // SECURITY: Fail-closed on storage failure
       console.error('[EncryptedStorage] Storage failure during unlock - failing closed');
       this.encryptionKey = null;
@@ -185,7 +185,7 @@ export class EncryptedStorage {
 
     try {
       await chrome.storage.local.set({ encryptedVault });
-    } catch (storageError) {
+    } catch {
       // SECURITY: Fail-closed on storage failure
       // If we can't persist data, lock the vault to prevent operating
       // with stale state or giving false confidence that data was saved
@@ -209,7 +209,7 @@ export class EncryptedStorage {
     let result: { encryptedVault?: string };
     try {
       result = await chrome.storage.local.get(['encryptedVault']);
-    } catch (storageError) {
+    } catch {
       // SECURITY: Fail-closed on storage failure
       console.error('[EncryptedStorage] Storage failure during load - locking vault');
       this.encryptionKey = null;
@@ -222,7 +222,7 @@ export class EncryptedStorage {
 
     try {
       return this.decrypt(result.encryptedVault);
-    } catch (decryptError) {
+    } catch {
       // SECURITY: Fail-closed on decryption failure (data corruption)
       console.error('[EncryptedStorage] Decryption failure during load - locking vault');
       this.encryptionKey = null;

@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RequestQueue } from '../../src/shared/storage/request-queue';
-import { setMockStorage, getMockStorage } from '../setup';
+import { setMockStorage } from '../setup';
 
 describe('RequestQueue', () => {
   let queue: RequestQueue;
@@ -229,7 +229,6 @@ describe('RequestQueue', () => {
     it('cleans expired requests', async () => {
       // Mock Date.now to create expired items
       const now = Date.now();
-      const realDateNow = Date.now;
 
       // Add items with past expiration
       vi.spyOn(Date, 'now').mockReturnValue(now - 10 * 60 * 1000); // 10 min ago

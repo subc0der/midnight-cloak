@@ -1,7 +1,7 @@
 // Interactive CLI for Midnight Cloak deployment
 // Based on example-counter patterns
 
-import { type WalletContext, type AgeVerifierPrivateState, type CredentialRegistryPrivateState } from './api.js';
+import { type WalletContext } from './api.js';
 import { stdin as input, stdout as output } from 'node:process';
 import { createInterface, type Interface } from 'node:readline/promises';
 import { type Logger } from 'pino';
@@ -64,7 +64,7 @@ const getDustLabel = async (wallet: api.WalletContext['wallet']): Promise<string
 
 const saveDeploymentResult = (contractType: string, address: string) => {
   const resultPath = path.resolve(process.cwd(), 'deployment-result.json');
-  let results: Record<string, any> = {};
+  let results: Record<string, unknown> = {};
 
   try {
     if (fs.existsSync(resultPath)) {
@@ -371,7 +371,7 @@ const deploymentLoop = async (
           console.log(`    Available: ${formatBalance(dust.available)}`);
           console.log(`    Pending:   ${formatBalance(dust.pending)}`);
           console.log(`    Coins:     ${dust.availableCoins} available, ${dust.pendingCoins} pending\n`);
-        } catch (e) {
+        } catch {
           console.log(`\n  ✗ Failed to get balance\n`);
         }
         break;

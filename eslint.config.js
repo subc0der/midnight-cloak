@@ -108,6 +108,13 @@ export default [
       },
     },
   },
+  // Deploy CLI - relaxed any rules due to Midnight SDK interface complexity
+  {
+    files: ['packages/deploy-cli/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
   {
     ignores: [
       '**/node_modules/**',

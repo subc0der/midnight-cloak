@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Credential } from '@midnight-cloak/core';
 
@@ -20,11 +20,7 @@ export default function Home({ onLock }: HomeProps) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadCredentials();
-  }, []);
-
-  async function loadCredentials() {
+  const loadCredentials = useCallback(async () => {
     try {
       const response = await chrome.runtime.sendMessage({
         type: 'GET_CREDENTIALS',
@@ -43,7 +39,11 @@ export default function Home({ onLock }: HomeProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [onLock]);
+
+  useEffect(() => {
+    loadCredentials();
+  }, [loadCredentials]);
 
   async function handleLock() {
     await chrome.runtime.sendMessage({ type: 'LOCK_VAULT' });

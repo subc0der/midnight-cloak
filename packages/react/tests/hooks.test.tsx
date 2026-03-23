@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { MidnightCloakProvider } from '../src/components/MidnightCloakProvider';
 import { useMidnightCloak } from '../src/hooks/useMidnightCloak';
@@ -76,8 +76,6 @@ describe('useVerification', () => {
 
     const { result } = renderHook(() => useVerification(), { wrapper });
 
-    let pendingStatusSeen = false;
-
     // Start verification and check status changes
     act(() => {
       result.current.verify({
@@ -85,11 +83,6 @@ describe('useVerification', () => {
         policy: { kind: 'age', minAge: 18 },
       });
     });
-
-    // Status should be pending immediately after calling verify
-    if (result.current.status === 'pending') {
-      pendingStatusSeen = true;
-    }
 
     await waitFor(() => {
       expect(result.current.status).not.toBe('pending');

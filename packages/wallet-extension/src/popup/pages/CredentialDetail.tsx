@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Credential } from '@midnight-cloak/core';
 
@@ -9,11 +9,7 @@ export default function CredentialDetail() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    loadCredential();
-  }, [id]);
-
-  async function loadCredential() {
+  const loadCredential = useCallback(async () => {
     try {
       const response = await chrome.runtime.sendMessage({
         type: 'GET_CREDENTIAL',
@@ -28,7 +24,11 @@ export default function CredentialDetail() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [id]);
+
+  useEffect(() => {
+    loadCredential();
+  }, [loadCredential]);
 
   async function handleDelete() {
     if (!confirm('Are you sure you want to delete this credential?')) {

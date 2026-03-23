@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { PersistedCredentialOffer } from '../../shared/storage/request-queue';
 import { getTrustLevelUI, type IssuerTrustAssessment } from '../../shared/storage/issuer-trust';
 
@@ -23,11 +23,7 @@ export default function CredentialOffer({ onComplete }: CredentialOfferProps) {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadPendingOffers();
-  }, []);
-
-  async function loadPendingOffers() {
+  const loadPendingOffers = useCallback(async () => {
     try {
       // Get all pending offers to show count
       const allResponse = await chrome.runtime.sendMessage({ type: 'GET_ALL_PENDING_OFFERS' });
@@ -49,7 +45,11 @@ export default function CredentialOffer({ onComplete }: CredentialOfferProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [onComplete]);
+
+  useEffect(() => {
+    loadPendingOffers();
+  }, [loadPendingOffers]);
 
   async function assessIssuerTrust(pendingOffer: PersistedCredentialOffer) {
     try {
