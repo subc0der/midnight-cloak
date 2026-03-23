@@ -11,6 +11,7 @@
 import { EncryptedStorage } from '../shared/storage/encrypted-storage';
 import { RequestQueue, type PersistedVerificationRequest, type PersistedCredentialOffer } from '../shared/storage/request-queue';
 import { IssuerTrustStore, type TrustedIssuer, type IssuerTrustAssessment } from '../shared/storage/issuer-trust';
+import { createBackup, restoreBackup, mergeCredentials, type BackupFile } from '../shared/storage/credential-backup';
 import { getProofGenerator, type ServiceUris } from './proof-generator';
 
 /**
@@ -201,6 +202,16 @@ async function handleMessage(
 
     case 'ASSESS_ISSUER_TRUST':
       return assessIssuerTrust(message.issuerAddress as string, message.credentialType as string | undefined);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Credential Backup (Export/Import)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    case 'EXPORT_CREDENTIALS':
+      return exportCredentials(message.password as string);
+
+    case 'IMPORT_CREDENTIALS':
+      return importCredentials(message.backup as BackupFile, message.password as string);
 
     default:
       return { success: false, error: 'Unknown message type' };
@@ -819,6 +830,106 @@ async function assessIssuerTrust(
     return { success: true, assessment };
   } catch (err) {
     console.error('[Background] Failed to assess issuer trust:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Credential Backup (Export/Import)
+//
+// Allows users to create encrypted backups of their credentials and restore
+// them later. Uses Argon2id + AES-256-GCM encryption (same as vault).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Derive key via offscreen document for backup encryption.
+ * This is a wrapper to pass to createBackup/restoreBackup.
+ */
+async function deriveKeyForBackup(password: string, salt: Uint8Array): Promise<Uint8Array> {
+  // Ensure offscreen document is available
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+  });
+
+  if (existingContexts.length === 0) {
+    await chrome.offscreen.createDocument({
+      url: 'offscreen.html',
+      reasons: [chrome.offscreen.Reason.DOM_PARSER],
+      justification: 'Argon2 key derivation for backup encryption',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  const response = await chrome.runtime.sendMessage({
+    type: 'DERIVE_KEY',
+    password,
+    salt: Array.from(salt),
+  });
+
+  if (!response || !response.success) {
+    throw new Error(response?.error || 'Key derivation failed');
+  }
+
+  return new Uint8Array(response.keyBytes);
+}
+
+async function exportCredentials(
+  backupPassword: string
+): Promise<{ success: boolean; backup?: BackupFile; error?: string }> {
+  if (!storage) {
+    return { success: false, error: 'Vault is locked' };
+  }
+
+  try {
+    // Load credentials from vault
+    const data = await storage.load();
+    const credentials = data?.credentials || [];
+
+    if (credentials.length === 0) {
+      return { success: false, error: 'No credentials to export' };
+    }
+
+    // Create encrypted backup
+    const backup = await createBackup(credentials, backupPassword, deriveKeyForBackup);
+
+    console.log(`[Background] Exported ${credentials.length} credential(s)`);
+    await resetAutoLockTimer();
+
+    return { success: true, backup };
+  } catch (err) {
+    console.error('[Background] Failed to export credentials:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+async function importCredentials(
+  backup: BackupFile,
+  backupPassword: string
+): Promise<{ success: boolean; added?: number; skipped?: number; error?: string }> {
+  if (!storage) {
+    return { success: false, error: 'Vault is locked' };
+  }
+
+  try {
+    // Restore credentials from backup
+    const importedCredentials = await restoreBackup(backup, backupPassword, deriveKeyForBackup);
+
+    // Load existing credentials
+    const data = await storage.load();
+    const existingCredentials = data?.credentials || [];
+
+    // Merge (skip duplicates by ID)
+    const { merged, added, skipped } = mergeCredentials(existingCredentials, importedCredentials);
+
+    // Save merged credentials
+    await storage.save({ credentials: merged });
+
+    console.log(`[Background] Imported credentials: ${added} added, ${skipped} skipped (duplicates)`);
+    await resetAutoLockTimer();
+
+    return { success: true, added, skipped };
+  } catch (err) {
+    console.error('[Background] Failed to import credentials:', err);
     return { success: false, error: (err as Error).message };
   }
 }
