@@ -98,6 +98,9 @@ export default [
       'prefer-const': 'error',
       'no-var': 'error',
       eqeqeq: ['error', 'always'],
+      // Disable no-undef for TypeScript files - TypeScript's type checking is superior
+      // and handles undefined variable detection much better than ESLint's no-undef rule
+      'no-undef': 'off',
     },
     settings: {
       react: {
