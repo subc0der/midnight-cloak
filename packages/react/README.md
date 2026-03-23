@@ -248,7 +248,7 @@ All components include ARIA attributes for screen reader support:
 
 ## Styling
 
-Components accept standard `className` and `style` props. No default styles are included—bring your own CSS.
+Components accept standard `className` and `style` props. No default styles are included - bring your own CSS.
 
 ```tsx
 <VerifyButton

@@ -1,8 +1,8 @@
-# Midnight Cloak SDK — API Specification
+# Midnight Cloak SDK - API Specification
 
 > **Version**: 1.0.0-alpha  
 > **Last Updated**: December 2025  
-> **Status**: Draft — Subject to change during development
+> **Status**: Draft - Subject to change during development
 
 ---
 

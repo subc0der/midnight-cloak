@@ -1,4 +1,4 @@
-# Midnight Cloak — Development Guide
+# Midnight Cloak - Development Guide
 
 > **Purpose**: Step-by-step implementation guide for building Midnight Cloak
 > **Audience**: Solo developer
@@ -113,8 +113,8 @@ npm run build
 ```
 
 Study these files carefully:
-- `contract/src/bboard.compact` — Private message handling
-- `bboard-api/src/` — TypeScript API patterns
+- `contract/src/bboard.compact` - Private message handling
+- `bboard-api/src/` - TypeScript API patterns
 - How selective disclosure works
 
 ### Week 3: Study Existing Identity Projects
