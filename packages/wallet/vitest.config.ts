@@ -7,6 +7,17 @@ export default defineConfig({
     environment: 'node',
     include: ['**/*.{test,spec}.ts'],
     exclude: ['node_modules', 'dist'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov', 'json-summary'],
+      exclude: ['node_modules', 'dist', 'tests', '*.config.ts', 'src/index.ts'],
+      thresholds: {
+        statements: 85,
+        branches: 80,
+        functions: 90,
+        lines: 85,
+      },
+    },
   },
   resolve: {
     alias: {

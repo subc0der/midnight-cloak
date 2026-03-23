@@ -10,14 +10,23 @@ export default defineConfig({
     include: ['tests/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'lcov'],
+      reporter: ['text', 'html', 'lcov', 'json-summary'],
       exclude: [
         'node_modules',
         'dist',
         'tests',
         '*.config.ts',
         'public',
+        'src/popup/main.tsx',
+        'src/background/service-worker.ts',
+        'src/content/content-script.ts',
       ],
+      thresholds: {
+        statements: 60,
+        branches: 50,
+        functions: 60,
+        lines: 60,
+      },
     },
   },
   resolve: {

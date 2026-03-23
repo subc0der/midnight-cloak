@@ -8,8 +8,14 @@ export default defineConfig({
     exclude: ['node_modules', 'dist', 'build'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov', 'json-summary'],
       exclude: ['node_modules', 'dist', 'build', '**/*.d.ts', '**/*.config.*'],
+      thresholds: {
+        statements: 40,
+        branches: 40,
+        functions: 35,
+        lines: 40,
+      },
     },
   },
 });
