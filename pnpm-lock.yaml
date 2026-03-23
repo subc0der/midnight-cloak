@@ -34,8 +34,8 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
       '@midnight-ntwrk/midnight-js-contracts':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 4.0.1
+        version: 4.0.1
       '@midnight-ntwrk/midnight-js-http-client-proof-provider':
         specifier: 3.1.0
         version: 3.1.0
@@ -193,8 +193,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       '@midnight-ntwrk/midnight-js-contracts':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 4.0.1
+        version: 4.0.1
       '@midnight-ntwrk/midnight-js-fetch-zk-config-provider':
         specifier: 3.1.0
         version: 3.1.0
@@ -307,8 +307,8 @@ importers:
         specifier: workspace:*
         version: link:../wallet
       '@midnight-ntwrk/midnight-js-contracts':
-        specifier: 3.1.0
-        version: 3.1.0
+        specifier: 4.0.1
+        version: 4.0.1
       '@midnight-ntwrk/midnight-js-fetch-zk-config-provider':
         specifier: 3.1.0
         version: 3.1.0
@@ -488,6 +488,10 @@ packages:
     resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/runtime@7.29.2':
+    resolution: {integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==}
+    engines: {node: '>=6.9.0'}
+
   '@babel/template@7.27.2':
     resolution: {integrity: sha512-LPDZ85aEJyYSd18/DkjNh4/y1ntkE5KwUHWTiqgRxruuZL2F1yuHligVHLvcHY2vMHXttKFpJn6LwfI7cw7ODw==}
     engines: {node: '>=6.9.0'}
@@ -547,6 +551,11 @@ packages:
     resolution: {integrity: sha512-z05APUiDDPbodhTkH/RJqOLoCU11bU2IZLfcwLFrld03+ob1VeqRnELQlmueLIYm6NZifHAtjl32V+GRt34y4A==}
     peerDependencies:
       effect: 3.20.0
+
+  '@effect/platform@0.95.0':
+    resolution: {integrity: sha512-WDlRiWRSWlmhCPq09bvAofK0qr5vM4yNklXjoJdZHmugKRRTpN/Okn3ODnjgM/Kb/4hjMrRyrsUeH/Brieq7KA==}
+    peerDependencies:
+      effect: ^3.20.0
 
   '@esbuild/aix-ppc64@0.25.0':
     resolution: {integrity: sha512-O7vun9Sf8DFjH2UtqK8Ku3LkquL9SZL8OLY1T5NZkA34+wG3OQF7cl4Ql8vdNzM6fzBbYfLaiRLIOZ+2FOCgBQ==}
@@ -1124,17 +1133,29 @@ packages:
   '@midnight-ntwrk/compact-js@2.4.3':
     resolution: {integrity: sha512-1DkzkT9q6sBNMElmYpzjMoVlAtmB3dw9dAQkMBUsz56mlRvnAMgMSaqtWdPBsZlsdUkw+yOvBGs8pY+cnIwQfQ==}
 
+  '@midnight-ntwrk/compact-js@2.5.0':
+    resolution: {integrity: sha512-vCLbndc3GtSTjZE30NtNqINOrrjZ2O/m8q4jCVeyx9t+rTLwwFqGXUOYobKbM34rwfnTz95ZAI6vVixYnarfrA==}
+
   '@midnight-ntwrk/compact-runtime@0.14.0':
     resolution: {integrity: sha512-VfZmfPDedRUPAYIhKAgS5y+KtxOkSSOCS24PAsGMjhMpzJaaWVSd5SajF6HtNZsciL54sqru4EpWvmCAqsbmYQ==}
 
+  '@midnight-ntwrk/compact-runtime@0.15.0':
+    resolution: {integrity: sha512-6+odrxb83ZZwF29SqNBBgaOR3hf5ej4KZVGibDwdXta9+uiv6qYW0fMrsKP9S+c2AqvY+vEb5NEFFI54lA7G5A==}
+
   '@midnight-ntwrk/ledger-v7@7.0.2':
     resolution: {integrity: sha512-8ICrpYxLXj9vCskCrP6Rxh8z7H4WkemYLj7BBtVyNxLZM5EDIxdVMo7+wZXtEUwPUcxPEFFBw3/5YddSE1zoOQ==}
+
+  '@midnight-ntwrk/ledger-v8@8.0.3':
+    resolution: {integrity: sha512-2BLMfHnZyKAHZxaGWjlenhity096lZ9jvyp1qrQH5J3ogpy7H5ostCW8kRj70dGv5T55qDAC5nJ+wnU/8CGUcQ==}
 
   '@midnight-ntwrk/ledger@4.0.0':
     resolution: {integrity: sha512-cnJisY8uQ4NO54miDnjs/ov6n102ZPfKEPxtiDKVEdlKijcc70jz/CI2yBCc0itlwwaqma7FM2Ou5N4pWpbwbg==}
 
   '@midnight-ntwrk/midnight-js-contracts@3.1.0':
     resolution: {integrity: sha512-yofuzxbOKedjzz/jocZZLo+XkMGEChlXwkMZksWBwmn/zluTgJfei8isb3HnChpPPdycF/MJeGpUXm/hKqfdug==}
+
+  '@midnight-ntwrk/midnight-js-contracts@4.0.1':
+    resolution: {integrity: sha512-s8EHUFmuYIJN3VD0/T1fZUHw/bhAkDhTLS4P/BKWA/qgR9w6LrmaO/ENX0/g0MOpdAcDP90B5/+4ODYWVI3Khg==}
 
   '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@3.1.0':
     resolution: {integrity: sha512-f3M2NQQWRr895hr26VOWN23hD9NvyIN9zjafJt1Qvdtv2CYMOaCH1TrsyXAXKQZUrLGtf7ikatWm5tQnTyl6tw==}
@@ -1151,23 +1172,38 @@ packages:
   '@midnight-ntwrk/midnight-js-network-id@3.1.0':
     resolution: {integrity: sha512-ImDa6igGofV5116K1UiKhfiu0/5+YFGajRCRt9Gpfcokn5QMFT/jfaPInKt3MZ0hHYdw2plYeo/nITQp1mrkCQ==}
 
+  '@midnight-ntwrk/midnight-js-network-id@4.0.1':
+    resolution: {integrity: sha512-LSwKxoB7OWc6yjsCBQGv6Oj0xcxX3Hj/wq4ZY4dHsy6ghA8T1sNdDTHvMXjmWa1ToPT1HSQxPMM02tQovNerRA==}
+
   '@midnight-ntwrk/midnight-js-node-zk-config-provider@3.1.0':
     resolution: {integrity: sha512-eLd1kOG12nYdmSsLhKVcy9PVZF5P/6eWTtRxL17Vjqjg2qyLA5jw6xKvsi9dbPmRDE5TYAF+UoM75w/wKq0eUA==}
 
   '@midnight-ntwrk/midnight-js-types@3.1.0':
     resolution: {integrity: sha512-kLLl++DUL7buEqtkN20XJjgqMuwIni37BFwlb2Be/oYYf35bd6UmvTHE1bNK1LTXJp4wjTMMoXOjSRMxwwhmBA==}
 
+  '@midnight-ntwrk/midnight-js-types@4.0.1':
+    resolution: {integrity: sha512-S336JYsNImNgNfO0cRUjD+u+6sHCRYK95fNSAaSBiHAEtbQH9azd4oGFWaWsuu9HikqUjAfJvXM4s3b0JoxwNg==}
+
   '@midnight-ntwrk/midnight-js-utils@3.1.0':
     resolution: {integrity: sha512-MVCiAd6KoJzbSSWhVKGAoV/05kUFU0vkoiSqYubDSy9Y7QO88heygedRkAKeXbNUHPDAeSG6o3j/sAluWJefmg==}
 
+  '@midnight-ntwrk/midnight-js-utils@4.0.1':
+    resolution: {integrity: sha512-y+7uUPEj4I+Dze5aqWx5LxZZl6Ed0vpuyTAu4oRnhz0sBvTZEnKzlPgy4Z8mEUgQWu4qSzekmRNQb0233iLUWA==}
+
   '@midnight-ntwrk/onchain-runtime-v2@2.0.1':
     resolution: {integrity: sha512-nVtDyPaWD14thZuSz/MVUNNkv4HO2nYf3E3QbaRCE4UR+jKnUrd0s/BN0fLpnrYFlcMNHS7/sZqAeosV80tsOQ==}
+
+  '@midnight-ntwrk/onchain-runtime-v3@3.0.0':
+    resolution: {integrity: sha512-HbFbUOsvgpEFy1OT0Ni2LMFk4jnMQS1em+H+Mof/B3DpnNKl0Lkx5QiulKOc6pyU4KPEagOqx4fYNyVXFwgZ7g==}
 
   '@midnight-ntwrk/platform-js@2.2.0':
     resolution: {integrity: sha512-HWwS7bWnkRvufHowxutk4QA+nlLK0UVjxFCIfCkxVKLEO5UzgrfIUx2mY+P6BFnzGJZ0R6tZDTyJ2jh1Go258w==}
 
   '@midnight-ntwrk/platform-js@2.2.2':
     resolution: {integrity: sha512-NaoCCKvPS0htufK9BKDsSb7sWPiuJpWM8x/3BON9njep926gojuIlzpB0Sx4a3gTslRDIPWAhqa1/mecVBztiw==}
+
+  '@midnight-ntwrk/platform-js@2.2.4':
+    resolution: {integrity: sha512-6mrYKSSE8kPgn/5rQ2xofDJk1yAZZRdLOO6Yelweuh5GOnOGz7Qw4venDG/c4TRqtV9ouFp+F5j7ta8aprMinw==}
 
   '@midnight-ntwrk/wallet-sdk-abstractions@1.0.0':
     resolution: {integrity: sha512-kJb3I1jYCuI3y1nvCixPlw4QwThrUnv0RT/eHUFB36Zir49qW4qIa5a7g2vDLXW2PL2tbh8m5xoTDFQirThI9w==}
@@ -2445,6 +2481,9 @@ packages:
   effect@3.20.0:
     resolution: {integrity: sha512-qMLfDJscrNG8p/aw+IkT9W7fgj50Z4wG5bLBy0Txsxz8iUHjDIkOgO3SV0WZfnQbNG2VJYb0b+rDLMrhM4+Krw==}
 
+  effect@3.21.0:
+    resolution: {integrity: sha512-PPN80qRokCd1f015IANNhrwOnLO7GrrMQfk4/lnZRE/8j7UPWrNNjPV0uBrZutI/nHzernbW+J0hdqQysHiSnQ==}
+
   electron-to-chromium@1.5.267:
     resolution: {integrity: sha512-0Drusm6MVRXSOJpGbaSVgcQsuB4hEkMpHXaVstcPmhu5LIedxs1xNK/nIxmQIU/RPC0+1/o0AVZfBTkTNJOdUw==}
 
@@ -3243,6 +3282,9 @@ packages:
 
   msgpackr@1.11.8:
     resolution: {integrity: sha512-bC4UGzHhVvgDNS7kn9tV8fAucIYUBuGojcaLiz7v+P63Lmtm0Xeji8B/8tYKddALXxJLpwIeBmUN3u64C4YkRA==}
+
+  msgpackr@1.11.9:
+    resolution: {integrity: sha512-FkoAAyyA6HM8wL882EcEyFZ9s7hVADSwG9xrVx3dxxNQAtgADTrJoEWivID82Iv1zWDsv/OtbrrcZAzGzOMdNw==}
 
   multipasta@0.2.7:
     resolution: {integrity: sha512-KPA58d68KgGil15oDqXjkUBEBYc00XvbPj5/X+dyzeo/lWm9Nc25pQRlf1D+gv4OpK7NM0J1odrbu9JNNGvynA==}
@@ -4384,6 +4426,8 @@ snapshots:
 
   '@babel/runtime@7.28.6': {}
 
+  '@babel/runtime@7.29.2': {}
+
   '@babel/template@7.27.2':
     dependencies:
       '@babel/code-frame': 7.27.1
@@ -4466,6 +4510,13 @@ snapshots:
       effect: 3.20.0
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.8
+      multipasta: 0.2.7
+
+  '@effect/platform@0.95.0(effect@3.21.0)':
+    dependencies:
+      effect: 3.21.0
+      find-my-way-ts: 0.1.6
+      msgpackr: 1.11.9
       multipasta: 0.2.7
 
   '@esbuild/aix-ppc64@0.25.0':
@@ -4843,13 +4894,30 @@ snapshots:
       effect: 3.20.0
       tslib: 2.8.1
 
+  '@midnight-ntwrk/compact-js@2.5.0':
+    dependencies:
+      '@effect/platform': 0.95.0(effect@3.21.0)
+      '@midnight-ntwrk/compact-runtime': 0.15.0
+      '@midnight-ntwrk/ledger-v8': 8.0.3
+      '@midnight-ntwrk/platform-js': 2.2.4
+      effect: 3.21.0
+      tslib: 2.8.1
+
   '@midnight-ntwrk/compact-runtime@0.14.0':
     dependencies:
       '@midnight-ntwrk/onchain-runtime-v2': 2.0.1
       '@types/object-inspect': 1.13.0
       object-inspect: 1.13.4
 
+  '@midnight-ntwrk/compact-runtime@0.15.0':
+    dependencies:
+      '@midnight-ntwrk/onchain-runtime-v3': 3.0.0
+      '@types/object-inspect': 1.13.0
+      object-inspect: 1.13.4
+
   '@midnight-ntwrk/ledger-v7@7.0.2': {}
+
+  '@midnight-ntwrk/ledger-v8@8.0.3': {}
 
   '@midnight-ntwrk/ledger@4.0.0': {}
 
@@ -4859,6 +4927,13 @@ snapshots:
       '@midnight-ntwrk/midnight-js-network-id': 3.1.0
       '@midnight-ntwrk/midnight-js-types': 3.1.0
       '@midnight-ntwrk/midnight-js-utils': 3.1.0
+
+  '@midnight-ntwrk/midnight-js-contracts@4.0.1':
+    dependencies:
+      '@midnight-ntwrk/compact-js': 2.5.0
+      '@midnight-ntwrk/midnight-js-network-id': 4.0.1
+      '@midnight-ntwrk/midnight-js-types': 4.0.1
+      '@midnight-ntwrk/midnight-js-utils': 4.0.1
 
   '@midnight-ntwrk/midnight-js-fetch-zk-config-provider@3.1.0':
     dependencies:
@@ -4917,6 +4992,8 @@ snapshots:
 
   '@midnight-ntwrk/midnight-js-network-id@3.1.0': {}
 
+  '@midnight-ntwrk/midnight-js-network-id@4.0.1': {}
+
   '@midnight-ntwrk/midnight-js-node-zk-config-provider@3.1.0':
     dependencies:
       '@midnight-ntwrk/midnight-js-types': 3.1.0
@@ -4927,12 +5004,25 @@ snapshots:
       '@midnight-ntwrk/platform-js': 2.2.0
       rxjs: 7.8.2
 
+  '@midnight-ntwrk/midnight-js-types@4.0.1':
+    dependencies:
+      '@midnight-ntwrk/compact-js': 2.5.0
+      '@midnight-ntwrk/platform-js': 2.2.4
+      rxjs: 7.8.2
+
   '@midnight-ntwrk/midnight-js-utils@3.1.0':
     dependencies:
       '@midnight-ntwrk/midnight-js-network-id': 3.1.0
       '@scure/base': 2.0.0
 
+  '@midnight-ntwrk/midnight-js-utils@4.0.1':
+    dependencies:
+      '@midnight-ntwrk/midnight-js-network-id': 4.0.1
+      '@scure/base': 2.0.0
+
   '@midnight-ntwrk/onchain-runtime-v2@2.0.1': {}
+
+  '@midnight-ntwrk/onchain-runtime-v3@3.0.0': {}
 
   '@midnight-ntwrk/platform-js@2.2.0':
     dependencies:
@@ -4944,6 +5034,12 @@ snapshots:
     dependencies:
       '@effect/platform': 0.94.5(effect@3.20.0)
       effect: 3.20.0
+      tslib: 2.8.1
+
+  '@midnight-ntwrk/platform-js@2.2.4':
+    dependencies:
+      '@effect/platform': 0.95.0(effect@3.21.0)
+      effect: 3.21.0
       tslib: 2.8.1
 
   '@midnight-ntwrk/wallet-sdk-abstractions@1.0.0':
@@ -5727,7 +5823,7 @@ snapshots:
   '@testing-library/dom@10.4.1':
     dependencies:
       '@babel/code-frame': 7.29.0
-      '@babel/runtime': 7.28.6
+      '@babel/runtime': 7.29.2
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
@@ -6571,6 +6667,11 @@ snapshots:
   eastasianwidth@0.2.0: {}
 
   effect@3.20.0:
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      fast-check: 3.23.2
+
+  effect@3.21.0:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
@@ -7515,6 +7616,10 @@ snapshots:
     optional: true
 
   msgpackr@1.11.8:
+    optionalDependencies:
+      msgpackr-extract: 3.0.3
+
+  msgpackr@1.11.9:
     optionalDependencies:
       msgpackr-extract: 3.0.3
 
