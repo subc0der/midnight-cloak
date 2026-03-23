@@ -166,8 +166,8 @@ export default function Settings({ onLock }: SettingsProps) {
   async function handleExport() {
     setBackupError(null);
 
-    if (backupPassword.length < 8) {
-      setBackupError('Password must be at least 8 characters');
+    if (backupPassword.length < 12) {
+      setBackupError('Password must be at least 12 characters');
       return;
     }
 
@@ -473,7 +473,7 @@ export default function Settings({ onLock }: SettingsProps) {
 
               <input
                 type="password"
-                placeholder="Backup password (min 8 characters)"
+                placeholder="Backup password (min 12 characters)"
                 value={backupPassword}
                 onChange={(e) => setBackupPassword(e.target.value)}
                 disabled={isProcessing}
