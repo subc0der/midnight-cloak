@@ -63,6 +63,9 @@ export default function Home({ onLock }: HomeProps) {
       <header className="header">
         <h1>Midnight Cloak</h1>
         <div className="header-actions">
+          <button className="btn-icon" onClick={() => navigate('/activity')} title="Activity Log">
+            📋
+          </button>
           <button className="btn-icon" onClick={() => navigate('/settings')} title="Settings">
             ⚙️
           </button>

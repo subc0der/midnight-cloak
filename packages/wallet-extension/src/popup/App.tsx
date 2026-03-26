@@ -7,6 +7,7 @@ import CredentialDetail from './pages/CredentialDetail';
 import Settings from './pages/Settings';
 import VerificationRequest from './pages/VerificationRequest';
 import CredentialOffer from './pages/CredentialOffer';
+import ActivityLog from './pages/ActivityLog';
 
 type AppState = 'loading' | 'onboarding' | 'locked' | 'unlocked' | 'verification-request' | 'credential-offer';
 
@@ -119,6 +120,7 @@ export default function App() {
         <Route path="/" element={<Home onLock={handleLock} />} />
         <Route path="/credential/:id" element={<CredentialDetail />} />
         <Route path="/settings" element={<Settings onLock={handleLock} />} />
+        <Route path="/activity" element={<ActivityLog />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

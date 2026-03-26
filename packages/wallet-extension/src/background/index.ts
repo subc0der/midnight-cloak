@@ -12,6 +12,7 @@ import { EncryptedStorage } from '../shared/storage/encrypted-storage';
 import { RequestQueue, type PersistedVerificationRequest, type PersistedCredentialOffer } from '../shared/storage/request-queue';
 import { IssuerTrustStore, type TrustedIssuer, type IssuerTrustAssessment } from '../shared/storage/issuer-trust';
 import { createBackup, restoreBackup, mergeCredentials, type BackupFile } from '../shared/storage/credential-backup';
+import { ActivityLogStore, type ActivityEntry, type ActivityEventType } from '../shared/storage/activity-log';
 import { getProofGenerator, type ServiceUris } from './proof-generator';
 
 /**
@@ -212,6 +213,16 @@ async function handleMessage(
 
     case 'IMPORT_CREDENTIALS':
       return importCredentials(message.backup as BackupFile, message.password as string);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Activity Log
+    // ─────────────────────────────────────────────────────────────────────────
+
+    case 'GET_ACTIVITY_LOG':
+      return getActivityLog(message.filter as { eventType?: ActivityEventType; origin?: string } | undefined);
+
+    case 'CLEAR_ACTIVITY_LOG':
+      return clearActivityLog();
 
     default:
       return { success: false, error: 'Unknown message type' };
@@ -439,12 +450,21 @@ async function handleVerificationRequest(
 
   // Add to persistent request queue
   // SECURITY: Use trustedOrigin from sender, not message payload (prevents spoofing)
+  const policyConfig = (message.policyConfig as PersistedVerificationRequest['policyConfig']) || { type: 'UNKNOWN' };
   await requestQueue.addVerificationRequest({
     id: requestId,
     origin: trustedOrigin,
-    policyConfig: (message.policyConfig as PersistedVerificationRequest['policyConfig']) || { type: 'UNKNOWN' },
+    policyConfig,
     serviceUris: message.serviceUris,
     timestamp: Date.now(),
+  });
+
+  // Log activity (metadata only - no sensitive data)
+  await activityLog.addEntry({
+    type: 'verification_request',
+    origin: trustedOrigin,
+    credentialType: policyConfig.type,
+    metadata: { requestId, minAge: policyConfig.minAge },
   });
 
   // Open popup for user to approve/deny
@@ -588,6 +608,15 @@ async function approveVerification(requestId?: string): Promise<{ success: boole
 
     // Store result for content script pickup
     await requestQueue.completeRequest(pendingRequest.id, 'verification', result);
+
+    // Log successful approval (metadata only)
+    await activityLog.addEntry({
+      type: 'approval',
+      origin: pendingRequest.origin,
+      credentialType: pendingRequest.policyConfig.type,
+      metadata: { requestId: pendingRequest.id },
+    });
+
     await resetAutoLockTimer();
 
     return result;
@@ -614,6 +643,14 @@ async function denyVerification(requestId?: string): Promise<{ success: boolean 
     error: 'User denied the request',
   });
 
+  // Log denial (metadata only)
+  await activityLog.addEntry({
+    type: 'denial',
+    origin: pendingRequest.origin,
+    credentialType: pendingRequest.policyConfig.type,
+    metadata: { requestId: pendingRequest.id },
+  });
+
   return { success: true };
 }
 
@@ -637,6 +674,14 @@ async function handleCredentialOffer(
     origin: trustedOrigin,
     credential,
     timestamp: Date.now(),
+  });
+
+  // Log activity (metadata only - no sensitive claims)
+  await activityLog.addEntry({
+    type: 'credential_offer',
+    origin: trustedOrigin,
+    credentialType: credential.type,
+    metadata: { requestId: offerId },
   });
 
   // Open popup for user to accept/reject
@@ -702,6 +747,15 @@ async function acceptCredential(offerId?: string): Promise<{ success: boolean; e
 
     // Store result for content script pickup
     await requestQueue.completeRequest(pendingOffer.id, 'credential', result);
+
+    // Log acceptance (metadata only - no sensitive claims)
+    await activityLog.addEntry({
+      type: 'credential_accepted',
+      origin: pendingOffer.origin,
+      credentialType: pendingOffer.credential.type,
+      metadata: { requestId: pendingOffer.id },
+    });
+
     await resetAutoLockTimer();
 
     return result;
@@ -726,6 +780,14 @@ async function rejectCredential(offerId?: string): Promise<{ success: boolean }>
   await requestQueue.completeRequest(pendingOffer.id, 'credential', {
     success: false,
     error: 'User rejected the credential',
+  });
+
+  // Log rejection (metadata only)
+  await activityLog.addEntry({
+    type: 'credential_rejected',
+    origin: pendingOffer.origin,
+    credentialType: pendingOffer.credential.type,
+    metadata: { requestId: pendingOffer.id },
   });
 
   return { success: true };
@@ -930,6 +992,46 @@ async function importCredentials(
     return { success: true, added, skipped };
   } catch (err) {
     console.error('[Background] Failed to import credentials:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Activity Log
+//
+// Tracks user interactions with dApps for audit/transparency purposes.
+// Stores only metadata - no sensitive claims, proof data, or credential IDs.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const activityLog = ActivityLogStore.getInstance();
+
+async function getActivityLog(
+  filter?: { eventType?: ActivityEventType; origin?: string }
+): Promise<{ success: boolean; entries?: ActivityEntry[]; error?: string }> {
+  try {
+    let entries: ActivityEntry[];
+
+    if (filter?.eventType) {
+      entries = await activityLog.getByType(filter.eventType);
+    } else if (filter?.origin) {
+      entries = await activityLog.getByOrigin(filter.origin);
+    } else {
+      entries = await activityLog.getAll();
+    }
+
+    return { success: true, entries };
+  } catch (err) {
+    console.error('[Background] Failed to get activity log:', err);
+    return { success: false, error: (err as Error).message };
+  }
+}
+
+async function clearActivityLog(): Promise<{ success: boolean; error?: string }> {
+  try {
+    await activityLog.clear();
+    return { success: true };
+  } catch (err) {
+    console.error('[Background] Failed to clear activity log:', err);
     return { success: false, error: (err as Error).message };
   }
 }
