@@ -178,6 +178,30 @@ export interface TokenBalanceVerificationResult {
 }
 
 /**
+ * Parameters for NFT ownership proof generation
+ */
+export interface NFTOwnershipProofParams {
+  /** NFT collection identifier or policy ID */
+  collection: string;
+  /** User's actual NFT count from this collection */
+  nftCount: number;
+  /** Minimum NFTs required */
+  minCount: number;
+  /** Request identifier for tracking */
+  requestId: string;
+}
+
+/**
+ * NFT ownership verification result from contract
+ */
+export interface NFTOwnershipVerificationResult {
+  isVerified: boolean;
+  txHash: string;
+  /** Whether this result is from a mock implementation */
+  isMock?: boolean;
+}
+
+/**
  * Parameters for credential registration
  */
 export interface RegisterCredentialParams {
@@ -378,6 +402,29 @@ export class ContractClient {
       throw new ContractError(`${fieldName} must be a finite number`);
     }
     if (balance < 0) {
+      throw new ContractError(`${fieldName} must be non-negative`);
+    }
+  }
+
+  /**
+   * Validate collection identifier
+   * @throws ContractError if collection is invalid
+   */
+  private validateCollection(collection: string): void {
+    if (typeof collection !== 'string' || collection.trim().length === 0) {
+      throw new ContractError('collection must be a non-empty string');
+    }
+  }
+
+  /**
+   * Validate NFT count is a non-negative integer
+   * @throws ContractError if count is invalid
+   */
+  private validateNFTCount(count: number, fieldName: string = 'nftCount'): void {
+    if (!Number.isInteger(count)) {
+      throw new ContractError(`${fieldName} must be an integer`);
+    }
+    if (count < 0) {
       throw new ContractError(`${fieldName} must be non-negative`);
     }
   }
@@ -865,6 +912,165 @@ export class ContractClient {
               token: params.token,
               balance: params.balance,
               minBalance: params.minBalance,
+            },
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          return {
+            isVerified,
+            txHash: data.txHash || `proof_${Date.now().toString(16)}`,
+            isMock: false,
+          };
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        if (!this.allowMockProofs) {
+          throw new ContractError(`Browser proof generation failed: ${message}`);
+        }
+        console.warn('Browser proof generation failed, falling back to mock:', message);
+      }
+    }
+
+    // Check if mocks are allowed when real proofs aren't available
+    if (!this.allowMockProofs) {
+      throw new ContractError(
+        'Real ZK proof generation requires Lace wallet connection and proof server. ' +
+          'Enable allowMockProofs for development without these services.'
+      );
+    }
+
+    // Mock implementation for development
+    return {
+      isVerified,
+      txHash: this.generateMockTxHash(),
+      isMock: true,
+    };
+  }
+
+  /**
+   * Generate a ZK proof for NFT ownership verification
+   *
+   * This generates a proof that the user owns at least minCount NFTs
+   * from the specified collection without revealing which specific NFTs.
+   *
+   * @param params - Proof parameters
+   * @returns Proof response with proof bytes and public outputs
+   * @throws ContractError if proof generation fails and mocks are not allowed
+   */
+  async generateNFTOwnershipProof(params: NFTOwnershipProofParams): Promise<ProofResponse> {
+    this.ensureInitialized();
+
+    // Validate inputs
+    this.validateCollection(params.collection);
+    this.validateNFTCount(params.nftCount, 'nftCount');
+    this.validateNFTCount(params.minCount, 'minCount');
+
+    const isVerified = params.nftCount >= params.minCount;
+
+    // Check if proof server is available
+    const proofServerAvailable = await this.isProofServerAvailable();
+
+    if (proofServerAvailable) {
+      // Call proof server to generate real ZK proof
+      try {
+        const response = await fetch(`${this.networkConfig.proofServer}/prove`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            circuit: 'nft-ownership-verifier',
+            function: 'verifyNFTOwnership',
+            inputs: {
+              collection: params.collection,
+              nftCount: params.nftCount,
+              minCount: params.minCount,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Proof server returned ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return {
+          proof: fromHex(data.proof),
+          publicOutputs: [isVerified, params.collection, params.minCount, params.requestId],
+          isMock: false,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+
+        // Only fall back to mock if explicitly allowed
+        if (!this.allowMockProofs) {
+          throw new ContractError(`Failed to generate ZK proof: ${message}`);
+        }
+
+        console.warn('Proof server request failed, using mock proof (allowMockProofs=true):', message);
+      }
+    } else if (!this.allowMockProofs) {
+      throw new ContractError('Proof server is unavailable and mock proofs are not allowed');
+    }
+
+    // Mock proof for development (only if allowMockProofs is true)
+    const proofData = new Uint8Array(64);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(`MOCK:${params.requestId}:${isVerified}:${params.collection}`);
+    proofData.set(data.slice(0, 64));
+
+    return {
+      proof: proofData,
+      publicOutputs: [isVerified, params.collection, params.minCount, params.requestId],
+      isMock: true,
+    };
+  }
+
+  /**
+   * Verify NFT ownership on-chain
+   *
+   * This verifies that a user owns at least minCount NFTs from the specified
+   * collection without revealing which specific NFTs they own.
+   *
+   * When browser providers are available (Lace connected), this will attempt
+   * real ZK proof generation via the proof server. Otherwise falls back to
+   * mock proofs if allowed.
+   *
+   * @param params - Verification parameters
+   * @returns Verification result with transaction hash
+   * @throws ContractError if validation fails or mock proofs not allowed
+   */
+  async verifyNFTOwnershipOnChain(params: {
+    collection: string;
+    nftCount: number;
+    minCount: number;
+  }): Promise<NFTOwnershipVerificationResult> {
+    this.ensureInitialized();
+
+    // Validate inputs
+    this.validateCollection(params.collection);
+    this.validateNFTCount(params.nftCount, 'nftCount');
+    this.validateNFTCount(params.minCount, 'minCount');
+
+    const isVerified = params.nftCount >= params.minCount;
+
+    // Try browser providers first (requires Lace + proof server)
+    const browserProviders = await this.getBrowserProvidersForContract('nft-ownership-verifier');
+
+    if (browserProviders) {
+      try {
+        const proofServerUrl = this._laceServiceConfig?.proverServerUri || this.networkConfig.proofServer;
+
+        const response = await fetch(`${proofServerUrl}/prove`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            circuit: 'nft-ownership-verifier',
+            function: 'verifyNFTOwnership',
+            inputs: {
+              collection: params.collection,
+              nftCount: params.nftCount,
+              minCount: params.minCount,
             },
           }),
         });

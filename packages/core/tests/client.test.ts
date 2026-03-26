@@ -64,4 +64,23 @@ describe('MidnightCloakClient', () => {
     expect(events).toContain('requested');
     expect(events).toContain('approved');
   });
+
+  it('should verify NFT_OWNERSHIP with mock wallet', async () => {
+    const events: string[] = [];
+    client.on('verification:requested', () => events.push('requested'));
+    client.on('verification:approved', () => events.push('approved'));
+
+    // Use mock wallet for testing
+    client.useMockWallet({ network: 'preprod' });
+
+    const result = await client.verify({
+      type: 'NFT_OWNERSHIP',
+      policy: { kind: 'nft_ownership', collection: 'CoolCats', minCount: 1 },
+    });
+
+    expect(result.verified).toBe(true);
+    expect(result.proof).toBeDefined();
+    expect(events).toContain('requested');
+    expect(events).toContain('approved');
+  });
 });

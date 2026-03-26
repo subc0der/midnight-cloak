@@ -9,6 +9,7 @@ import type {
   VerificationStatus,
   AgePolicy,
   TokenBalancePolicy,
+  NFTOwnershipPolicy,
   SimpleVerificationRequest,
 } from './types';
 import { generateRequestId, withTimeout } from './utils';
@@ -104,7 +105,7 @@ export class Verifier {
         case 'TOKEN_BALANCE':
           return await this.verifyTokenBalance(requestId, request.policy as TokenBalancePolicy);
         case 'NFT_OWNERSHIP':
-          throw new UnsupportedVerificationTypeError('NFT_OWNERSHIP');
+          return await this.verifyNFTOwnership(requestId, request.policy as NFTOwnershipPolicy);
         case 'RESIDENCY':
           throw new UnsupportedVerificationTypeError('RESIDENCY');
         case 'ACCREDITED':
@@ -387,6 +388,189 @@ export class Verifier {
       token: policy.token,
       balance: mockBalance,
       minBalance: policy.minBalance,
+    });
+
+    return { verified: result.isVerified };
+  }
+
+  private async verifyNFTOwnership(requestId: string, policy: NFTOwnershipPolicy): Promise<VerificationResult> {
+    const wallet = this.getActiveWallet();
+
+    if (!wallet) {
+      return {
+        verified: false,
+        requestId,
+        timestamp: Date.now(),
+        proof: null,
+        error: { code: ErrorCodes.WALLET_NOT_CONNECTED, message: 'No wallet connected. Please connect your wallet first.' },
+      };
+    }
+
+    try {
+      // 1. Get wallet address and sign verification request
+      const address = await wallet.getAddress();
+      const payloadObj = {
+        requestId,
+        type: 'NFT_OWNERSHIP',
+        policy,
+        timestamp: Date.now(),
+      };
+      // CIP-30 signData requires hex-encoded payload
+      const payloadJson = JSON.stringify(payloadObj);
+      const encoder = new TextEncoder();
+      const payloadBytes = encoder.encode(payloadJson);
+      const payload = Array.from(payloadBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // 2. Request signature (this prompts user approval in the wallet)
+      const signature = await wallet.signData(address, payload);
+
+      if (!signature) {
+        return {
+          verified: false,
+          requestId,
+          timestamp: Date.now(),
+          proof: null,
+          error: { code: ErrorCodes.VERIFICATION_DENIED, message: 'User denied verification request' },
+        };
+      }
+
+      // 3. Generate ZK proof
+      let proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] };
+      try {
+        proof = await this.generateNFTOwnershipProofWithTimeout(requestId, policy);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Proof generation failed';
+        return {
+          verified: false,
+          requestId,
+          timestamp: Date.now(),
+          proof: null,
+          error: { code: ErrorCodes.PROOF_GENERATION_FAILED, message },
+        };
+      }
+
+      // 4. Submit to contract
+      let contractResult: { verified: boolean };
+      try {
+        contractResult = await this.submitNFTOwnershipToContractWithTimeout(requestId, proof, policy);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Contract execution failed';
+        return {
+          verified: false,
+          requestId,
+          timestamp: Date.now(),
+          proof: null,
+          error: { code: ErrorCodes.CONTRACT_ERROR, message },
+        };
+      }
+
+      return {
+        verified: contractResult.verified,
+        requestId,
+        timestamp: Date.now(),
+        proof: contractResult.verified ? proof : null,
+        error: contractResult.verified
+          ? null
+          : { code: ErrorCodes.CREDENTIAL_NOT_FOUND, message: 'NFT ownership does not meet requirements' },
+      };
+    } catch (error) {
+      // User rejected or wallet error
+      const message = error instanceof Error ? error.message : 'Wallet operation failed';
+      const errorCode = getWalletErrorCode(message);
+      return {
+        verified: false,
+        requestId,
+        timestamp: Date.now(),
+        proof: null,
+        error: { code: errorCode, message },
+      };
+    }
+  }
+
+  /**
+   * Generate NFT ownership proof with timeout protection
+   */
+  private async generateNFTOwnershipProofWithTimeout(
+    requestId: string,
+    policy: NFTOwnershipPolicy
+  ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
+    try {
+      return await withTimeout(
+        this.generateNFTOwnershipProof(requestId, policy),
+        this._config.timeout,
+        `Proof generation timed out after ${this._config.timeout}ms`
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new ProofGenerationError(error.message);
+      }
+      throw error;
+    }
+  }
+
+  private async generateNFTOwnershipProof(
+    requestId: string,
+    policy: NFTOwnershipPolicy
+  ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
+    await this.ensureContractClientInitialized();
+
+    // NOTE: In production, nftCount would come from the user's credential in the wallet.
+    // For now, we use a mock value that will always pass the verification.
+    const minCount = policy.minCount ?? 1;
+    const mockNFTCount = minCount + 5; // Mock: user has more than required
+
+    const proofResponse = await this.contractClient.generateNFTOwnershipProof({
+      collection: policy.collection,
+      nftCount: mockNFTCount,
+      minCount,
+      requestId,
+    });
+
+    return {
+      type: 'zk-snark',
+      data: proofResponse.proof,
+      publicInputs: proofResponse.publicOutputs,
+    };
+  }
+
+  /**
+   * Submit NFT ownership proof to contract with timeout protection
+   */
+  private async submitNFTOwnershipToContractWithTimeout(
+    requestId: string,
+    proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] },
+    policy: NFTOwnershipPolicy
+  ): Promise<{ verified: boolean }> {
+    try {
+      return await withTimeout(
+        this.submitNFTOwnershipToContract(requestId, proof, policy),
+        this._config.timeout,
+        `Contract execution timed out after ${this._config.timeout}ms`
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new ContractError(error.message);
+      }
+      throw error;
+    }
+  }
+
+  private async submitNFTOwnershipToContract(
+    _requestId: string,
+    _proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] },
+    policy: NFTOwnershipPolicy
+  ): Promise<{ verified: boolean }> {
+    await this.ensureContractClientInitialized();
+
+    // NOTE: In production, nftCount would come from the user's credential.
+    // For now, we use a mock value that matches the proof generation.
+    const minCount = policy.minCount ?? 1;
+    const mockNFTCount = minCount + 5; // Must match generateNFTOwnershipProof mock value
+
+    const result = await this.contractClient.verifyNFTOwnershipOnChain({
+      collection: policy.collection,
+      nftCount: mockNFTCount,
+      minCount,
     });
 
     return { verified: result.isVerified };

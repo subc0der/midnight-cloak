@@ -77,6 +77,21 @@ Verify minimum token holdings:
 </VerifyButton>
 ```
 
+### Pattern 5: NFT-Gated Content
+
+Verify NFT ownership from a collection:
+
+```tsx
+<VerifyButton
+  type="NFT_OWNERSHIP"
+  collection="CoolCats"
+  minCount={1}
+  onVerified={() => grantNFTHolderAccess()}
+>
+  Verify NFT Ownership
+</VerifyButton>
+```
+
 ## Development Mode
 
 Set `allowMockProofs: true` in development to test without real ZK proofs:

@@ -173,3 +173,32 @@ function TokenGatedSection() {
     </section>
   );
 }
+
+// Example: NFT-gated content section
+function NFTGatedSection() {
+  const [hasAccess, setHasAccess] = useState(false);
+
+  return (
+    <section className="nft-section">
+      <h2>NFT Holder Lounge</h2>
+      <p>Exclusive access for CoolCats NFT holders.</p>
+
+      <VerifyButton
+        type="NFT_OWNERSHIP"
+        collection="CoolCats"
+        minCount={1}
+        onVerified={() => setHasAccess(true)}
+        onError={(error) => console.error('NFT verification failed:', error)}
+      >
+        Verify CoolCats Ownership
+      </VerifyButton>
+
+      {hasAccess && (
+        <div className="nft-content">
+          <h3>Welcome to the Lounge!</h3>
+          <p>You have verified ownership of a CoolCats NFT.</p>
+        </div>
+      )}
+    </section>
+  );
+}
