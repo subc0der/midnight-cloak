@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MidnightCloakClient } from '../src/client';
+import { ErrorCodes } from '../src/errors';
 
 describe('MidnightCloakClient', () => {
   let client: MidnightCloakClient;
@@ -82,5 +83,91 @@ describe('MidnightCloakClient', () => {
     expect(result.proof).toBeDefined();
     expect(events).toContain('requested');
     expect(events).toContain('approved');
+  });
+
+  it('should return WALLET_NOT_CONNECTED error when no wallet connected for AGE', async () => {
+    // Do NOT use mock wallet - test the no-wallet case
+    const result = await client.verify({
+      type: 'AGE',
+      policy: { kind: 'age', minAge: 18 },
+    });
+
+    expect(result.verified).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error?.code).toBe(ErrorCodes.WALLET_NOT_CONNECTED);
+  });
+
+  it('should return WALLET_NOT_CONNECTED error when no wallet connected for TOKEN_BALANCE', async () => {
+    const result = await client.verify({
+      type: 'TOKEN_BALANCE',
+      policy: { kind: 'token_balance', token: 'NIGHT', minBalance: 100 },
+    });
+
+    expect(result.verified).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error?.code).toBe(ErrorCodes.WALLET_NOT_CONNECTED);
+  });
+
+  it('should return WALLET_NOT_CONNECTED error when no wallet connected for NFT_OWNERSHIP', async () => {
+    const result = await client.verify({
+      type: 'NFT_OWNERSHIP',
+      policy: { kind: 'nft_ownership', collection: 'CoolCats', minCount: 1 },
+    });
+
+    expect(result.verified).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error?.code).toBe(ErrorCodes.WALLET_NOT_CONNECTED);
+  });
+
+  it('should return VERIFICATION_DENIED when user rejects AGE signature', async () => {
+    const events: string[] = [];
+    client.on('verification:denied', () => events.push('denied'));
+
+    // Use mock wallet configured to reject signature
+    client.useMockWallet({ network: 'preprod', rejectSignature: true });
+
+    const result = await client.verify({
+      type: 'AGE',
+      policy: { kind: 'age', minAge: 18 },
+    });
+
+    expect(result.verified).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error?.code).toBe(ErrorCodes.VERIFICATION_DENIED);
+    expect(events).toContain('denied');
+  });
+
+  it('should return VERIFICATION_DENIED when user rejects TOKEN_BALANCE signature', async () => {
+    const events: string[] = [];
+    client.on('verification:denied', () => events.push('denied'));
+
+    client.useMockWallet({ network: 'preprod', rejectSignature: true });
+
+    const result = await client.verify({
+      type: 'TOKEN_BALANCE',
+      policy: { kind: 'token_balance', token: 'NIGHT', minBalance: 100 },
+    });
+
+    expect(result.verified).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error?.code).toBe(ErrorCodes.VERIFICATION_DENIED);
+    expect(events).toContain('denied');
+  });
+
+  it('should return VERIFICATION_DENIED when user rejects NFT_OWNERSHIP signature', async () => {
+    const events: string[] = [];
+    client.on('verification:denied', () => events.push('denied'));
+
+    client.useMockWallet({ network: 'preprod', rejectSignature: true });
+
+    const result = await client.verify({
+      type: 'NFT_OWNERSHIP',
+      policy: { kind: 'nft_ownership', collection: 'CoolCats', minCount: 1 },
+    });
+
+    expect(result.verified).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error?.code).toBe(ErrorCodes.VERIFICATION_DENIED);
+    expect(events).toContain('denied');
   });
 });

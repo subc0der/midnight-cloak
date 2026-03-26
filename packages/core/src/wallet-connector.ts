@@ -333,6 +333,7 @@ export function createMockWallet(options: {
   network?: Network;
   address?: string;
   autoApprove?: boolean;
+  rejectSignature?: boolean;
 } = {}): ConnectedWallet {
   const network = options.network || 'preprod';
   // Use Midnight-style address format for mock
@@ -346,7 +347,13 @@ export function createMockWallet(options: {
     getAddress: async () => address,
     signData: async (_address: string, payload: string) => {
       // Simulate signing delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Simulate user rejection if configured
+      if (options.rejectSignature) {
+        return null;
+      }
+
       // Return mock signature using browser-native TextEncoder and btoa
       // Use chunked conversion to avoid stack overflow on large payloads
       // ChunkSize of 4096 is safe across all major JS engines

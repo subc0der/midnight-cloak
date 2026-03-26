@@ -427,7 +427,7 @@ export class MidnightCloakClient {
    *
    * @throws Error if called in production environment
    */
-  useMockWallet(options?: { network?: Network; autoApprove?: boolean }): void {
+  useMockWallet(options?: { network?: Network; autoApprove?: boolean; rejectSignature?: boolean }): void {
     // SECURITY: Prevent mock wallet usage in production
     assertNotProduction('useMockWallet()');
 

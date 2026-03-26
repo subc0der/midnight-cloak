@@ -40,6 +40,28 @@ export class Verifier {
   }
 
   /**
+   * Generate hex-encoded verification signature payload for CIP-30 signData.
+   * Centralized to avoid duplication across verification methods.
+   */
+  private generateVerificationPayload(
+    requestId: string,
+    type: string,
+    policy: AgePolicy | TokenBalancePolicy | NFTOwnershipPolicy
+  ): string {
+    const payloadObj = {
+      requestId,
+      type,
+      policy,
+      timestamp: Date.now(),
+    };
+    // CIP-30 signData requires hex-encoded payload
+    const payloadJson = JSON.stringify(payloadObj);
+    const encoder = new TextEncoder();
+    const payloadBytes = encoder.encode(payloadJson);
+    return Array.from(payloadBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
    * Ensure contract client is initialized before use
    */
   private async ensureContractClientInitialized(): Promise<void> {
@@ -134,17 +156,7 @@ export class Verifier {
     try {
       // 1. Get wallet address and sign verification request
       const address = await wallet.getAddress();
-      const payloadObj = {
-        requestId,
-        type: 'AGE',
-        policy,
-        timestamp: Date.now(),
-      };
-      // CIP-30 signData requires hex-encoded payload
-      const payloadJson = JSON.stringify(payloadObj);
-      const encoder = new TextEncoder();
-      const payloadBytes = encoder.encode(payloadJson);
-      const payload = Array.from(payloadBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      const payload = this.generateVerificationPayload(requestId, 'AGE', policy);
 
       // 2. Request signature (this prompts user approval in the wallet)
       const signature = await wallet.signData(address, payload);
@@ -228,17 +240,7 @@ export class Verifier {
     try {
       // 1. Get wallet address and sign verification request
       const address = await wallet.getAddress();
-      const payloadObj = {
-        requestId,
-        type: 'TOKEN_BALANCE',
-        policy,
-        timestamp: Date.now(),
-      };
-      // CIP-30 signData requires hex-encoded payload
-      const payloadJson = JSON.stringify(payloadObj);
-      const encoder = new TextEncoder();
-      const payloadBytes = encoder.encode(payloadJson);
-      const payload = Array.from(payloadBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      const payload = this.generateVerificationPayload(requestId, 'TOKEN_BALANCE', policy);
 
       // 2. Request signature (this prompts user approval in the wallet)
       const signature = await wallet.signData(address, payload);
@@ -333,8 +335,10 @@ export class Verifier {
   ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
     await this.ensureContractClientInitialized();
 
-    // NOTE: In production, balance would come from the user's credential in the wallet.
-    // For now, we use a mock value that will always pass the verification.
+    // TODO(Phase 3 Integration): Replace mock value with real credential data from wallet vault.
+    // Currently using mock value for development/testing. When wallet extension credential
+    // vault is fully integrated, balance should come from user's TOKEN_BALANCE credential.
+    // See: packages/wallet-extension/src/background/encrypted-storage.ts
     const mockBalance = policy.minBalance + 1000; // Mock: user has more than required
 
     const proofResponse = await this.contractClient.generateTokenBalanceProof({
@@ -380,8 +384,8 @@ export class Verifier {
   ): Promise<{ verified: boolean }> {
     await this.ensureContractClientInitialized();
 
-    // NOTE: In production, balance would come from the user's credential.
-    // For now, we use a mock value that matches the proof generation.
+    // TODO(Phase 3 Integration): Replace mock value with real credential data from wallet vault.
+    // Must match the value used in generateTokenBalanceProof for consistency.
     const mockBalance = policy.minBalance + 1000; // Must match generateTokenBalanceProof mock value
 
     const result = await this.contractClient.verifyTokenBalanceOnChain({
@@ -409,17 +413,7 @@ export class Verifier {
     try {
       // 1. Get wallet address and sign verification request
       const address = await wallet.getAddress();
-      const payloadObj = {
-        requestId,
-        type: 'NFT_OWNERSHIP',
-        policy,
-        timestamp: Date.now(),
-      };
-      // CIP-30 signData requires hex-encoded payload
-      const payloadJson = JSON.stringify(payloadObj);
-      const encoder = new TextEncoder();
-      const payloadBytes = encoder.encode(payloadJson);
-      const payload = Array.from(payloadBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      const payload = this.generateVerificationPayload(requestId, 'NFT_OWNERSHIP', policy);
 
       // 2. Request signature (this prompts user approval in the wallet)
       const signature = await wallet.signData(address, payload);
@@ -514,8 +508,10 @@ export class Verifier {
   ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
     await this.ensureContractClientInitialized();
 
-    // NOTE: In production, nftCount would come from the user's credential in the wallet.
-    // For now, we use a mock value that will always pass the verification.
+    // TODO(Phase 3 Integration): Replace mock value with real credential data from wallet vault.
+    // Currently using mock value for development/testing. When wallet extension credential
+    // vault is fully integrated, nftCount should come from user's NFT_OWNERSHIP credential.
+    // See: packages/wallet-extension/src/background/encrypted-storage.ts
     const minCount = policy.minCount ?? 1;
     const mockNFTCount = minCount + 5; // Mock: user has more than required
 
@@ -562,8 +558,8 @@ export class Verifier {
   ): Promise<{ verified: boolean }> {
     await this.ensureContractClientInitialized();
 
-    // NOTE: In production, nftCount would come from the user's credential.
-    // For now, we use a mock value that matches the proof generation.
+    // TODO(Phase 3 Integration): Replace mock value with real credential data from wallet vault.
+    // Must match the value used in generateNFTOwnershipProof for consistency.
     const minCount = policy.minCount ?? 1;
     const mockNFTCount = minCount + 5; // Must match generateNFTOwnershipProof mock value
 
