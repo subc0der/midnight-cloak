@@ -17,9 +17,16 @@ export default defineConfig({
         'tests',
         '*.config.ts',
         'public',
+        // Entry points with Chrome API side effects - not unit testable
+        // These wire up event listeners and call tested logic
         'src/popup/main.tsx',
+        'src/background/index.ts',
         'src/background/service-worker.ts',
+        'src/offscreen/index.ts',
+        'src/content/injected.ts',
         'src/content/content-script.ts',
+        // Type definitions - no runtime code
+        'src/shared/messaging/types.ts',
       ],
       thresholds: {
         statements: 60,

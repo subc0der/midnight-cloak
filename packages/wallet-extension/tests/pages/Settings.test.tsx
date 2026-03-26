@@ -76,11 +76,19 @@ describe('Settings', () => {
     it('shows settings title', async () => {
       renderSettings(mockOnLock);
 
-      expect(screen.getByText('Settings')).toBeInTheDocument();
+      // Wait for async state updates to complete (avoids act() warnings)
+      await waitFor(() => {
+        expect(screen.getByText('Settings')).toBeInTheDocument();
+      });
     });
 
     it('navigates back on back button click', async () => {
       renderSettings(mockOnLock);
+
+      // Wait for component to finish loading before interacting
+      await waitFor(() => {
+        expect(screen.getByText('Settings')).toBeInTheDocument();
+      });
 
       fireEvent.click(screen.getByText('←'));
       expect(mockNavigate).toHaveBeenCalledWith('/');
@@ -290,14 +298,20 @@ describe('Settings', () => {
     it('shows version', async () => {
       renderSettings(mockOnLock);
 
-      expect(screen.getByText('Version')).toBeInTheDocument();
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(screen.getByText('Version')).toBeInTheDocument();
+      });
       expect(screen.getByText('0.1.0')).toBeInTheDocument();
     });
 
     it('shows network', async () => {
       renderSettings(mockOnLock);
 
-      expect(screen.getByText('Network')).toBeInTheDocument();
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(screen.getByText('Network')).toBeInTheDocument();
+      });
       expect(screen.getByText('Preprod')).toBeInTheDocument();
     });
   });
@@ -306,7 +320,10 @@ describe('Settings', () => {
     it('shows reset button in danger zone', async () => {
       renderSettings(mockOnLock);
 
-      expect(screen.getByText('Danger Zone')).toBeInTheDocument();
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(screen.getByText('Danger Zone')).toBeInTheDocument();
+      });
       expect(screen.getByRole('button', { name: /reset extension/i })).toBeInTheDocument();
     });
 
@@ -315,6 +332,11 @@ describe('Settings', () => {
       mockConfirm.mockReturnValueOnce(true).mockReturnValueOnce(true);
 
       renderSettings(mockOnLock);
+
+      // Wait for component to finish loading
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /reset extension/i })).toBeInTheDocument();
+      });
 
       await user.click(screen.getByRole('button', { name: /reset extension/i }));
 
@@ -328,6 +350,11 @@ describe('Settings', () => {
 
       renderSettings(mockOnLock);
 
+      // Wait for component to finish loading
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /reset extension/i })).toBeInTheDocument();
+      });
+
       await user.click(screen.getByRole('button', { name: /reset extension/i }));
 
       expect(mockConfirm).toHaveBeenCalledTimes(1);
@@ -339,6 +366,11 @@ describe('Settings', () => {
       mockConfirm.mockReturnValueOnce(true).mockReturnValueOnce(false);
 
       renderSettings(mockOnLock);
+
+      // Wait for component to finish loading
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /reset extension/i })).toBeInTheDocument();
+      });
 
       await user.click(screen.getByRole('button', { name: /reset extension/i }));
 
