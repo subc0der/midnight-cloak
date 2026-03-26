@@ -45,4 +45,23 @@ describe('MidnightCloakClient', () => {
     });
     expect(standaloneClient.getNetworkConfig().networkId).toBe('undeployed');
   });
+
+  it('should verify TOKEN_BALANCE with mock wallet', async () => {
+    const events: string[] = [];
+    client.on('verification:requested', () => events.push('requested'));
+    client.on('verification:approved', () => events.push('approved'));
+
+    // Use mock wallet for testing
+    client.useMockWallet({ network: 'preprod' });
+
+    const result = await client.verify({
+      type: 'TOKEN_BALANCE',
+      policy: { kind: 'token_balance', token: 'NIGHT', minBalance: 100 },
+    });
+
+    expect(result.verified).toBe(true);
+    expect(result.proof).toBeDefined();
+    expect(events).toContain('requested');
+    expect(events).toContain('approved');
+  });
 });

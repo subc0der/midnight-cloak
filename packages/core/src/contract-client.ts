@@ -154,6 +154,30 @@ export interface AgeVerificationResult {
 }
 
 /**
+ * Parameters for token balance proof generation
+ */
+export interface TokenBalanceProofParams {
+  /** Token identifier (e.g., 'NIGHT', 'ADA', contract address) */
+  token: string;
+  /** User's actual balance */
+  balance: number;
+  /** Minimum balance to verify */
+  minBalance: number;
+  /** Request identifier for tracking */
+  requestId: string;
+}
+
+/**
+ * Token balance verification result from contract
+ */
+export interface TokenBalanceVerificationResult {
+  isVerified: boolean;
+  txHash: string;
+  /** Whether this result is from a mock implementation */
+  isMock?: boolean;
+}
+
+/**
  * Parameters for credential registration
  */
 export interface RegisterCredentialParams {
@@ -332,6 +356,29 @@ export class ContractClient {
     }
     if (commitment.length !== 32) {
       throw new ContractError('commitment must be exactly 32 bytes');
+    }
+  }
+
+  /**
+   * Validate token identifier
+   * @throws ContractError if token is invalid
+   */
+  private validateToken(token: string): void {
+    if (typeof token !== 'string' || token.trim().length === 0) {
+      throw new ContractError('token must be a non-empty string');
+    }
+  }
+
+  /**
+   * Validate balance is a non-negative number
+   * @throws ContractError if balance is invalid
+   */
+  private validateBalance(balance: number, fieldName: string = 'balance'): void {
+    if (typeof balance !== 'number' || !Number.isFinite(balance)) {
+      throw new ContractError(`${fieldName} must be a finite number`);
+    }
+    if (balance < 0) {
+      throw new ContractError(`${fieldName} must be non-negative`);
     }
   }
 
@@ -665,6 +712,165 @@ export class ContractClient {
           const data = await response.json();
           // In production, the proof would be submitted via the wallet
           // For now, we return the proof result
+          return {
+            isVerified,
+            txHash: data.txHash || `proof_${Date.now().toString(16)}`,
+            isMock: false,
+          };
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        if (!this.allowMockProofs) {
+          throw new ContractError(`Browser proof generation failed: ${message}`);
+        }
+        console.warn('Browser proof generation failed, falling back to mock:', message);
+      }
+    }
+
+    // Check if mocks are allowed when real proofs aren't available
+    if (!this.allowMockProofs) {
+      throw new ContractError(
+        'Real ZK proof generation requires Lace wallet connection and proof server. ' +
+          'Enable allowMockProofs for development without these services.'
+      );
+    }
+
+    // Mock implementation for development
+    return {
+      isVerified,
+      txHash: this.generateMockTxHash(),
+      isMock: true,
+    };
+  }
+
+  /**
+   * Generate a ZK proof for token balance verification
+   *
+   * This generates a proof that the user's balance >= minBalance
+   * without revealing the actual balance.
+   *
+   * @param params - Proof parameters
+   * @returns Proof response with proof bytes and public outputs
+   * @throws ContractError if proof generation fails and mocks are not allowed
+   */
+  async generateTokenBalanceProof(params: TokenBalanceProofParams): Promise<ProofResponse> {
+    this.ensureInitialized();
+
+    // Validate inputs
+    this.validateToken(params.token);
+    this.validateBalance(params.balance, 'balance');
+    this.validateBalance(params.minBalance, 'minBalance');
+
+    const isVerified = params.balance >= params.minBalance;
+
+    // Check if proof server is available
+    const proofServerAvailable = await this.isProofServerAvailable();
+
+    if (proofServerAvailable) {
+      // Call proof server to generate real ZK proof
+      try {
+        const response = await fetch(`${this.networkConfig.proofServer}/prove`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            circuit: 'token-balance-verifier',
+            function: 'verifyTokenBalance',
+            inputs: {
+              token: params.token,
+              balance: params.balance,
+              minBalance: params.minBalance,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Proof server returned ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return {
+          proof: fromHex(data.proof),
+          publicOutputs: [isVerified, params.token, params.minBalance, params.requestId],
+          isMock: false,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+
+        // Only fall back to mock if explicitly allowed
+        if (!this.allowMockProofs) {
+          throw new ContractError(`Failed to generate ZK proof: ${message}`);
+        }
+
+        console.warn('Proof server request failed, using mock proof (allowMockProofs=true):', message);
+      }
+    } else if (!this.allowMockProofs) {
+      throw new ContractError('Proof server is unavailable and mock proofs are not allowed');
+    }
+
+    // Mock proof for development (only if allowMockProofs is true)
+    const proofData = new Uint8Array(64);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(`MOCK:${params.requestId}:${isVerified}:${params.token}`);
+    proofData.set(data.slice(0, 64));
+
+    return {
+      proof: proofData,
+      publicOutputs: [isVerified, params.token, params.minBalance, params.requestId],
+      isMock: true,
+    };
+  }
+
+  /**
+   * Verify token balance on-chain
+   *
+   * This verifies that a user holds at least minBalance of the specified token
+   * without revealing their actual balance.
+   *
+   * When browser providers are available (Lace connected), this will attempt
+   * real ZK proof generation via the proof server. Otherwise falls back to
+   * mock proofs if allowed.
+   *
+   * @param params - Verification parameters
+   * @returns Verification result with transaction hash
+   * @throws ContractError if validation fails or mock proofs not allowed
+   */
+  async verifyTokenBalanceOnChain(params: {
+    token: string;
+    balance: number;
+    minBalance: number;
+  }): Promise<TokenBalanceVerificationResult> {
+    this.ensureInitialized();
+
+    // Validate inputs
+    this.validateToken(params.token);
+    this.validateBalance(params.balance, 'balance');
+    this.validateBalance(params.minBalance, 'minBalance');
+
+    const isVerified = params.balance >= params.minBalance;
+
+    // Try browser providers first (requires Lace + proof server)
+    const browserProviders = await this.getBrowserProvidersForContract('token-balance-verifier');
+
+    if (browserProviders) {
+      try {
+        const proofServerUrl = this._laceServiceConfig?.proverServerUri || this.networkConfig.proofServer;
+
+        const response = await fetch(`${proofServerUrl}/prove`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            circuit: 'token-balance-verifier',
+            function: 'verifyTokenBalance',
+            inputs: {
+              token: params.token,
+              balance: params.balance,
+              minBalance: params.minBalance,
+            },
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
           return {
             isVerified,
             txHash: data.txHash || `proof_${Date.now().toString(16)}`,

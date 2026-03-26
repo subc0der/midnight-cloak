@@ -144,3 +144,32 @@ function UnlockedContent() {
     </div>
   );
 }
+
+// Example: Token-gated content section
+function TokenGatedSection() {
+  const [hasAccess, setHasAccess] = useState(false);
+
+  return (
+    <section className="token-section">
+      <h2>Token Holder Benefits</h2>
+      <p>Exclusive content for NIGHT token holders.</p>
+
+      <VerifyButton
+        type="TOKEN_BALANCE"
+        token="NIGHT"
+        minBalance={100}
+        onVerified={() => setHasAccess(true)}
+        onError={(error) => console.error('Token verification failed:', error)}
+      >
+        Verify 100+ NIGHT
+      </VerifyButton>
+
+      {hasAccess && (
+        <div className="token-content">
+          <h3>Welcome, Token Holder!</h3>
+          <p>You have access to exclusive NIGHT holder content.</p>
+        </div>
+      )}
+    </section>
+  );
+}

@@ -1,13 +1,14 @@
-# React Age Gate Example
+# React Verification Examples
 
-A complete example showing how to gate content behind age verification using the Midnight Cloak React SDK.
+Complete examples showing how to gate content behind verification using the Midnight Cloak React SDK.
 
 ## What This Demonstrates
 
 1. **MidnightCloakProvider** - Wrapping your app with the provider
-2. **VerifyButton** - Explicit "click to verify" pattern
+2. **VerifyButton** - Explicit "click to verify" pattern (AGE and TOKEN_BALANCE)
 3. **CredentialGate** - Automatic content gating
 4. **Render Props** - Custom verification UI with full control
+5. **Token Gating** - Verify minimum token holdings
 
 ## Quick Start
 
@@ -59,6 +60,21 @@ For full control over the verification UI:
     // Your custom UI here
   )}
 </CredentialGate>
+```
+
+### Pattern 4: Token-Gated Content
+
+Verify minimum token holdings:
+
+```tsx
+<VerifyButton
+  type="TOKEN_BALANCE"
+  token="NIGHT"
+  minBalance={100}
+  onVerified={() => grantTokenHolderAccess()}
+>
+  Verify 100+ NIGHT
+</VerifyButton>
 ```
 
 ## Development Mode

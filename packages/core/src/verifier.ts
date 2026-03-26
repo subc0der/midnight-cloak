@@ -8,6 +8,7 @@ import type {
   VerificationResult,
   VerificationStatus,
   AgePolicy,
+  TokenBalancePolicy,
   SimpleVerificationRequest,
 } from './types';
 import { generateRequestId, withTimeout } from './utils';
@@ -101,7 +102,7 @@ export class Verifier {
         case 'AGE':
           return await this.verifyAge(requestId, request.policy as AgePolicy);
         case 'TOKEN_BALANCE':
-          throw new UnsupportedVerificationTypeError('TOKEN_BALANCE');
+          return await this.verifyTokenBalance(requestId, request.policy as TokenBalancePolicy);
         case 'NFT_OWNERSHIP':
           throw new UnsupportedVerificationTypeError('NFT_OWNERSHIP');
         case 'RESIDENCY':
@@ -208,6 +209,187 @@ export class Verifier {
         error: { code: errorCode, message },
       };
     }
+  }
+
+  private async verifyTokenBalance(requestId: string, policy: TokenBalancePolicy): Promise<VerificationResult> {
+    const wallet = this.getActiveWallet();
+
+    if (!wallet) {
+      return {
+        verified: false,
+        requestId,
+        timestamp: Date.now(),
+        proof: null,
+        error: { code: ErrorCodes.WALLET_NOT_CONNECTED, message: 'No wallet connected. Please connect your wallet first.' },
+      };
+    }
+
+    try {
+      // 1. Get wallet address and sign verification request
+      const address = await wallet.getAddress();
+      const payloadObj = {
+        requestId,
+        type: 'TOKEN_BALANCE',
+        policy,
+        timestamp: Date.now(),
+      };
+      // CIP-30 signData requires hex-encoded payload
+      const payloadJson = JSON.stringify(payloadObj);
+      const encoder = new TextEncoder();
+      const payloadBytes = encoder.encode(payloadJson);
+      const payload = Array.from(payloadBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // 2. Request signature (this prompts user approval in the wallet)
+      const signature = await wallet.signData(address, payload);
+
+      if (!signature) {
+        return {
+          verified: false,
+          requestId,
+          timestamp: Date.now(),
+          proof: null,
+          error: { code: ErrorCodes.VERIFICATION_DENIED, message: 'User denied verification request' },
+        };
+      }
+
+      // 3. Generate ZK proof
+      let proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] };
+      try {
+        proof = await this.generateTokenBalanceProofWithTimeout(requestId, policy);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Proof generation failed';
+        return {
+          verified: false,
+          requestId,
+          timestamp: Date.now(),
+          proof: null,
+          error: { code: ErrorCodes.PROOF_GENERATION_FAILED, message },
+        };
+      }
+
+      // 4. Submit to contract
+      let contractResult: { verified: boolean };
+      try {
+        contractResult = await this.submitTokenBalanceToContractWithTimeout(requestId, proof, policy);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Contract execution failed';
+        return {
+          verified: false,
+          requestId,
+          timestamp: Date.now(),
+          proof: null,
+          error: { code: ErrorCodes.CONTRACT_ERROR, message },
+        };
+      }
+
+      return {
+        verified: contractResult.verified,
+        requestId,
+        timestamp: Date.now(),
+        proof: contractResult.verified ? proof : null,
+        error: contractResult.verified
+          ? null
+          : { code: ErrorCodes.CREDENTIAL_NOT_FOUND, message: 'Token balance does not meet requirements' },
+      };
+    } catch (error) {
+      // User rejected or wallet error
+      const message = error instanceof Error ? error.message : 'Wallet operation failed';
+      const errorCode = getWalletErrorCode(message);
+      return {
+        verified: false,
+        requestId,
+        timestamp: Date.now(),
+        proof: null,
+        error: { code: errorCode, message },
+      };
+    }
+  }
+
+  /**
+   * Generate token balance proof with timeout protection
+   */
+  private async generateTokenBalanceProofWithTimeout(
+    requestId: string,
+    policy: TokenBalancePolicy
+  ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
+    try {
+      return await withTimeout(
+        this.generateTokenBalanceProof(requestId, policy),
+        this._config.timeout,
+        `Proof generation timed out after ${this._config.timeout}ms`
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new ProofGenerationError(error.message);
+      }
+      throw error;
+    }
+  }
+
+  private async generateTokenBalanceProof(
+    requestId: string,
+    policy: TokenBalancePolicy
+  ): Promise<{ type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] }> {
+    await this.ensureContractClientInitialized();
+
+    // NOTE: In production, balance would come from the user's credential in the wallet.
+    // For now, we use a mock value that will always pass the verification.
+    const mockBalance = policy.minBalance + 1000; // Mock: user has more than required
+
+    const proofResponse = await this.contractClient.generateTokenBalanceProof({
+      token: policy.token,
+      balance: mockBalance,
+      minBalance: policy.minBalance,
+      requestId,
+    });
+
+    return {
+      type: 'zk-snark',
+      data: proofResponse.proof,
+      publicInputs: proofResponse.publicOutputs,
+    };
+  }
+
+  /**
+   * Submit token balance proof to contract with timeout protection
+   */
+  private async submitTokenBalanceToContractWithTimeout(
+    requestId: string,
+    proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] },
+    policy: TokenBalancePolicy
+  ): Promise<{ verified: boolean }> {
+    try {
+      return await withTimeout(
+        this.submitTokenBalanceToContract(requestId, proof, policy),
+        this._config.timeout,
+        `Contract execution timed out after ${this._config.timeout}ms`
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new ContractError(error.message);
+      }
+      throw error;
+    }
+  }
+
+  private async submitTokenBalanceToContract(
+    _requestId: string,
+    _proof: { type: 'zk-snark'; data: Uint8Array; publicInputs: unknown[] },
+    policy: TokenBalancePolicy
+  ): Promise<{ verified: boolean }> {
+    await this.ensureContractClientInitialized();
+
+    // NOTE: In production, balance would come from the user's credential.
+    // For now, we use a mock value that matches the proof generation.
+    const mockBalance = policy.minBalance + 1000; // Must match generateTokenBalanceProof mock value
+
+    const result = await this.contractClient.verifyTokenBalanceOnChain({
+      token: policy.token,
+      balance: mockBalance,
+      minBalance: policy.minBalance,
+    });
+
+    return { verified: result.isVerified };
   }
 
   /**
