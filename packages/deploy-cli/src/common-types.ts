@@ -1,9 +1,8 @@
 // Type definitions for Midnight Cloak deployment CLI
 // Based on example-counter patterns
 
-import type { MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
+import type { MidnightProviders, AnyProvableCircuitId } from '@midnight-ntwrk/midnight-js-types';
 import type { DeployedContract, FoundContract } from '@midnight-ntwrk/midnight-js-contracts';
-import type { ImpureCircuitId } from '@midnight-ntwrk/compact-js';
 
 // Import contract types from managed directories
 import type * as AgeVerifierTypes from '../../contracts/src/managed/age-verifier/contract/index.js';
@@ -16,19 +15,19 @@ export interface AgeVerifierPrivateState {
   currentYear: number;
 }
 
-export type AgeVerifierCircuits = ImpureCircuitId<AgeVerifierTypes.Contract<AgeVerifierPrivateState>>;
+// Use string type for circuit IDs (compatible with Ledger v8)
+export type AgeVerifierCircuits = 'verifyAge';
 
 export const AgeVerifierPrivateStateId = 'ageVerifierPrivateState' as const;
 
 export type AgeVerifierProviders = MidnightProviders<
-  AgeVerifierCircuits,
+  AnyProvableCircuitId,
   typeof AgeVerifierPrivateStateId,
   AgeVerifierPrivateState
 >;
 
-export type DeployedAgeVerifierContract =
-  | DeployedContract<AgeVerifierTypes.Contract<AgeVerifierPrivateState>>
-  | FoundContract<AgeVerifierTypes.Contract<AgeVerifierPrivateState>>;
+// Use 'any' for contract types until contracts are recompiled for Ledger v8
+export type DeployedAgeVerifierContract = DeployedContract<any> | FoundContract<any>;
 
 // ─── Credential Registry Types ──────────────────────────────────────────────
 
@@ -36,16 +35,16 @@ export interface CredentialRegistryPrivateState {
   secretKey: Uint8Array;
 }
 
-export type CredentialRegistryCircuits = ImpureCircuitId<CredentialRegistryTypes.Contract<CredentialRegistryPrivateState>>;
+// Use string type for circuit IDs (compatible with Ledger v8)
+export type CredentialRegistryCircuits = 'registerCredential' | 'checkCommitment';
 
 export const CredentialRegistryPrivateStateId = 'credentialRegistryPrivateState' as const;
 
 export type CredentialRegistryProviders = MidnightProviders<
-  CredentialRegistryCircuits,
+  AnyProvableCircuitId,
   typeof CredentialRegistryPrivateStateId,
   CredentialRegistryPrivateState
 >;
 
-export type DeployedCredentialRegistryContract =
-  | DeployedContract<CredentialRegistryTypes.Contract<CredentialRegistryPrivateState>>
-  | FoundContract<CredentialRegistryTypes.Contract<CredentialRegistryPrivateState>>;
+// Use 'any' for contract types until contracts are recompiled for Ledger v8
+export type DeployedCredentialRegistryContract = DeployedContract<any> | FoundContract<any>;

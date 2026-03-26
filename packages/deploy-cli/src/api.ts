@@ -2,8 +2,8 @@
 // Based on example-counter patterns from Midnight Network
 
 import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
-import * as ledger from '@midnight-ntwrk/ledger-v7';
-import { unshieldedToken } from '@midnight-ntwrk/ledger-v7';
+import * as ledger from '@midnight-ntwrk/ledger-v8';
+import { unshieldedToken } from '@midnight-ntwrk/ledger-v8';
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
 import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
@@ -71,14 +71,19 @@ globalThis.WebSocket = WebSocket;
 // ─── Compiled Contracts ─────────────────────────────────────────────────────
 
 // Pre-compile contracts with ZK circuit assets and witnesses
-const ageVerifierCompiledContract = CompiledContract.make('age-verifier', AgeVerifier.Contract).pipe(
-  CompiledContract.withWitnesses(ageVerifierWitnesses),
-  CompiledContract.withCompiledFileAssets(contractConfig.ageVerifierZkPath),
+// Note: Contracts compiled with older Compact CLI have 'impureCircuits' instead of 'provableCircuits'.
+// Type assertions are used until contracts are recompiled with the new compiler.
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ageVerifierCompiledContract: any = (CompiledContract.make as any)('age-verifier', AgeVerifier.Contract).pipe(
+  (CompiledContract.withWitnesses as any)(ageVerifierWitnesses),
+  (CompiledContract.withCompiledFileAssets as any)(contractConfig.ageVerifierZkPath),
 );
 
-const credentialRegistryCompiledContract = CompiledContract.make('credential-registry', CredentialRegistry.Contract).pipe(
-  CompiledContract.withWitnesses(credentialRegistryWitnesses),
-  CompiledContract.withCompiledFileAssets(contractConfig.credentialRegistryZkPath),
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const credentialRegistryCompiledContract: any = (CompiledContract.make as any)('credential-registry', CredentialRegistry.Contract).pipe(
+  (CompiledContract.withWitnesses as any)(credentialRegistryWitnesses),
+  (CompiledContract.withCompiledFileAssets as any)(contractConfig.credentialRegistryZkPath),
 );
 
 // ─── Wallet Context ─────────────────────────────────────────────────────────
@@ -277,7 +282,7 @@ const registerForDustGeneration = async (
   const state = await Rx.firstValueFrom(wallet.state().pipe(Rx.filter((s) => s.isSynced)));
 
   if (state.dust.availableCoins.length > 0) {
-    const dustBal = state.dust.walletBalance(new Date());
+    const dustBal = state.dust.balance(new Date());
     console.log(`  ✓ Dust tokens already available (${formatBalance(dustBal)} DUST)`);
     return;
   }
@@ -292,7 +297,7 @@ const registerForDustGeneration = async (
         wallet.state().pipe(
           Rx.throttleTime(5_000),
           Rx.filter((s) => s.isSynced),
-          Rx.filter((s) => s.dust.walletBalance(new Date()) > 0n),
+          Rx.filter((s) => s.dust.balance(new Date()) > 0n),
         ),
       ),
     );
@@ -314,7 +319,7 @@ const registerForDustGeneration = async (
       wallet.state().pipe(
         Rx.throttleTime(5_000),
         Rx.filter((s) => s.isSynced),
-        Rx.filter((s) => s.dust.walletBalance(new Date()) > 0n),
+        Rx.filter((s) => s.dust.balance(new Date()) > 0n),
       ),
     ),
   );
@@ -365,16 +370,34 @@ export const buildWalletAndWaitForFunds = async (config: Config, seed: string): 
       const dustSecretKey = ledger.DustSecretKey.fromSeed(keys[Roles.Dust]);
       const unshieldedKeystore = createKeystore(keys[Roles.NightExternal], getNetworkId());
 
-      const shieldedWallet = ShieldedWallet(buildShieldedConfig(config)).startWithSecretKeys(shieldedSecretKeys);
-      const unshieldedWallet = UnshieldedWallet(buildUnshieldedConfig(config)).startWithPublicKey(
-        PublicKey.fromKeyStore(unshieldedKeystore),
-      );
-      const dustWallet = DustWallet(buildDustConfig(config)).startWithSecretKey(
-        dustSecretKey,
-        ledger.LedgerParameters.initialParameters().dust,
-      );
+      // Build combined config for WalletFacade.init
+      const walletConfig = {
+        networkId: getNetworkId(),
+        indexerClientConnection: {
+          indexerHttpUrl: config.indexer,
+          indexerWsUrl: config.indexerWS,
+        },
+        provingServerUrl: new URL(config.proofServer),
+        relayURL: new URL(config.node.replace(/^http/, 'ws')),
+        txHistoryStorage: new InMemoryTransactionHistoryStorage(),
+        costParameters: {
+          additionalFeeOverhead: 300_000_000_000_000n,
+          feeBlocksMargin: 5,
+        },
+      };
 
-      const wallet = new WalletFacade(shieldedWallet, unshieldedWallet, dustWallet);
+      const wallet = await WalletFacade.init({
+        configuration: walletConfig as any,
+        shielded: () => ShieldedWallet(buildShieldedConfig(config)).startWithSecretKeys(shieldedSecretKeys),
+        unshielded: () => UnshieldedWallet(buildUnshieldedConfig(config)).startWithPublicKey(
+          PublicKey.fromKeyStore(unshieldedKeystore),
+        ),
+        dust: () => DustWallet(buildDustConfig(config)).startWithSecretKey(
+          dustSecretKey,
+          ledger.LedgerParameters.initialParameters().dust,
+        ),
+      });
+
       await wallet.start(shieldedSecretKeys, dustSecretKey);
 
       return { wallet, shieldedSecretKeys, dustSecretKey, unshieldedKeystore };
@@ -419,10 +442,14 @@ export const buildFreshWallet = async (config: Config): Promise<WalletContext> =
 export const configureAgeVerifierProviders = async (ctx: WalletContext, config: Config): Promise<AgeVerifierProviders> => {
   const walletAndMidnightProvider = await createWalletAndMidnightProvider(ctx);
   const zkConfigProvider = new NodeZkConfigProvider<any>(contractConfig.ageVerifierZkPath);
+  // Generate a unique account ID from the wallet's coin public key
+  const state = await Rx.firstValueFrom(ctx.wallet.state().pipe(Rx.filter((s) => s.isSynced)));
+  const accountId = state.shielded.coinPublicKey.toHexString();
   return {
     privateStateProvider: levelPrivateStateProvider<any>({
       privateStateStoreName: `${contractConfig.privateStateStoreName}-age-verifier`,
-      walletProvider: walletAndMidnightProvider,
+      privateStoragePasswordProvider: () => 'midnight-cloak-deploy-cli',
+      accountId,
     }),
     publicDataProvider: indexerPublicDataProvider(config.indexer, config.indexerWS),
     zkConfigProvider,
@@ -435,10 +462,14 @@ export const configureAgeVerifierProviders = async (ctx: WalletContext, config: 
 export const configureCredentialRegistryProviders = async (ctx: WalletContext, config: Config): Promise<CredentialRegistryProviders> => {
   const walletAndMidnightProvider = await createWalletAndMidnightProvider(ctx);
   const zkConfigProvider = new NodeZkConfigProvider<any>(contractConfig.credentialRegistryZkPath);
+  // Generate a unique account ID from the wallet's coin public key
+  const state = await Rx.firstValueFrom(ctx.wallet.state().pipe(Rx.filter((s) => s.isSynced)));
+  const accountId = state.shielded.coinPublicKey.toHexString();
   return {
     privateStateProvider: levelPrivateStateProvider<any>({
       privateStateStoreName: `${contractConfig.privateStateStoreName}-credential-registry`,
-      walletProvider: walletAndMidnightProvider,
+      privateStoragePasswordProvider: () => 'midnight-cloak-deploy-cli',
+      accountId,
     }),
     publicDataProvider: indexerPublicDataProvider(config.indexer, config.indexerWS),
     zkConfigProvider,
@@ -599,7 +630,7 @@ export const getDustBalance = async (
   wallet: WalletFacade,
 ): Promise<{ available: bigint; pending: bigint; availableCoins: number; pendingCoins: number }> => {
   const state = await Rx.firstValueFrom(wallet.state().pipe(Rx.filter((s) => s.isSynced)));
-  const available = state.dust.walletBalance(new Date());
+  const available = state.dust.balance(new Date());
   const availableCoins = state.dust.availableCoins.length;
   const pendingCoins = state.dust.pendingCoins.length;
   const pending = state.dust.pendingCoins.reduce((sum, c) => sum + c.initialValue, 0n);
