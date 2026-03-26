@@ -113,7 +113,6 @@ secrets.json
 
 # Deployment artifacts
 deployment-result.json
-DEPLOYMENT_GUIDE.md
 
 # LevelDB (private state storage)
 midnight-cloak-deploy/
