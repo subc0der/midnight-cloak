@@ -7,7 +7,19 @@ import { resolve } from 'path';
 import { existsSync } from 'fs';
 
 // Check if circuit files exist (they're gitignored, won't exist in CI)
-const circuitsExist = existsSync('../../packages/contracts/src/managed/age-verifier/zkir');
+// Check each directory individually - keys only exist with full ZK compilation
+const zkirExists = existsSync('../../packages/contracts/src/managed/age-verifier/zkir');
+const keysExist = existsSync('../../packages/contracts/src/managed/age-verifier/keys');
+
+// Build copy targets based on what actually exists
+const circuitCopyTargets = [
+  ...(zkirExists
+    ? [{ src: '../../packages/contracts/src/managed/age-verifier/zkir/*', dest: 'circuits/age-verifier/zkir' }]
+    : []),
+  ...(keysExist
+    ? [{ src: '../../packages/contracts/src/managed/age-verifier/keys/*', dest: 'circuits/age-verifier/keys' }]
+    : []),
+];
 
 export default defineConfig({
   plugins: [
@@ -16,22 +28,9 @@ export default defineConfig({
     topLevelAwait(),
     // Copy circuit files so extension can fetch them via HTTP
     // The extension's FetchZkConfigProvider requires circuits served over HTTP/HTTPS
-    // Only copy if circuits exist locally (not in CI where they're gitignored)
-    ...(circuitsExist
-      ? [
-          viteStaticCopy({
-            targets: [
-              {
-                src: '../../packages/contracts/src/managed/age-verifier/zkir/*',
-                dest: 'circuits/age-verifier/zkir',
-              },
-              {
-                src: '../../packages/contracts/src/managed/age-verifier/keys/*',
-                dest: 'circuits/age-verifier/keys',
-              },
-            ],
-          }),
-        ]
+    // Only copy circuits that exist locally (keys only exist with full ZK compilation)
+    ...(circuitCopyTargets.length > 0
+      ? [viteStaticCopy({ targets: circuitCopyTargets })]
       : []),
   ],
   resolve: {

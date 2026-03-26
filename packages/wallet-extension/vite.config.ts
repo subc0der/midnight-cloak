@@ -8,7 +8,23 @@ import { existsSync } from 'fs';
 import manifest from './public/manifest.json';
 
 // Check if circuit files exist (they're gitignored, won't exist in CI)
-const circuitsExist = existsSync('../contracts/src/managed/age-verifier/zkir');
+// Check each directory individually - keys only exist with full ZK compilation
+const zkirExists = existsSync('../contracts/src/managed/age-verifier/zkir');
+const keysExist = existsSync('../contracts/src/managed/age-verifier/keys');
+const contractExists = existsSync('../contracts/src/managed/age-verifier/contract');
+
+// Build copy targets based on what actually exists
+const circuitCopyTargets = [
+  ...(zkirExists
+    ? [{ src: '../contracts/src/managed/age-verifier/zkir/*', dest: 'circuits/age-verifier/zkir' }]
+    : []),
+  ...(keysExist
+    ? [{ src: '../contracts/src/managed/age-verifier/keys/*', dest: 'circuits/age-verifier/keys' }]
+    : []),
+  ...(contractExists
+    ? [{ src: '../contracts/src/managed/age-verifier/contract/*', dest: 'circuits/age-verifier/contract' }]
+    : []),
+];
 
 export default defineConfig({
   plugins: [
@@ -16,26 +32,9 @@ export default defineConfig({
     topLevelAwait(),
     react(),
     crx({ manifest }),
-    // Only copy circuits if they exist locally (not in CI where they're gitignored)
-    ...(circuitsExist
-      ? [
-          viteStaticCopy({
-            targets: [
-              {
-                src: '../contracts/src/managed/age-verifier/zkir/*',
-                dest: 'circuits/age-verifier/zkir',
-              },
-              {
-                src: '../contracts/src/managed/age-verifier/keys/*',
-                dest: 'circuits/age-verifier/keys',
-              },
-              {
-                src: '../contracts/src/managed/age-verifier/contract/*',
-                dest: 'circuits/age-verifier/contract',
-              },
-            ],
-          }),
-        ]
+    // Only copy circuits that exist locally (keys only exist with full ZK compilation)
+    ...(circuitCopyTargets.length > 0
+      ? [viteStaticCopy({ targets: circuitCopyTargets })]
       : []),
   ],
   build: {
