@@ -202,3 +202,6 @@ function NFTGatedSection() {
     </section>
   );
 }
+
+// Export example components for documentation purposes
+export { TokenGatedSection, NFTGatedSection };

@@ -74,13 +74,11 @@ globalThis.WebSocket = WebSocket;
 // Note: Contracts compiled with older Compact CLI have 'impureCircuits' instead of 'provableCircuits'.
 // Type assertions are used until contracts are recompiled with the new compiler.
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ageVerifierCompiledContract: any = (CompiledContract.make as any)('age-verifier', AgeVerifier.Contract).pipe(
   (CompiledContract.withWitnesses as any)(ageVerifierWitnesses),
   (CompiledContract.withCompiledFileAssets as any)(contractConfig.ageVerifierZkPath),
 );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const credentialRegistryCompiledContract: any = (CompiledContract.make as any)('credential-registry', CredentialRegistry.Contract).pipe(
   (CompiledContract.withWitnesses as any)(credentialRegistryWitnesses),
   (CompiledContract.withCompiledFileAssets as any)(contractConfig.credentialRegistryZkPath),

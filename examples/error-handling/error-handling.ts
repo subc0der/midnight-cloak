@@ -199,8 +199,8 @@ function useVerificationWithErrors() {
   };
 }
 
-// Example usage
-async function main() {
+// Example usage (prefixed with _ to indicate intentionally unused in module)
+async function _main() {
   const client = new MidnightCloakClient({
     network: 'preprod',
     timeout: 30000,

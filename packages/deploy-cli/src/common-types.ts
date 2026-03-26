@@ -4,9 +4,10 @@
 import type { MidnightProviders, AnyProvableCircuitId } from '@midnight-ntwrk/midnight-js-types';
 import type { DeployedContract, FoundContract } from '@midnight-ntwrk/midnight-js-contracts';
 
-// Import contract types from managed directories
-import type * as AgeVerifierTypes from '../../contracts/src/managed/age-verifier/contract/index.js';
-import type * as CredentialRegistryTypes from '../../contracts/src/managed/credential-registry/contract/index.js';
+// Note: Contract type imports removed - using 'any' until contracts are recompiled for Ledger v8
+// When recompiling, restore these imports and use proper types:
+// import type * as AgeVerifierTypes from '../../contracts/src/managed/age-verifier/contract/index.js';
+// import type * as CredentialRegistryTypes from '../../contracts/src/managed/credential-registry/contract/index.js';
 
 // ─── Age Verifier Types ─────────────────────────────────────────────────────
 
