@@ -326,4 +326,69 @@ describe('ActivityLogStore', () => {
       expect(entries).toEqual([]);
     });
   });
+
+  describe('storage failure handling', () => {
+    it('propagates error when storage.get fails', async () => {
+      const store = ActivityLogStore.getInstance();
+
+      // Mock storage failure
+      vi.mocked(chrome.storage.local.get).mockRejectedValueOnce(
+        new Error('Storage quota exceeded')
+      );
+
+      await expect(store.getAll()).rejects.toThrow('Storage quota exceeded');
+    });
+
+    it('propagates error when storage.set fails', async () => {
+      const store = ActivityLogStore.getInstance();
+
+      // Mock storage failure on set
+      vi.mocked(chrome.storage.local.set).mockRejectedValueOnce(
+        new Error('Storage quota exceeded')
+      );
+
+      await expect(
+        store.addEntry({
+          type: 'verification_request',
+          origin: 'https://example.com',
+          credentialType: 'AGE',
+        })
+      ).rejects.toThrow('Storage quota exceeded');
+    });
+
+    it('recovers after transient storage failure', async () => {
+      const store = ActivityLogStore.getInstance();
+
+      // First call fails
+      vi.mocked(chrome.storage.local.get).mockRejectedValueOnce(
+        new Error('Transient error')
+      );
+
+      await expect(store.getAll()).rejects.toThrow('Transient error');
+
+      // Second call succeeds
+      const entries = await store.getAll();
+      expect(entries).toEqual([]);
+    });
+  });
+
+  describe('context detection', () => {
+    it('warns when instantiated outside background context', () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      // Force non-background context
+      ActivityLogStore.setBackgroundContext(false);
+      ActivityLogStore.resetInstance();
+
+      // Re-set to non-background before getInstance
+      ActivityLogStore.setBackgroundContext(false);
+      ActivityLogStore.getInstance();
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Warning: Instantiated outside background script')
+      );
+
+      consoleSpy.mockRestore();
+    });
+  });
 });

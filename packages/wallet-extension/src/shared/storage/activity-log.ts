@@ -67,9 +67,16 @@ function emptyActivityLog(): ActivityLogData {
  *
  * Singleton pattern matching RequestQueue for consistency.
  * Uses mutex lock to prevent race conditions.
+ *
+ * IMPORTANT: This class should ONLY be instantiated in the background script.
+ * The popup/content scripts should communicate via chrome.runtime.sendMessage
+ * using GET_ACTIVITY_LOG and CLEAR_ACTIVITY_LOG message types. Direct use in
+ * UI contexts bypasses the background script's mutex coordination and can
+ * cause race conditions with concurrent storage operations.
  */
 export class ActivityLogStore {
   private static instance: ActivityLogStore | null = null;
+  private static isBackgroundContext: boolean | null = null;
 
   /**
    * Mutex lock to serialize storage operations.
@@ -78,9 +85,24 @@ export class ActivityLogStore {
   private operationQueue: Promise<void> = Promise.resolve();
 
   /**
-   * Get the singleton instance
+   * Get the singleton instance.
+   *
+   * Logs a warning if called outside the background script context.
    */
   static getInstance(): ActivityLogStore {
+    // Check context on first call
+    if (ActivityLogStore.isBackgroundContext === null) {
+      ActivityLogStore.isBackgroundContext = ActivityLogStore.detectBackgroundContext();
+    }
+
+    // Warn if used outside background context (but don't block for testing)
+    if (!ActivityLogStore.isBackgroundContext) {
+      console.warn(
+        '[ActivityLogStore] Warning: Instantiated outside background script. ' +
+          'Use chrome.runtime.sendMessage for GET_ACTIVITY_LOG/CLEAR_ACTIVITY_LOG instead.'
+      );
+    }
+
     if (!ActivityLogStore.instance) {
       ActivityLogStore.instance = new ActivityLogStore();
     }
@@ -88,10 +110,38 @@ export class ActivityLogStore {
   }
 
   /**
+   * Detect if we're running in the background script context
+   */
+  private static detectBackgroundContext(): boolean {
+    // In test environment, assume background context
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
+      return true;
+    }
+    // In service worker, there's no window.document
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return true;
+    }
+    // If we have chrome.runtime and no visible document, likely background
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      // Service workers don't have document.body
+      return !document.body;
+    }
+    return false;
+  }
+
+  /**
    * Reset the singleton (for testing)
    */
   static resetInstance(): void {
     ActivityLogStore.instance = null;
+    ActivityLogStore.isBackgroundContext = null;
+  }
+
+  /**
+   * Force background context detection (for testing)
+   */
+  static setBackgroundContext(isBackground: boolean): void {
+    ActivityLogStore.isBackgroundContext = isBackground;
   }
 
   // Private constructor for singleton

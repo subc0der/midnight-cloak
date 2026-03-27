@@ -274,4 +274,77 @@ describe('ActivityLog', () => {
     expect(screen.getByText('Credential Accepted')).toBeInTheDocument();
     expect(screen.getByText('Credential Rejected')).toBeInTheDocument();
   });
+
+  describe('error handling', () => {
+    it('displays error when load fails', async () => {
+      mockSendMessage.mockRejectedValue(new Error('Network error'));
+
+      renderActivityLog();
+
+      await waitFor(() => {
+        expect(screen.getByText('Unable to connect to extension')).toBeInTheDocument();
+      });
+    });
+
+    it('displays error when response indicates failure', async () => {
+      mockSendMessage.mockResolvedValue({ success: false });
+
+      renderActivityLog();
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to load activity log')).toBeInTheDocument();
+      });
+    });
+
+    it('shows retry button on error', async () => {
+      mockSendMessage.mockRejectedValueOnce(new Error('Network error'));
+
+      renderActivityLog();
+
+      await waitFor(() => {
+        expect(screen.getByText('Retry')).toBeInTheDocument();
+      });
+    });
+
+    it('retries loading when retry button clicked', async () => {
+      mockSendMessage
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce({ success: true, entries: [] });
+
+      renderActivityLog();
+
+      await waitFor(() => {
+        expect(screen.getByText('Retry')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Retry'));
+
+      await waitFor(() => {
+        expect(screen.getByText('No Activity Yet')).toBeInTheDocument();
+      });
+    });
+
+    it('displays error when clear fails', async () => {
+      const entries: ActivityEntry[] = [
+        { id: '1', type: 'approval', origin: 'https://example.com', credentialType: 'AGE', timestamp: Date.now() },
+      ];
+
+      mockSendMessage
+        .mockResolvedValueOnce({ success: true, entries })
+        .mockRejectedValueOnce(new Error('Clear failed'));
+
+      renderActivityLog();
+
+      await waitFor(() => {
+        expect(screen.getByText('Approved')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Clear Activity History'));
+      fireEvent.click(screen.getByText('Clear All'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Unable to clear activity log')).toBeInTheDocument();
+      });
+    });
+  });
 });

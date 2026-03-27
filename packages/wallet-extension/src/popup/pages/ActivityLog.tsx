@@ -63,10 +63,12 @@ export default function ActivityLog() {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearing, setClearing] = useState(false);
 
   const loadEntries = useCallback(async () => {
+    setError(null);
     try {
       const response = await chrome.runtime.sendMessage({
         type: 'GET_ACTIVITY_LOG',
@@ -74,9 +76,12 @@ export default function ActivityLog() {
 
       if (response.success) {
         setEntries(response.entries || []);
+      } else {
+        setError('Failed to load activity log');
       }
     } catch (err) {
       console.error('Failed to load activity log:', err);
+      setError('Unable to connect to extension');
     } finally {
       setLoading(false);
     }
@@ -88,6 +93,7 @@ export default function ActivityLog() {
 
   async function handleClear() {
     setClearing(true);
+    setError(null);
     try {
       const response = await chrome.runtime.sendMessage({
         type: 'CLEAR_ACTIVITY_LOG',
@@ -96,9 +102,12 @@ export default function ActivityLog() {
       if (response.success) {
         setEntries([]);
         setShowClearConfirm(false);
+      } else {
+        setError('Failed to clear activity log');
       }
     } catch (err) {
       console.error('Failed to clear activity log:', err);
+      setError('Unable to clear activity log');
     } finally {
       setClearing(false);
     }
@@ -115,11 +124,41 @@ export default function ActivityLog() {
       </header>
 
       <div className="page scroll-content">
+        {error && (
+          <div
+            style={{
+              padding: 12,
+              marginBottom: 12,
+              background: 'var(--color-error-bg, rgba(239, 68, 68, 0.1))',
+              border: '1px solid var(--color-error)',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--color-error)',
+              fontSize: 13,
+            }}
+          >
+            {error}
+            <button
+              onClick={loadEntries}
+              style={{
+                marginLeft: 8,
+                padding: '4px 8px',
+                background: 'transparent',
+                border: '1px solid var(--color-error)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--color-error)',
+                cursor: 'pointer',
+                fontSize: 12,
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
         {loading ? (
           <div className="empty-state">
             <div className="spinner" />
           </div>
-        ) : entries.length === 0 ? (
+        ) : entries.length === 0 && !error ? (
           <div className="empty-state">
             <div className="empty-state-icon">📋</div>
             <h3>No Activity Yet</h3>
