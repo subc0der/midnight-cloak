@@ -351,7 +351,7 @@ export function createMockWallet(options: {
 
       // Simulate user rejection if configured
       if (options.rejectSignature) {
-        return null;
+        throw new Error('User rejected signature request');
       }
 
       // Return mock signature using browser-native TextEncoder and btoa
